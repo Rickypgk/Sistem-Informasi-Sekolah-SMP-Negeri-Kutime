@@ -145,24 +145,39 @@ body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; color:var(--text); 
 @section('content')
 @php
     use App\Models\PageContent;
-    use App\Models\SchoolSetting;
     use App\Models\Berita;
 
     $heroMedia   = PageContent::getHeroMedia();
     $hmTipe      = $heroMedia?->hero_media_tipe ?? 'none';
-    $hmFileUrls  = $heroMedia?->heroFilesUrls   ?? [];
+    $hmFileUrls  = $heroMedia?->heroFilesUrls ?? [];
     $hmEmbedUrl  = $heroMedia?->heroYoutubeEmbed;
     $hmInterval  = $heroMedia?->hero_slide_interval ?? 4000;
 
-    $heroTitle   = PageContent::getValue('hero_title',       SchoolSetting::get('nama_sekolah','SMP Negeri Kutime'));
+    /*
+    =====================================================
+    FIX SAFE SCHOOL SETTING (ANTI ERROR 500)
+    =====================================================
+    */
+    $defaultSchoolName = 'SMP Negeri Kutime';
+
+    try {
+        $schoolName = \App\Models\SchoolSetting::get('nama_sekolah', $defaultSchoolName);
+    } catch (\Throwable $e) {
+        $schoolName = $defaultSchoolName;
+    }
+
+    $heroTitle = PageContent::getValue('hero_title', $schoolName);
+
     $heroDesc    = PageContent::getValue('hero_description', 'Sekolah berkualitas yang mencetak generasi unggul, berkarakter, dan berdaya saing.');
     $tentang     = PageContent::getValue('tentang');
     $visi        = PageContent::getValue('visi');
     $misi        = PageContent::getValue('misi');
+
     $sambutan    = PageContent::getValue('sambutan_teks');
     $sambNama    = PageContent::getValue('sambutan_nama');
     $sambJabatan = PageContent::getValue('sambutan_jabatan','Kepala Sekolah');
     $sambFoto    = PageContent::getValue('sambutan_foto_path');
+
     $infoPpdb    = PageContent::getValue('info_ppdb');
     $infoKal     = PageContent::getValue('info_kalender');
 
@@ -173,9 +188,13 @@ body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; color:var(--text); 
     $beritaPenting = Berita::where('status','aktif')->where('is_penting',true)->latest()->first();
 
     $galeriList = collect();
+
     if (class_exists('App\Models\Galeri')) {
         $galeriList = \App\Models\Galeri::where('status','aktif')
-            ->where('tipe','foto')->terurut()->limit(8)->get();
+            ->where('tipe','foto')
+            ->orderBy('created_at','desc')
+            ->limit(8)
+            ->get();
     }
 @endphp
 

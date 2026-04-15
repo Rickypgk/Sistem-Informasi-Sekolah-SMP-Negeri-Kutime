@@ -2,28 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Berita;
 use Illuminate\Http\Request;
+use App\Models\Berita;
 
 class PublicBeritaController extends Controller
 {
     public function index(Request $request)
     {
         // Pengumuman penting (maks. 3, tampil di atas)
-        $pengumuman = Berita::aktif()
-            ->pengumuman()
-            ->penting()
+        $pengumuman = Berita::query()
+            ->when(method_exists(Berita::class, 'scopeAktif'), fn($q) => $q->aktif())
+            ->when(method_exists(Berita::class, 'scopePengumuman'), fn($q) => $q->pengumuman())
+            ->when(method_exists(Berita::class, 'scopePenting'), fn($q) => $q->penting())
             ->orderBy('tanggal_publish', 'desc')
             ->take(3)
             ->get();
 
         // Query berita dengan filter
-        $query = Berita::aktif()->orderBy('tanggal_publish', 'desc');
+        $query = Berita::query()
+            ->when(method_exists(Berita::class, 'scopeAktif'), fn($q) => $q->aktif())
+            ->orderBy('tanggal_publish', 'desc');
 
+        // Filter kategori
         if ($request->filled('kategori')) {
             $query->where('kategori', $request->kategori);
         }
 
+        // Pencarian judul
         if ($request->filled('cari')) {
             $query->where('judul', 'like', '%' . $request->cari . '%');
         }
@@ -35,15 +40,30 @@ class PublicBeritaController extends Controller
 
     public function show(string $slug)
     {
-        $berita = Berita::aktif()
-            ->where('slug', $slug)
-            ->firstOrFail();
+        $query = Berita::query();
 
-        // Berita terkait – kategori sama, prioritaskan yang punya media
-        $terkait = Berita::aktif()
+        if (method_exists(Berita::class, 'scopeAktif')) {
+            $query->aktif();
+        }
+
+        $berita = $query->where('slug', $slug)->firstOrFail();
+
+        // Berita terkait – kategori sama
+        $terkaitQuery = Berita::query();
+
+        if (method_exists(Berita::class, 'scopeAktif')) {
+            $terkaitQuery->aktif();
+        }
+
+        $terkait = $terkaitQuery
             ->where('kategori', $berita->kategori)
             ->where('id', '!=', $berita->id)
-            ->orderByRaw("CASE WHEN media_tipe != 'none' AND media_tipe IS NOT NULL THEN 0 ELSE 1 END")
+            ->orderByRaw("
+                CASE 
+                    WHEN media_tipe != 'none' AND media_tipe IS NOT NULL THEN 0 
+                    ELSE 1 
+                END
+            ")
             ->orderBy('tanggal_publish', 'desc')
             ->take(3)
             ->get();

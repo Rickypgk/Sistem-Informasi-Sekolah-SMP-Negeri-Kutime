@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pengumuman;
-use Illuminate\Http\Request;
+
 
 class DashboardController extends Controller
 {

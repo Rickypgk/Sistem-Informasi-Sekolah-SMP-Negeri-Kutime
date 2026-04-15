@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 
 class SchoolSetting extends Model
 {
+    protected $table = 'school_settings'; // sesuaikan dengan tabel yang ada di database
     protected $fillable = ['key', 'value'];
 
     /**
@@ -49,3 +49,4 @@ class SchoolSetting extends Model
         return asset('storage/' . $path);
     }
 }
+
