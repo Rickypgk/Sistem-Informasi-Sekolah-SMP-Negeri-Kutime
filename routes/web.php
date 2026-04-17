@@ -67,8 +67,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
     // Tambahkan dua route ini ke grup admin  KELOLA USER
     Route::get('/users/template-import/{role}', [AdminUserController::class, 'downloadTemplate'])->name('admin.users.template-import');
-    Route::post('/users/import', [AdminUserController::class, 'import'])->name('admin.users.import');
-    
+    Route::post('/users/import', [AdminUserController::class, 'import'])->name('users.import');
+
 
     // ── Kelola Kelas ──────────────────────────────────────────────
     Route::resource('kelas', KelasController::class);
