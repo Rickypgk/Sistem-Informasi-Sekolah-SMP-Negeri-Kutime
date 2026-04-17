@@ -56,28 +56,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/profil/edit', [AdminProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil',      [AdminProfilController::class, 'update'])->name('profil.update');
 
-    // ── Kelola User ───────────────────────────────────────────────
-    // ⚠ Route STATIS harus SEBELUM Route::resource()
-    Route::get('users/export-excel',    [UserController::class, 'exportExcel'])->name('users.export-excel');
-    Route::get('users/export-pdf',      [UserController::class, 'exportPdf'])->name('users.export-pdf');
-    Route::get('users/template-import', [UserController::class, 'downloadTemplate'])->name('users.template-import');
-    Route::post('users/import',         [UserController::class, 'import'])->name('users.import');
-    Route::patch('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
-    Route::resource('users', UserController::class);    
-
-    // Import & Export
-    Route::post('/import',                 [UserController::class, 'import'])          ->name('import');
-    Route::get('/export/excel',            [UserController::class, 'exportExcel'])     ->name('export-excel');
-    Route::get('/export/pdf',              [UserController::class, 'exportPdf'])       ->name('export-pdf');
-    Route::get('/template/import',         [UserController::class, 'downloadTemplate'])->name('template-import');
-
-    
-
-    // ── Kelola User ───────────────────────────────────────────────
-    Route::get('users/export-excel',    [UserController::class, 'exportExcel'])->name('users.export-excel');
-    Route::get('users/export-pdf',      [UserController::class, 'exportPdf'])->name('users.export-pdf');
-    Route::post('users/import',         [UserController::class, 'import'])->name('users.import');
-    Route::patch('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+    // Users
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/',                        [UserController::class, 'index'])          ->name('index');
+        Route::post('/',                       [UserController::class, 'store'])          ->name('store');
+        Route::get('/{user}',                  [UserController::class, 'show'])           ->name('show');
+        Route::get('/{user}/edit',             [UserController::class, 'edit'])           ->name('edit');
+        Route::put('/{user}',                  [UserController::class, 'update'])         ->name('update');
+        Route::patch('/{user}/reset-password', [UserController::class, 'resetPassword'])  ->name('reset-password');
+        Route::delete('/{user}',               [UserController::class, 'destroy'])        ->name('destroy');
+ 
+        // Import & Export
+        Route::post('/import',                 [UserController::class, 'import'])          ->name('import');
+        Route::get('/export/excel',            [UserController::class, 'exportExcel'])     ->name('export-excel');
+        Route::get('/export/pdf',              [UserController::class, 'exportPdf'])       ->name('export-pdf');
+        Route::get('/template/import',         [UserController::class, 'downloadTemplate'])->name('template-import');
+    });
 
     // DOWNLOAD TEMPLATE - DENGAN PARAMETER ROLE (INI YANG BARU)
     Route::get('/admin/users/template-import/{role}', [UserController::class, 'downloadTemplate'])->name('admin.users.template-import');
