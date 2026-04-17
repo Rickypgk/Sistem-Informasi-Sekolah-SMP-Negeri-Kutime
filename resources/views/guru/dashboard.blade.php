@@ -3,16 +3,16 @@
 
 @section('content')
 
-<div class="space-y-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+<div class="space-y-4 max-w-7xl mx-auto">
 
     {{-- HEADER SELAMAT DATANG --}}
     @include('guru.dashboard.header')
 
     {{-- GRID UTAMA --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {{-- Kolom kiri: Konten utama (performa & chart) --}}
-        <div class="lg:col-span-2 space-y-5">
+        <div class="lg:col-span-2 space-y-4">
 
             {{-- Ringkasan Performa (KPI Cards) --}}
             @include('guru.dashboard.performance-summary')
