@@ -65,6 +65,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::patch('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
     Route::resource('users', UserController::class);    
 
+    // Import & Export
+    Route::post('/import',                 [UserController::class, 'import'])          ->name('import');
+    Route::get('/export/excel',            [UserController::class, 'exportExcel'])     ->name('export-excel');
+    Route::get('/export/pdf',              [UserController::class, 'exportPdf'])       ->name('export-pdf');
+    Route::get('/template/import',         [UserController::class, 'downloadTemplate'])->name('template-import');
+
+    
+
     // ── Kelola User ───────────────────────────────────────────────
     Route::get('users/export-excel',    [UserController::class, 'exportExcel'])->name('users.export-excel');
     Route::get('users/export-pdf',      [UserController::class, 'exportPdf'])->name('users.export-pdf');
