@@ -5,7 +5,7 @@ use App\Http\Controllers\Admin\ProfilController as AdminProfilController;
 use App\Http\Controllers\Admin\WebsiteController;
 use App\Http\Controllers\Admin\BeritaController;
 use App\Http\Controllers\Admin\GaleriController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\AbsensiGuruController;
 use App\Http\Controllers\Auth\LoginController;
@@ -58,16 +58,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
     // ── Kelola User ───────────────────────────────────────────────
     // ⚠ Route STATIS harus SEBELUM Route::resource()
-    Route::get('users/export-excel',    [AdminUserController::class, 'exportExcel'])->name('users.export-excel');
-    Route::get('users/export-pdf',      [AdminUserController::class, 'exportPdf'])->name('users.export-pdf');
-    Route::get('users/template-import', [AdminUserController::class, 'downloadTemplate'])->name('users.template-import');
-    Route::post('users/import',         [AdminUserController::class, 'import'])->name('users.import');
-    Route::patch('users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('users.reset-password');
-    Route::resource('users', AdminUserController::class);
+    Route::get('users/export-excel',    [UserController::class, 'exportExcel'])->name('users.export-excel');
+    Route::get('users/export-pdf',      [UserController::class, 'exportPdf'])->name('users.export-pdf');
+    Route::get('users/template-import', [UserController::class, 'downloadTemplate'])->name('users.template-import');
+    Route::post('users/import',         [UserController::class, 'import'])->name('users.import');
+    Route::patch('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+    Route::resource('users', UserController::class);    
 
-    // Tambahkan dua route ini ke grup admin  KELOLA USER
-    Route::get('/users/template-import/{role}', [AdminUserController::class, 'downloadTemplate'])->name('admin.users.template-import');
-    
+    // ── Kelola User ───────────────────────────────────────────────
+    Route::get('users/export-excel',    [UserController::class, 'exportExcel'])->name('users.export-excel');
+    Route::get('users/export-pdf',      [UserController::class, 'exportPdf'])->name('users.export-pdf');
+    Route::post('users/import',         [UserController::class, 'import'])->name('users.import');
+    Route::patch('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+
+    // DOWNLOAD TEMPLATE - DENGAN PARAMETER ROLE (INI YANG BARU)
+    Route::get('/admin/users/template-import/{role}', [UserController::class, 'downloadTemplate'])->name('admin.users.template-import');
 
 
     // ── Kelola Kelas ──────────────────────────────────────────────

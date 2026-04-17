@@ -268,7 +268,7 @@
                 </p>
                 <div class="flex gap-2">
                     <a id="btnTemplateGuru"
-                       href="{{ route('admin.users.template-import', 'guru') }}"
+                       href="{{ route('admin.users.template-import', ['role' => 'guru']) }}"
                        class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
                               border border-indigo-200 dark:border-indigo-800
                               bg-indigo-50 dark:bg-indigo-950/50
@@ -282,7 +282,7 @@
                         Template Guru
                     </a>
                     <a id="btnTemplateSiswa"
-                       href="{{ route('admin.users.template-import', 'siswa') }}"
+                       href="{{ route('admin.users.template-import', ['role' => 'siswa']) }}"
                        class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
                               border border-emerald-200 dark:border-emerald-800
                               bg-emerald-50 dark:bg-emerald-950/50

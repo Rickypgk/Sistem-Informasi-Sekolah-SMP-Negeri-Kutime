@@ -22,6 +22,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
+
 class UserController extends Controller
 {
     // =========================================================================
@@ -32,8 +33,8 @@ class UserController extends Controller
     {
         $activeTab = $request->get('tab', 'guru');
 
-        $gurus  = User::where('role', 'guru')->with(['guru.kelas'])->latest()->get();
-        $siswas = User::where('role', 'siswa')->with(['siswa.kelas'])->latest()->get();
+        $gurus     = User::where('role', 'guru')->with(['guru.kelas'])->latest()->get();
+        $siswas    = User::where('role', 'siswa')->with(['siswa.kelas'])->latest()->get();
         $kelasList = Kelas::orderBy('nama')->get();
 
         return view('admin.users.index', compact('gurus', 'siswas', 'activeTab', 'kelasList'));
@@ -41,19 +42,97 @@ class UserController extends Controller
 
     // =========================================================================
     // DOWNLOAD TEMPLATE IMPORT EXCEL
+    // URL: ?role=guru | ?role=siswa | ?guru= | ?siswa=
     // =========================================================================
-
-    public function downloadTemplate(string $role)
+    public function downloadTemplate(Request $request)
     {
-        abort_unless(in_array($role, ['guru', 'siswa']), 404);
+        $role = $request->query('role')
+            ?? ($request->has('guru') ? 'guru' : null)
+            ?? ($request->has('siswa') ? 'siswa' : null);
+
+        abort_unless(in_array($role, ['guru', 'siswa'], true), 404);
 
         $spreadsheet = new Spreadsheet();
-        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
         if ($role === 'guru') {
             $sheetTitle = 'Import Guru';
-            $filename   = 'template_import_guru.xlsx';
-            $headers    = [
+            $filename = 'template_import_guru.xlsx';
+            $headers = [
+                'nama', 'email', 'password', 'nip', 'jenis_kelamin (L/P)',
+                'tempat_lahir', 'tanggal_lahir (dd/mm/yyyy)', 'pendidikan_terakhir',
+                'status_pegawai', 'pangkat_gol_rang', 'no_sk_pertama',
+                'no_sk_terakhir', 'nama_kelas'
+            ];
+            $contohData = [
+                'Budi Santoso, S.Pd', 'budi@guru.sch.id', 'password123',
+                '198501012010011001', 'L', 'Jakarta', '01/01/1985',
+                'S1 Pendidikan Matematika', 'PNS', 'Penata Muda / III-a',
+                '001/SK/2010', '002/SK/2023', 'Kelas 7A'
+            ];
+        } else {
+            $sheetTitle = 'Import Siswa';
+            $filename = 'template_import_siswa.xlsx';
+            $headers = [
+                'nama', 'email', 'password', 'nis_nipd', 'nik', 'jenis_kelamin (L/P)',
+                'tempat_lahir', 'tanggal_lahir (dd/mm/yyyy)', 'agama', 'no_telp',
+                'shkun', 'nama_kelas', 'alamat', 'rt', 'rw', 'dusun',
+                'kecamatan', 'kode_pos', 'jenis_tinggal', 'transportasi',
+                'penerima_kps (Ya/Tidak)', 'no_kps'
+            ];
+            $contohData = [
+                'Ani Rahayu', 'ani@siswa.sch.id', 'password123', '20240001',
+                '3201010101010001', 'P', 'Bogor', '01/01/2010', 'Islam',
+                '08123456789', '', 'Kelas 7A', 'Jl. Merdeka No. 1', '001',
+                '002', 'Cikaret', 'Cibinong', '16913', 'Bersama Orang Tua',
+                'Jalan kaki', 'Tidak', ''
+            ];
+        }
+
+        $sheet->setTitle($sheetTitle);
+        $colCount = count($headers);
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colCount);
+
+        // Header
+        $sheet->fromArray($headers, null, 'A1');
+        $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        // Contoh data
+        $sheet->fromArray($contohData, null, 'A2');
+        $sheet->getStyle("A2:{$lastCol}2")->applyFromArray([
+            'font' => ['italic' => true, 'color' => ['rgb' => '6B7280']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
+        ]);
+
+        // Auto-size
+        foreach (range(1, $colCount) as $colIndex) {
+            $sheet->getColumnDimensionByColumn($colIndex)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        return response()->streamDownload(function() use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * Konfigurasi template untuk Guru
+     */
+    private function getGuruTemplateConfig(): array
+    {
+        return [
+            'title' => 'Import Guru',
+            'filename' => 'template_import_guru.xlsx',
+            'headers' => [
                 'nama',
                 'email',
                 'password',
@@ -67,8 +146,8 @@ class UserController extends Controller
                 'no_sk_pertama',
                 'no_sk_terakhir',
                 'nama_kelas',
-            ];
-            $contohData = [
+            ],
+            'contohData' => [
                 'Budi Santoso, S.Pd',
                 'budi@guru.sch.id',
                 'password123',
@@ -82,11 +161,19 @@ class UserController extends Controller
                 '001/SK/2010',
                 '002/SK/2023',
                 'Kelas 7A',
-            ];
-        } else {
-            $sheetTitle = 'Import Siswa';
-            $filename   = 'template_import_siswa.xlsx';
-            $headers    = [
+            ]
+        ];
+    }
+
+    /**
+     * Konfigurasi template untuk Siswa
+     */
+    private function getSiswaTemplateConfig(): array
+    {
+        return [
+            'title' => 'Import Siswa',
+            'filename' => 'template_import_siswa.xlsx',
+            'headers' => [
                 'nama',
                 'email',
                 'password',
@@ -109,8 +196,8 @@ class UserController extends Controller
                 'transportasi',
                 'penerima_kps (Ya/Tidak)',
                 'no_kps',
-            ];
-            $contohData = [
+            ],
+            'contohData' => [
                 'Ani Rahayu',
                 'ani@siswa.sch.id',
                 'password123',
@@ -133,98 +220,71 @@ class UserController extends Controller
                 'Jalan kaki',
                 'Tidak',
                 '',
-            ];
-        }
+            ]
+        ];
+    }
 
-        $sheet->setTitle($sheetTitle);
+    /**
+     * Setup sheet dengan styling lengkap
+     */
+    private function setupTemplateSheet($sheet, array $config): void
+    {
+        $sheet->setTitle($config['title']);
+        $headers = $config['headers'];
+        $contohData = $config['contohData'];
+
         $colCount = count($headers);
         $lastCol  = Coordinate::stringFromColumnIndex($colCount);
 
-        // ----- Baris 1: Header kolom -----
+        // Baris 1 — Header (Bold, Background Biru, Center)
         $sheet->fromArray($headers, null, 'A1');
-
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
-            'font' => [
-                'bold'  => true,
-                'color' => ['rgb' => 'FFFFFF'],
-                'size'  => 11,
-            ],
-            'fill' => [
-                'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '4F46E5'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical'   => Alignment::VERTICAL_CENTER,
-            ],
-            'borders' => [
+            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'borders'   => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
-                    'color'       => ['rgb' => '3730A3'],
+                    'color'       => ['rgb' => 'D1D5DB'],
                 ],
             ],
         ]);
 
-        // ----- Baris 2: Data contoh -----
+        // Baris 2 — Contoh data (Italic, Background Abu-abu muda)
         $sheet->fromArray($contohData, null, 'A2');
-
         $sheet->getStyle("A2:{$lastCol}2")->applyFromArray([
-            'font' => [
-                'italic' => true,
-                'color'  => ['rgb' => '64748B'],
-            ],
-            'fill' => [
-                'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'F1F5F9'],
-            ],
-            'borders' => [
+            'font'      => ['italic' => true, 'color' => ['rgb' => '6B7280']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+            'borders'   => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
-                    'color'       => ['rgb' => 'CBD5E1'],
+                    'color'       => ['rgb' => 'D1D5DB'],
                 ],
             ],
         ]);
 
-        // ----- Baris 3 dst: border tipis untuk area input -----
-        $maxDataRow = 200;
-        $sheet->getStyle("A3:{$lastCol}{$maxDataRow}")->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color'       => ['rgb' => 'E2E8F0'],
-                ],
-            ],
+        // Baris 3 — Petunjuk (Italic, Background Putih)
+        $sheet->setCellValue('A3', '← Contoh data (HAPUS baris ini sebelum import)');
+        $sheet->getStyle('A3')->applyFromArray([
+            'font'      => ['italic' => true, 'color' => ['rgb' => '9CA3AF']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
         ]);
 
-        // ----- Tinggi baris header -----
-        $sheet->getRowDimension(1)->setRowHeight(24);
-        $sheet->getRowDimension(2)->setRowHeight(20);
-
-        // ----- Auto-size semua kolom -----
+        // Auto-size semua kolom
         foreach (range(1, $colCount) as $colIndex) {
             $sheet->getColumnDimensionByColumn($colIndex)->setAutoSize(true);
         }
 
-        // ----- Freeze baris header -----
+        // Freeze pane di baris 3
         $sheet->freezePane('A3');
 
-        // ----- Set active cell ke A3 (siap input) -----
-        $sheet->setSelectedCell('A3');
-
-        $writer = new Xlsx($spreadsheet);
-
-        return response()->streamDownload(
-            function () use ($writer) {
-                $writer->save('php://output');
-            },
-            $filename,
-            [
-                'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-                'Cache-Control'       => 'max-age=0',
-            ]
-        );
+        // Set tinggi baris
+        $sheet->getRowDimension(1)->setRowHeight(25);
+        $sheet->getRowDimension(2)->setRowHeight(20);
+        $sheet->getRowDimension(3)->setRowHeight(18);
     }
+
 
     // =========================================================================
     // IMPORT EXCEL — FUNGSI UTAMA
@@ -248,8 +308,6 @@ class UserController extends Controller
             $spreadsheet = IOFactory::load($file->getRealPath());
             $sheet       = $spreadsheet->getActiveSheet();
             $rows        = $sheet->toArray(null, true, true, false);
-            // toArray(nullValue, calculateFormulas, formatData, returnCellRef)
-            // returnCellRef=false → array numerik 0-based per baris
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal membaca file Excel: ' . $e->getMessage());
         }
@@ -259,10 +317,9 @@ class UserController extends Controller
         $headerRowIndex = null;
 
         foreach ($rows as $index => $row) {
-            $cellA = strtolower(trim((string) ($row[0] ?? '')));
-
-            // Buang karakter non-alpha dari awal, cek apakah dimulai dengan "nama"
+            $cellA      = strtolower(trim((string) ($row[0] ?? '')));
             $cellAClean = ltrim($cellA, " \t\u{00A0}");
+
             if ($cellAClean === 'nama' || str_starts_with($cellAClean, 'nama')) {
                 $headerRowIndex = $index;
                 break;
@@ -276,7 +333,7 @@ class UserController extends Controller
             );
         }
 
-        // 4. Ambil baris data (setelah header), buang baris yang email-nya tampak seperti contoh
+        // 4. Ambil baris data (setelah header), buang baris contoh / kosong
         $emailContohMarkers = ['@guru.sch.id', '@siswa.sch.id', '@sekolah.sch.id', 'contoh', 'example'];
 
         $dataRows = array_filter(
@@ -315,7 +372,7 @@ class UserController extends Controller
                 // Skip baris kosong
                 if (empty($namaRaw) || empty($emailRaw)) continue;
 
-                // Validasi format email minimal
+                // Validasi format email
                 if (!filter_var($emailRaw, FILTER_VALIDATE_EMAIL)) {
                     $errors[] = "Baris data ke-" . ($rowIndex + 1) . ": Email \"{$emailRaw}\" tidak valid, baris dilewati.";
                     continue;
@@ -352,8 +409,6 @@ class UserController extends Controller
         }
 
         // 6. Feedback ke user
-        $successMsg = "Berhasil mengimpor {$importedCount} akun {$role}.";
-
         if ($importedCount === 0) {
             return back()
                 ->with('error', 'Tidak ada data yang berhasil diimpor. Periksa kembali isi file.')
@@ -362,7 +417,7 @@ class UserController extends Controller
 
         return redirect()
             ->route('admin.users.index', ['tab' => $role])
-            ->with('success', $successMsg)
+            ->with('success', "Berhasil mengimpor {$importedCount} akun {$role}.")
             ->with('import_errors', $errors);
     }
 
@@ -405,7 +460,7 @@ class UserController extends Controller
     {
         $kelasId = $this->findKelasId($row[11] ?? null);
         $kpsRaw  = strtolower(trim((string) ($row[20] ?? '')));
-        $isKps   = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true']) ? 1 : 0;
+        $isKps   = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true'], true) ? 1 : 0;
 
         $user->siswa()->create([
             'nama'               => $user->name,
@@ -502,7 +557,32 @@ class UserController extends Controller
     private function cleanString(mixed $value): ?string
     {
         $str = trim((string) $value);
-        return $str === '' || $str === 'null' ? null : $str;
+        return ($str === '' || $str === 'null') ? null : $str;
+    }
+
+    // =========================================================================
+    // TAMBAH USER MANUAL
+    // =========================================================================
+
+    public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|min:6|confirmed',
+            'role'     => 'required|in:guru,siswa,admin',
+        ]);
+
+        $user = User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'role'     => $request->role,
+            'password' => Hash::make($request->password),
+        ]);
+
+        return redirect()
+            ->route('admin.users.index', ['tab' => $user->role])
+            ->with('success', 'User berhasil ditambahkan.');
     }
 
     // =========================================================================
@@ -519,32 +599,124 @@ class UserController extends Controller
             ->with('success', 'User berhasil dihapus.');
     }
 
-    public function store(Request $request)
+    // =========================================================================
+    // EXPORT EXCEL SEMUA DATA GURU / SISWA
+    // URL: ?role=guru  |  ?role=siswa
+    // =========================================================================
+
+    public function exportExcel(Request $request)
     {
-        // Validasi
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed',
-            'role' => 'required',
+        $role = $request->query('role', 'guru');
+
+        abort_unless(in_array($role, ['guru', 'siswa'], true), 404, 'Role tidak valid.');
+
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(ucfirst($role));
+
+        if ($role === 'guru') {
+            $filename = 'data_guru.xlsx';
+            $headers  = [
+                'No', 'Nama', 'Email', 'NIP', 'Jenis Kelamin', 'Tempat Lahir',
+                'Tanggal Lahir', 'Pendidikan Terakhir', 'Status Pegawai',
+                'Pangkat/Golongan', 'No SK Pertama', 'No SK Terakhir', 'Kelas',
+            ];
+
+            $data = User::where('role', 'guru')->with('guru.kelas')->latest()->get();
+            $rows = [];
+
+            foreach ($data as $index => $user) {
+                $guru   = $user->guru;
+                $rows[] = [
+                    $index + 1,
+                    $user->name,
+                    $user->email,
+                    $guru?->nip ?? '-',
+                    $guru?->jk ?? '-',
+                    $guru?->tempat_lahir ?? '-',
+                    $guru?->tanggal_lahir ? $guru->tanggal_lahir->format('d/m/Y') : '-',
+                    $guru?->pendidikan_terakhir ?? '-',
+                    $guru?->status_pegawai ?? '-',
+                    $guru?->pangkat_gol_ruang ?? '-',
+                    $guru?->no_sk_pertama ?? '-',
+                    $guru?->no_sk_terakhir ?? '-',
+                    $guru?->kelas?->nama ?? '-',
+                ];
+            }
+        } else {
+            $filename = 'data_siswa.xlsx';
+            $headers  = [
+                'No', 'Nama', 'Email', 'NIS/NIPD', 'NIK', 'Jenis Kelamin',
+                'Tempat Lahir', 'Tanggal Lahir', 'Agama', 'No Telp', 'Kelas', 'Alamat',
+            ];
+
+            $data = User::where('role', 'siswa')->with('siswa.kelas')->latest()->get();
+            $rows = [];
+
+            foreach ($data as $index => $user) {
+                $siswa  = $user->siswa;
+                $rows[] = [
+                    $index + 1,
+                    $user->name,
+                    $user->email,
+                    $siswa?->nidn ?? '-',
+                    $siswa?->nik ?? '-',
+                    $siswa?->jk ?? '-',
+                    $siswa?->tempat_lahir ?? '-',
+                    $siswa?->tgl_lahir ? $siswa->tgl_lahir->format('d/m/Y') : '-',
+                    $siswa?->agama ?? '-',
+                    $siswa?->no_telp ?? '-',
+                    $siswa?->kelas?->nama ?? '-',
+                    $siswa?->alamat ?? '-',
+                ];
+            }
+        }
+
+        // Tulis header & data
+        $sheet->fromArray($headers, null, 'A1');
+        if (!empty($rows)) {
+            $sheet->fromArray($rows, null, 'A2');
+        }
+
+        $lastCol    = Coordinate::stringFromColumnIndex(count($headers));
+        $lastDataRow = count($rows) + 1;
+
+        // Styling header
+        $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
+            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
 
-        // Simpan data
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role,
-            'kelas_id' => $request->kelas_id,
-            'password' => Hash::make($request->password),
-        ]);
+        // Border seluruh tabel
+        if ($lastDataRow > 1) {
+            $sheet->getStyle("A1:{$lastCol}{$lastDataRow}")->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['rgb' => 'D1D5DB'],
+                    ],
+                ],
+            ]);
+        }
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'User berhasil ditambahkan');
+        // Auto size kolom
+        foreach (range(1, count($headers)) as $col) {
+            $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(
+            function () use ($writer) {
+                $writer->save('php://output');
+            },
+            $filename,
+            [
+                'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+                'Cache-Control'       => 'max-age=0',
+            ]
+        );
     }
-
-    // =========================================================================
-    // CATATAN: Fungsi update, resetPassword, exportExcel, exportPdf
-    // tetap sama seperti yang sudah ada di kode Anda sebelumnya.
-    // Tidak ada perubahan pada fungsi-fungsi tersebut.
-    // =========================================================================
 }
