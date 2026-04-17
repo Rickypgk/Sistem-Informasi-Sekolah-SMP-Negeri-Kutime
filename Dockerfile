@@ -1,33 +1,29 @@
-FROM php:8.2-cli
+FROM php:8.2-fpm
 
-WORKDIR /app
-
-# Install system dependencies + PHP extensions
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    unzip \
-    curl \
     git \
-    libzip-dev \
+    curl \
     libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd zip pdo pdo_mysql
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    libzip-dev
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy project files
+WORKDIR /var/www
+
 COPY . .
 
-# Install Laravel dependencies
+# Install dependencies
 RUN composer install
 
-# Generate app key (biar tidak error 500)
-RUN php artisan key:generate
-
-# Expose port Laravel
 EXPOSE 8000
 
-# Run Laravel
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD php artisan serve --host=0.0.0.0 --port=8000
