@@ -51,44 +51,57 @@
                      x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                      x-transition:leave="transition ease-in duration-75"
                      x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                     class="absolute right-0 mt-1.5 w-52 bg-white dark:bg-slate-800 rounded-xl shadow-xl
+                     class="absolute right-0 mt-1.5 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl
                             border border-slate-200 dark:border-slate-700 py-1 z-30 origin-top-right">
+
+                    <div class="px-3 py-1.5">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Excel</p>
+                    </div>
                     <a href="{{ route('admin.users.export-excel', ['role' => 'guru']) }}"
-                       class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium
+                       class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium
                               text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700">
                         <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0120 9.414V19a2 2 0 01-2 2z"/>
+                                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0
+                                     01.707.293l5.414 5.414A1 1 0 0120 9.414V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Excel — Data Guru
+                        Data Guru (.xlsx)
                     </a>
                     <a href="{{ route('admin.users.export-excel', ['role' => 'siswa']) }}"
-                       class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium
+                       class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium
                               text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700">
                         <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0120 9.414V19a2 2 0 01-2 2z"/>
+                                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0
+                                     01.707.293l5.414 5.414A1 1 0 0120 9.414V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Excel — Data Siswa
+                        Data Siswa (.xlsx)
                     </a>
+
                     <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
+
+                    <div class="px-3 py-1.5">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">PDF</p>
+                    </div>
                     <a href="{{ route('admin.users.export-pdf', ['role' => 'guru']) }}"
-                       class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium
+                       class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium
                               text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700">
                         <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1
+                                     0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                         </svg>
-                        PDF — Data Guru
+                        Data Guru (.pdf)
                     </a>
                     <a href="{{ route('admin.users.export-pdf', ['role' => 'siswa']) }}"
-                       class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium
+                       class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium
                               text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700">
                         <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1
+                                     0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                         </svg>
-                        PDF — Data Siswa
+                        Data Siswa (.pdf)
                     </a>
                 </div>
             </div>
@@ -118,7 +131,7 @@
     </div>
     @endif
 
-    {{-- ===== ALERT ERROR TUNGGAL ===== --}}
+    {{-- ===== ALERT ERROR ===== --}}
     @if(session('error'))
     <div class="flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200
                 dark:border-red-800 rounded-2xl p-4">
@@ -130,21 +143,40 @@
     </div>
     @endif
 
-    {{-- ===== ALERT ERROR BARIS IMPORT ===== --}}
+    {{-- ===== ALERT IMPORT ERRORS ===== --}}
     @if(session('import_errors'))
     <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
         <div class="flex items-center gap-2 mb-2">
             <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464
+                         0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
             <p class="text-xs font-bold text-amber-700 dark:text-amber-400">
-                Beberapa baris gagal diimpor ({{ count(session('import_errors')) }} baris):
+                {{ count(session('import_errors')) }} baris gagal diimpor:
             </p>
         </div>
         <ul class="space-y-1 pl-6">
             @foreach(session('import_errors') as $err)
             <li class="text-[11px] text-amber-600 dark:text-amber-500 list-disc">{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    {{-- ===== VALIDATION ERRORS ===== --}}
+    @if($errors->any())
+    <div class="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+            <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-xs font-bold text-red-600 dark:text-red-400">Terdapat kesalahan:</p>
+        </div>
+        <ul class="space-y-1 pl-6">
+            @foreach($errors->all() as $error)
+            <li class="text-[11px] text-red-600 dark:text-red-400 list-disc">{{ $error }}</li>
             @endforeach
         </ul>
     </div>
@@ -157,7 +189,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
         </svg>
-        <input type="text" id="searchInput" placeholder="Cari nama, email, NIP..."
+        <input type="text" id="searchInput" placeholder="Cari nama, email, NIP/NIS..."
                class="w-full pl-8 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600
                       bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300
                       placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300
@@ -208,7 +240,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200
                 dark:border-slate-700 w-full max-w-md overflow-hidden">
 
-        {{-- Header modal --}}
+        {{-- Header --}}
         <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
@@ -264,7 +296,7 @@
             <div class="rounded-xl border border-dashed border-slate-200 dark:border-slate-600
                         bg-slate-50 dark:bg-slate-900/50 p-3.5">
                 <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
-                    Belum punya template?
+                    Download Template Excel
                 </p>
                 <div class="flex gap-2">
                     <a id="btnTemplateGuru"
@@ -297,7 +329,7 @@
                     </a>
                 </div>
                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">
-                    Download template → isi data mulai baris ke-3 → simpan → upload di sini.
+                    Download template → isi data mulai baris ke-3 → upload di sini.
                 </p>
             </div>
 
@@ -306,35 +338,28 @@
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                     Password Default <span class="text-red-400">*</span>
                 </label>
-                <div class="relative">
-                    <input type="text" name="password_import" id="passwordImport" required
-                           placeholder="Masukkan password untuk semua akun baru..."
-                           class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600
-                                  bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300
-                                  placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition">
-                </div>
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-                    Semua akun yang diimport akan menggunakan password ini. Min. 5 karakter.
-                </p>
+                <input type="text" name="password_import" id="passwordImport" required
+                       placeholder="Password untuk semua akun baru..."
+                       class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600
+                              bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300
+                              placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Min. 5 karakter.</p>
             </div>
 
             {{-- 4. Upload File --}}
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                    File Excel (.xlsx) <span class="text-red-400">*</span>
+                    File Excel (.xlsx / .xls) <span class="text-red-400">*</span>
                 </label>
-                <div class="relative">
-                    <input type="file" name="import_file" id="importFileInput" required
-                           accept=".xlsx,.xls"
-                           class="w-full text-xs text-slate-500 dark:text-slate-400
-                                  file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                                  file:text-xs file:font-semibold
-                                  file:bg-indigo-50 dark:file:bg-indigo-950/50
-                                  file:text-indigo-700 dark:file:text-indigo-400
-                                  hover:file:bg-indigo-100 dark:hover:file:bg-indigo-950
-                                  file:cursor-pointer cursor-pointer file:transition-colors">
-                </div>
-                {{-- Preview nama file yang dipilih --}}
+                <input type="file" name="import_file" id="importFileInput" required
+                       accept=".xlsx,.xls"
+                       class="w-full text-xs text-slate-500 dark:text-slate-400
+                              file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
+                              file:text-xs file:font-semibold
+                              file:bg-indigo-50 dark:file:bg-indigo-950/50
+                              file:text-indigo-700 dark:file:text-indigo-400
+                              hover:file:bg-indigo-100 dark:hover:file:bg-indigo-950
+                              file:cursor-pointer cursor-pointer file:transition-colors">
                 <div id="filePreview" class="hidden mt-2 flex items-center gap-2 px-3 py-2 rounded-lg
                                               bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200
                                               dark:border-emerald-800">
@@ -366,9 +391,10 @@
     </div>
 </div>
 
-{{-- ===== MODAL LAIN (tidak diubah) ===== --}}
+{{-- ===== MODAL LAIN ===== --}}
 @include('admin.users._modal_detail')
 @include('admin.users._modal_tambah')
+@include('admin.users._modal_edit')
 @include('admin.users._modal_hapus')
 @include('admin.users._modal_reset_password')
 
@@ -376,65 +402,101 @@
 
 @push('scripts')
 <script>
-    // ── Buka / tutup modal ──────────────────────────────────────────────────
-    function openModal(id) {
-        const el = document.getElementById(id);
-        el.classList.remove('hidden');
-        el.classList.add('flex');
-        document.body.style.overflow = 'hidden';
+// ── Buka / tutup modal ──────────────────────────────────────────────────────
+function openModal(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+    const el = document.getElementById(id);
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+// Tutup modal jika klik backdrop
+document.querySelectorAll('[id^="modal"]').forEach(modal => {
+    modal.addEventListener('click', function (e) {
+        if (e.target === this) closeModal(this.id);
+    });
+});
+
+// ── Live Search ──────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
+    document.querySelectorAll('.searchable-row').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+    });
+});
+
+// ── Preview file ─────────────────────────────────────────────────────────────
+document.getElementById('importFileInput').addEventListener('change', function () {
+    const preview = document.getElementById('filePreview');
+    const label   = document.getElementById('filePreviewName');
+    if (this.files && this.files[0]) {
+        label.textContent = this.files[0].name;
+        preview.classList.remove('hidden');
+    } else {
+        preview.classList.add('hidden');
     }
+});
 
-    function closeModal(id) {
-        const el = document.getElementById(id);
-        el.classList.add('hidden');
-        el.classList.remove('flex');
-        document.body.style.overflow = '';
-    }
+// ── Toggle password visibility ────────────────────────────────────────────────
+function togglePwd(inputId) {
+    const input = document.getElementById(inputId);
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
 
-    // Tutup modal jika klik backdrop
-    document.querySelectorAll('[id^="modal"]').forEach(modal => {
-        modal.addEventListener('click', function (e) {
-            if (e.target === this) closeModal(this.id);
-        });
-    });
+// ── Buka modal detail ─────────────────────────────────────────────────────────
+function openDetailModal(userId) {
+    fetch(`/admin/users/${userId}`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        buildDetailModal(data);
+        openModal('modalDetail');
+    })
+    .catch(() => alert('Gagal memuat data user.'));
+}
 
-    // ── Live Search ──────────────────────────────────────────────────────────
-    document.getElementById('searchInput').addEventListener('input', function () {
-        const q = this.value.toLowerCase().trim();
-        document.querySelectorAll('.searchable-row').forEach(row => {
-            const match = row.innerText.toLowerCase().includes(q);
-            row.style.display = match ? '' : 'none';
-        });
-    });
+// ── Buka modal edit ───────────────────────────────────────────────────────────
+function openEditModal(userId) {
+    fetch(`/admin/users/${userId}/edit`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        populateEditModal(data);
+        openModal('modalEditUser');
+    })
+    .catch(() => alert('Gagal memuat data user.'));
+}
 
-    // ── Preview nama file yang dipilih ───────────────────────────────────────
-    document.getElementById('importFileInput').addEventListener('change', function () {
-        const preview = document.getElementById('filePreview');
-        const label   = document.getElementById('filePreviewName');
-        if (this.files && this.files[0]) {
-            label.textContent = this.files[0].name;
-            preview.classList.remove('hidden');
-        } else {
-            preview.classList.add('hidden');
-        }
-    });
+// ── Buka modal reset password ─────────────────────────────────────────────────
+function openResetModal(userId, userName) {
+    document.getElementById('resetUserName').textContent = userName;
+    document.getElementById('formResetPwd').action = `/admin/users/${userId}/reset-password`;
+    openModal('modalResetPwd');
+}
 
-    // ── Sinkronisasi link template dengan role yang dipilih ──────────────────
-    // (opsional: highlight tombol template yang relevan saat role berubah)
-    document.querySelectorAll('input[name="role"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            const isGuru = this.value === 'guru';
-            const btnGuru  = document.getElementById('btnTemplateGuru');
-            const btnSiswa = document.getElementById('btnTemplateSiswa');
+// ── Buka modal hapus ──────────────────────────────────────────────────────────
+function openDeleteModal(userId, userName) {
+    document.getElementById('deleteUserName').textContent = userName;
+    document.getElementById('formHapus').action = `/admin/users/${userId}`;
+    openModal('modalHapus');
+}
 
-            if (isGuru) {
-                btnGuru.classList.add('ring-2', 'ring-indigo-400');
-                btnSiswa.classList.remove('ring-2', 'ring-indigo-400');
-            } else {
-                btnSiswa.classList.add('ring-2', 'ring-indigo-400');
-                btnGuru.classList.remove('ring-2', 'ring-indigo-400');
-            }
-        });
-    });
+// ── Auto-open modal jika ada error validasi ──────────────────────────────────
+@if($errors->any() && old('_form_context') === 'tambah')
+    document.addEventListener('DOMContentLoaded', () => openModal('modalTambahUser'));
+@endif
+
+@if($errors->any() && old('_form_context') === 'edit')
+    document.addEventListener('DOMContentLoaded', () => openModal('modalEditUser'));
+@endif
 </script>
 @endpush
