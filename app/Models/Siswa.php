@@ -51,4 +51,8 @@ class Siswa extends Model
     {
         return $this->hasMany(AbsensiSiswa::class, 'siswa_id', 'id');
     }
+    public function studyGroup()
+    {
+        return $this->belongsTo(StudyGroup::class);
+    }
 }
