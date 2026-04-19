@@ -149,31 +149,29 @@ class KelasController extends Controller
      * @param int|null $userId      ID user (tabel users) yang menjadi wali
      * @param int      $studyGroupId ID study_groups
      */
+/* ──────────────────────────────────────────────────────────────
+     | PRIVATE HELPERS — Sinkronisasi Wali Kelas ↔ Profil Guru
+     ─────────────────────────────────────────────────────────────── */
+
     private function syncHomeroomToGuruProfile(?int $userId, ?int $studyGroupId): void
     {
-        // 🚫 Stop kalau data tidak valid
         if (!$userId || !$studyGroupId) {
             return;
         }
 
-        // 🔍 Ambil user (optional safety)
         $user = User::find($userId);
-        if (!$user) {
-            return;
-        }
+        if (!$user) return;
 
-        // ✅ Pastikan profil guru ada
         $guruProfile = Guru::firstOrCreate(
             ['user_id' => $userId],
             ['nama' => $user->name ?? '']
         );
 
-        // ✅ Update relasi ke study group
         $guruProfile->update([
-            'study_group_id' => $studyGroupId
+            'study_group_id' => $studyGroupId,
+            'kelas_id'       => $studyGroupId   // kompatibilitas dengan kode lama
         ]);
     }
-
     /**
      * Hapus kelas_id dari profil guru lama jika masih menunjuk kelas ini.
      */
