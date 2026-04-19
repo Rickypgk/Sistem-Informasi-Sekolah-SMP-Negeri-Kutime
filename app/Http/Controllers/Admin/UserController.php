@@ -210,7 +210,7 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // UPDATE PROFIL SISWA
+    // UPDATE PROFIL SISWA (Tetap sama)
     // =========================================================================
 
     private function updateSiswaProfile(User $user, Request $request): void
@@ -249,7 +249,7 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // RESET PASSWORD
+    // RESET PASSWORD (Tetap dipertahankan)
     // =========================================================================
 
     public function resetPassword(Request $request, User $user): RedirectResponse
@@ -263,19 +263,19 @@ public function index(Request $request): View
         ]);
 
         return redirect()
-            ->route('admin.users.index', ['tab' => $user->role])
-            ->with('success', 'Password berhasil direset untuk ' . ($user->guru?->nama ?? $user->siswa?->nama ?? $user->name) . '.');
+            ->route('admin.users.index', ['tab' => in_array($user->role, ['guru','kepala_sekolah']) ? 'guru' : $user->role])
+            ->with('success', 'Password berhasil direset.');
     }
 
-    // =========================================================================
-    // HAPUS USER
+// =========================================================================
+    // HAPUS USER (Diperbaiki)
     // =========================================================================
 
     public function destroy(User $user): RedirectResponse
     {
         $role = $user->role;
+        $tab  = in_array($role, ['guru', 'kepala_sekolah']) ? 'guru' : $role;
 
-        // Hapus foto jika ada
         if ($user->photo && Storage::disk('public')->exists($user->photo)) {
             Storage::disk('public')->delete($user->photo);
         }
@@ -283,7 +283,7 @@ public function index(Request $request): View
         $user->delete();
 
         return redirect()
-            ->route('admin.users.index', ['tab' => $role])
+            ->route('admin.users.index', ['tab' => $tab])
             ->with('success', 'User berhasil dihapus permanen.');
     }
 
