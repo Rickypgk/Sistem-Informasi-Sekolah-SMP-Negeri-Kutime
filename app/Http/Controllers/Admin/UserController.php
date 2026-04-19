@@ -146,8 +146,8 @@ public function index(Request $request): View
         ]);
     }
 
-    // =========================================================================
-    // UPDATE — simpan perubahan data user
+// =========================================================================
+    // UPDATE — simpan perubahan data user (Tetap dipertahankan)
     // =========================================================================
 
     public function update(Request $request, User $user): RedirectResponse
@@ -159,14 +159,12 @@ public function index(Request $request): View
 
         DB::beginTransaction();
         try {
-            // Update data users
             $user->update([
                 'name'  => $request->name,
                 'email' => $request->email,
             ]);
 
-            // Update profil berdasarkan role
-            if ($user->role === 'guru') {
+            if ($user->role === 'guru' || $user->role === 'kepala_sekolah') {
                 $this->updateGuruProfile($user, $request);
             } elseif ($user->role === 'siswa') {
                 $this->updateSiswaProfile($user, $request);
@@ -178,8 +176,10 @@ public function index(Request $request): View
             return back()->with('error', 'Gagal memperbarui user: ' . $e->getMessage());
         }
 
+        $tab = in_array($user->role, ['guru', 'kepala_sekolah']) ? 'guru' : $user->role;
+
         return redirect()
-            ->route('admin.users.index', ['tab' => $user->role])
+            ->route('admin.users.index', ['tab' => $tab])
             ->with('success', 'Data user berhasil diperbarui.');
     }
 
