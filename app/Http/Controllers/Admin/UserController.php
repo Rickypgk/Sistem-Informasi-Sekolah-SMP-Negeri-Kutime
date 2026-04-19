@@ -146,24 +146,36 @@ public function index(Request $request): View
         ]);
     }
 
-// =========================================================================
-    // UPDATE — simpan perubahan data user (Tetap dipertahankan)
+    // =========================================================================
+    // UPDATE — simpan perubahan data user (Diperbaiki)
     // =========================================================================
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        $request->validate([
+        // Validasi dasar + validasi kelas_id untuk siswa
+        $validationRules = [
             'name'  => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-        ]);
+        ];
+
+        // Tambahan validasi khusus untuk siswa agar menghindari foreign key error
+        if ($user->role === 'siswa') {
+            $validationRules['kelas_id'] = 'nullable|integer|exists:study_groups,id';
+            // Fallback jika masih menggunakan tabel kelas lama
+            // $validationRules['kelas_id'] = 'nullable|integer|exists:study_groups,id|exists:kelas,id';
+        }
+
+        $request->validate($validationRules);
 
         DB::beginTransaction();
         try {
+            // Update data utama di tabel users
             $user->update([
                 'name'  => $request->name,
                 'email' => $request->email,
             ]);
 
+            // Update profil sesuai role
             if ($user->role === 'guru' || $user->role === 'kepala_sekolah') {
                 $this->updateGuruProfile($user, $request);
             } elseif ($user->role === 'siswa') {
@@ -173,7 +185,17 @@ public function index(Request $request): View
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal memperbarui user: ' . $e->getMessage());
+            // Pesan error yang lebih informatif
+            $errorMessage = 'Gagal memperbarui user: ' . $e->getMessage();
+            
+            // Jika error foreign key, beri pesan yang lebih ramah
+            if (str_contains($e->getMessage(), '1452') || str_contains($e->getMessage(), 'foreign key')) {
+                $errorMessage = 'Gagal memperbarui data siswa. Kelas yang dipilih tidak ditemukan. Silakan pilih kelas yang tersedia.';
+            }
+
+            return back()
+                ->with('error', $errorMessage)
+                ->withInput();
         }
 
         $tab = in_array($user->role, ['guru', 'kepala_sekolah']) ? 'guru' : $user->role;
