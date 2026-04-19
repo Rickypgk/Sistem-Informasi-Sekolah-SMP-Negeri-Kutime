@@ -43,4 +43,8 @@ class Guru extends Model
     {
         return $this->belongsTo(StudyGroup::class);
     }
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class);
+    }
 }
