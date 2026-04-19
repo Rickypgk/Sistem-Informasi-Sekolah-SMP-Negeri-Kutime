@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 
 class KelasController extends Controller
 {
+    /**
+     * Tampilkan daftar kelas dari study_groups.
+     */
     public function index()
     {
         $kelas = StudyGroup::with(['homeroomTeacher', 'homeroomTeacher.guru', 'timetables'])
@@ -28,6 +31,9 @@ class KelasController extends Controller
         return view('admin.kelas.index', compact('kelas', 'gurus'));
     }
 
+    /**
+     * Simpan kelas baru. Jika wali kelas dipilih, update profil guru.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -53,6 +59,9 @@ class KelasController extends Controller
             ->with('success', 'Kelas berhasil ditambahkan dan tersinkron dengan Data Akademik.');
     }
 
+    /**
+     * Update kelas. Sinkronisasi wali kelas ke profil guru.
+     */
     public function update(Request $request, StudyGroup $kelas)
     {
         $validated = $request->validate([
@@ -85,6 +94,9 @@ class KelasController extends Controller
             ->with('success', 'Kelas berhasil diperbarui.');
     }
 
+    /**
+     * Hapus kelas dan timetable-nya. Lepas wali kelas dari profil guru.
+     */
     public function destroy(StudyGroup $kelas)
     {
         DB::transaction(function () use ($kelas) {
@@ -100,8 +112,9 @@ class KelasController extends Controller
     }
 
     /* ──────────────────────────────────────────────────────────────
-     | PRIVATE HELPERS — Sinkronisasi Wali Kelas ↔ Profil Guru
+     | PRIVATE HELPERS — Sinkronisasi wali kelas ↔ profil guru
      ─────────────────────────────────────────────────────────────── */
+
     private function syncHomeroomToGuruProfile(?int $userId, ?int $studyGroupId): void
     {
         if (!$userId || !$studyGroupId) return;
@@ -114,7 +127,9 @@ class KelasController extends Controller
             ['nama' => $user->name ?? '']
         );
 
-        $guruProfile->update(['study_group_id' => $studyGroupId]);
+        $guruProfile->update([
+            'study_group_id' => $studyGroupId   // ubah ke 'kelas_id' jika kolom di tabel gurus bernama kelas_id
+        ]);
     }
 
     private function clearHomeroomFromGuruProfile(?int $userId, int $studyGroupId): void
@@ -122,7 +137,7 @@ class KelasController extends Controller
         if (!$userId) return;
 
         Guru::where('user_id', $userId)
-            ->where('study_group_id', $studyGroupId)
+            ->where('study_group_id', $studyGroupId)   // ubah ke kelas_id jika perlu
             ->update(['study_group_id' => null]);
     }
 }
