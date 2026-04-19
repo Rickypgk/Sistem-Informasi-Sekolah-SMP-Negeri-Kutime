@@ -30,13 +30,21 @@ class UserController extends Controller
     // INDEX — tampilkan daftar user
     // =========================================================================
 
-    public function index(Request $request): View
+public function index(Request $request): View
     {
         $activeTab = $request->get('tab', 'guru');
 
-        $gurus     = User::where('role', 'guru')->with(['guru.kelas'])->latest()->get();
-        $siswas    = User::where('role', 'siswa')->with(['siswa.kelas'])->latest()->get();
-        $kelasList = Kelas::orderBy('nama')->get();
+        $gurus  = User::whereIn('role', ['guru', 'kepala_sekolah'])
+                      ->with(['guru.studyGroup', 'guru.kelas'])
+                      ->latest()
+                      ->get();
+
+        $siswas = User::where('role', 'siswa')
+                      ->with(['siswa.kelas', 'siswa.studyGroup'])
+                      ->latest()
+                      ->get();
+
+        $kelasList = $this->getKelasList();
 
         return view('admin.users.index', compact('gurus', 'siswas', 'activeTab', 'kelasList'));
     }
