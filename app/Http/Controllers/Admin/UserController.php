@@ -184,9 +184,8 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // UPDATE PROFIL GURU
+    // UPDATE PROFIL GURU & KEPALA SEKOLAH
     // =========================================================================
-
     private function updateGuruProfile(User $user, Request $request): void
     {
         $data = [
