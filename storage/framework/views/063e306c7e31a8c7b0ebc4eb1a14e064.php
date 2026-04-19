@@ -305,17 +305,33 @@ unset($__errorArgs, $__bag); ?>
                 if (isActive) {
                     card.classList.add('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-950/30', 'dark:border-indigo-500');
                     card.classList.remove('border-slate-200', 'bg-white', 'dark:bg-slate-700/30', 'dark:border-slate-600');
-                    title?.classList.replace('text-slate-600', 'text-indigo-700');
-                    sub?.classList.replace('text-slate-400', 'text-indigo-400');
-                    icon?.classList.replace('bg-slate-100', 'bg-indigo-100');
-                    svg?.classList.replace('text-slate-500', 'text-indigo-600');
+
+                    title?.classList.add('text-indigo-700');
+                    title?.classList.remove('text-slate-600');
+
+                    sub?.classList.add('text-indigo-400');
+                    sub?.classList.remove('text-slate-400');
+
+                    icon?.classList.add('bg-indigo-100');
+                    icon?.classList.remove('bg-slate-100');
+
+                    svg?.classList.add('text-indigo-600');
+                    svg?.classList.remove('text-slate-500');
                 } else {
                     card.classList.remove('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-950/30', 'dark:border-indigo-500');
                     card.classList.add('border-slate-200', 'bg-white', 'dark:bg-slate-700/30', 'dark:border-slate-600');
-                    title?.classList.replace('text-indigo-700', 'text-slate-600');
-                    sub?.classList.replace('text-indigo-400', 'text-slate-400');
-                    icon?.classList.replace('bg-indigo-100', 'bg-slate-100');
-                    svg?.classList.replace('text-indigo-600', 'text-slate-500');
+
+                    title?.classList.remove('text-indigo-700');
+                    title?.classList.add('text-slate-600');
+
+                    sub?.classList.remove('text-indigo-400');
+                    sub?.classList.add('text-slate-400');
+
+                    icon?.classList.remove('bg-indigo-100');
+                    icon?.classList.add('bg-slate-100');
+
+                    svg?.classList.remove('text-indigo-600');
+                    svg?.classList.add('text-slate-500');
                 }
             });
         }
@@ -324,29 +340,34 @@ unset($__errorArgs, $__bag); ?>
             card.addEventListener('click', () => {
                 const input = card.querySelector('input[type="radio"]');
                 if (!input) return;
+
                 input.checked = true;
                 toggleKelas(input.value);
                 styleRoleCards(input.value);
             });
         });
 
-        // Inisialisasi awal
+        // init default
         const checked = document.querySelector('#formTambahUser input[name="role"]:checked');
         if (checked) {
             toggleKelas(checked.value);
             styleRoleCards(checked.value);
         }
 
-        // Restore old value jika ada error validasi
-        <?php if($errors -> any()() && old('role')): ?>
-        const oldRole = "<?php echo e(old('role')); ?>";
-        const oldInput = document.querySelector(`#formTambahUser input[name="role"][value="${oldRole}"]`);
-        if (oldInput) {
-            oldInput.checked = true;
-            toggleKelas(oldRole);
-            styleRoleCards(oldRole);
-        }
+        // restore old value (FIXED)
+        <?php if($errors->any() && old('role')): ?>
+            const oldRole = "<?php echo e(old('role')); ?>";
+            const oldInput = document.querySelector(
+                `#formTambahUser input[name="role"][value="${oldRole}"]`
+            );
+
+            if (oldInput) {
+                oldInput.checked = true;
+                toggleKelas(oldRole);
+                styleRoleCards(oldRole);
+            }
         <?php endif; ?>
+
     })();
 </script>
 <?php $__env->stopPush(); ?><?php /**PATH C:\PA 3\smpn-kutime\resources\views/admin/users/_modal_tambah.blade.php ENDPATH**/ ?>
