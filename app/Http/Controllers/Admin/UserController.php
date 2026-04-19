@@ -82,8 +82,8 @@ public function index(Request $request): View
         ]);
     }
 
-    // =========================================================================
-    // TAMBAH USER MANUAL
+// =========================================================================
+    // TAMBAH USER MANUAL (Tetap dipertahankan + kompatibel)
     // =========================================================================
 
     public function store(Request $request): RedirectResponse
@@ -92,7 +92,7 @@ public function index(Request $request): View
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
-            'role'     => 'required|in:guru,siswa,admin',
+            'role'     => 'required|in:guru,siswa,admin,kepala_sekolah',
         ]);
 
         DB::beginTransaction();
@@ -104,8 +104,7 @@ public function index(Request $request): View
                 'password' => Hash::make($request->password),
             ]);
 
-            // Buat profil kosong sesuai role
-            if ($request->role === 'guru') {
+            if ($request->role === 'guru' || $request->role === 'kepala_sekolah') {
                 $user->guru()->create([
                     'nama'     => $request->name,
                     'kelas_id' => null,
@@ -124,7 +123,7 @@ public function index(Request $request): View
         }
 
         return redirect()
-            ->route('admin.users.index', ['tab' => $user->role])
+            ->route('admin.users.index', ['tab' => $user->role === 'kepala_sekolah' ? 'guru' : $user->role])
             ->with('success', 'User berhasil ditambahkan.');
     }
 
