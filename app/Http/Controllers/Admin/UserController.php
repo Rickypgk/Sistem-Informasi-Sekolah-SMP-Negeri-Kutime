@@ -49,20 +49,36 @@ public function index(Request $request): View
         return view('admin.users.index', compact('gurus', 'siswas', 'activeTab', 'kelasList'));
     }
 
-    // =========================================================================
-    // SHOW — data satu user (JSON, untuk modal detail)
+// =========================================================================
+    // SHOW — data satu user (JSON, untuk modal detail) — Diperbaiki
     // =========================================================================
 
     public function show(User $user)
     {
-        $user->load(['guru.kelas', 'siswa.kelas']);
+        $user->load(['guru.studyGroup', 'guru.kelas', 'siswa.kelas', 'siswa.studyGroup']);
 
-        $profile = $user->role === 'guru' ? $user->guru : $user->siswa;
+        $role = $user->role;
+        $profile = null;
+
+        if ($role === 'siswa' && $user->siswa) {
+            $profile = $user->siswa->toArray();
+            if ($user->siswa->kelas) {
+                $profile['kelas'] = $user->siswa->kelas->only([
+                    'id', 'name', 'grade', 'section', 'academic_year', 'semester'
+                ]);
+            }
+        } elseif (in_array($role, ['guru', 'kepala_sekolah']) && $user->guru) {
+            $profile = $user->guru->toArray();
+            if ($user->guru->kelas || $user->guru->studyGroup) {
+                $kelas = $user->guru->studyGroup ?? $user->guru->kelas;
+                $profile['kelas'] = $kelas ? $kelas->only(['id', 'name', 'grade', 'section']) : null;
+            }
+        }
 
         return response()->json([
-            'user'    => $user,
+            'user'    => $user->only(['id', 'name', 'email', 'photo', 'created_at']),
             'profile' => $profile,
-            'role'    => $user->role,
+            'role'    => $role,
         ]);
     }
 
