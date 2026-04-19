@@ -210,13 +210,37 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // UPDATE PROFIL SISWA (Tetap sama)
+    // UPDATE PROFIL SISWA — Diperbaiki (Anti Foreign Key Error)
     // =========================================================================
 
     private function updateSiswaProfile(User $user, Request $request): void
     {
         $kpsRaw = strtolower(trim((string) ($request->penerima_kps ?? '')));
         $isKps  = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true'], true) ? 'Ya' : 'Tidak';
+
+        // ====================== PERBAIKAN KEAMANAN KELAS_ID ======================
+        $kelasId = null;
+
+        if ($request->filled('kelas_id') && $request->kelas_id !== '' && $request->kelas_id !== 'null') {
+            $inputKelasId = (int) $request->kelas_id;
+
+            // Cek di StudyGroup dulu (model kelas utama saat ini)
+            $kelasExists = StudyGroup::where('id', $inputKelasId)->exists();
+
+            // Jika tidak ada, cek fallback ke tabel kelas lama
+            if (!$kelasExists) {
+                $kelasExists = Kelas::where('id', $inputKelasId)->exists();
+            }
+
+            if ($kelasExists) {
+                $kelasId = $inputKelasId;
+            } else {
+                // Log warning agar mudah di-debug
+                \Log::warning("Kelas ID {$inputKelasId} tidak ditemukan di StudyGroup maupun Kelas. Di-set null untuk siswa user_id = {$user->id}");
+                $kelasId = null;
+            }
+        }
+        // =====================================================================
 
         $data = [
             'nama'               => $request->name,
@@ -228,7 +252,7 @@ public function index(Request $request): View
             'agama'              => $request->agama,
             'no_telp'            => $request->no_telp,
             'shkun'              => $request->shkun,
-            'kelas_id'           => $request->filled('kelas_id') ? $request->kelas_id : null,
+            'kelas_id'           => $kelasId,                    // pakai nilai yang sudah aman
             'alamat'             => $request->alamat,
             'rt'                 => $request->rt,
             'rw'                 => $request->rw,
