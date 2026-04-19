@@ -1,20 +1,25 @@
 {{-- resources/views/admin/users/_table_siswa.blade.php
      Variabel masuk: $users (Collection<User> with role=siswa, with siswa.kelas)
+                     $kelasList (Collection<StudyGroup>) — dari controller
 --}}
 
 @php
     /*
     |------------------------------------------------------------------
-    | Ambil kelas unik dari data siswa yang sedang ditampilkan
-    | Sumber: relasi $user->siswa->kelas->nama
+    | Ambil kelas unik dari $kelasList (selalu fresh dari controller)
+    | Fallback: ambil dari relasi siswa jika $kelasList tidak tersedia
     |------------------------------------------------------------------
     */
-    $kelasUnik = $users
-        ->map(fn($u) => $u->siswa?->kelas)
-        ->filter()
-        ->unique('id')
-        ->sortBy('nama')
-        ->values();
+    if (isset($kelasList) && $kelasList->count()) {
+        $kelasUnik = $kelasList->sortBy('name')->values();
+    } else {
+        $kelasUnik = $users
+            ->map(fn($u) => $u->siswa?->kelas)
+            ->filter()
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+    }
 @endphp
 
 <div class="space-y-3">
@@ -53,7 +58,7 @@
                            border border-slate-200 dark:border-slate-600
                            text-slate-700 dark:text-slate-300
                            hover:bg-slate-50 dark:hover:bg-slate-600">
-                {{ $k->nama }}
+                {{ $k->name }}
                 <span class="ml-1 bg-slate-100 dark:bg-slate-600 rounded px-1 text-[10px]">
                     {{ $jumlahDiKelas }}
                 </span>
@@ -166,7 +171,7 @@
                         @php
                             $s        = $user->siswa;
                             $kelasId  = $s?->kelas_id ?? 'none';
-                            $kelasNama= $s?->kelas?->nama ?? null;
+                            $kelasNama= $s?->kelas?->name ?? $s?->kelas?->nama ?? null;
                         @endphp
 
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20
@@ -207,7 +212,7 @@
                                 </div>
                             </td>
 
-                            {{-- Kelas — tampil jelas di kolom kedua --}}
+                            {{-- Kelas --}}
                             <td class="px-3 py-2.5">
                                 @if($kelasNama)
                                     <span class="inline-flex px-1.5 py-0.5 rounded-lg
@@ -373,7 +378,6 @@
                                                      7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                     </button>
-                                    {{-- ── Tombol Edit ── letakkan PERTAMA di blok aksi ── --}}
                                     <button onclick="openEditModal({{ $user->id }})"
                                             title="Edit User"
                                             class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600
@@ -468,13 +472,12 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    const filterBtns = document.querySelectorAll('.kelas-filter-btn');
-    const rows       = document.querySelectorAll('#siswaBody tr[data-kelas-id]');
+    const filterBtns  = document.querySelectorAll('.kelas-filter-btn');
+    const rows        = document.querySelectorAll('#siswaBody tr[data-kelas-id]');
     const searchInput = document.getElementById('searchInput');
 
-    // ── Terapkan filter kelas + search sekaligus ────────────────
     function applyFilters() {
-        const activeBtn    = document.querySelector('.kelas-filter-btn.bg-indigo-600');
+        const activeBtn     = document.querySelector('.kelas-filter-btn.bg-indigo-600');
         const selectedKelas = activeBtn ? activeBtn.dataset.kelasId : 'all';
         const query         = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
@@ -485,55 +488,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ── Klik tombol filter kelas ─────────────────────────────────
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function () {
-            // Reset semua tombol ke style non-aktif
             filterBtns.forEach(b => {
-                b.classList.remove(
-                    'bg-indigo-600', 'text-white', 'shadow-sm',
-                    'hover:bg-indigo-700'
-                );
-                b.classList.add(
-                    'bg-white', 'dark:bg-slate-700',
-                    'border', 'border-slate-200', 'dark:border-slate-600',
-                    'text-slate-700', 'dark:text-slate-300',
-                    'hover:bg-slate-50', 'dark:hover:bg-slate-600'
-                );
-                // Update warna badge di dalam tombol
+                b.classList.remove('bg-indigo-600','text-white','shadow-sm','hover:bg-indigo-700');
+                b.classList.add('bg-white','dark:bg-slate-700','border','border-slate-200',
+                    'dark:border-slate-600','text-slate-700','dark:text-slate-300',
+                    'hover:bg-slate-50','dark:hover:bg-slate-600');
                 const badge = b.querySelector('span');
                 if (badge) {
                     badge.classList.remove('bg-white/25');
-                    badge.classList.add('bg-slate-100', 'dark:bg-slate-600');
+                    badge.classList.add('bg-slate-100','dark:bg-slate-600');
                 }
             });
 
-            // Set tombol ini sebagai aktif
-            this.classList.add(
-                'bg-indigo-600', 'text-white', 'shadow-sm', 'hover:bg-indigo-700'
-            );
-            this.classList.remove(
-                'bg-white', 'dark:bg-slate-700',
-                'border', 'border-slate-200', 'dark:border-slate-600',
-                'text-slate-700', 'dark:text-slate-300',
-                'hover:bg-slate-50', 'dark:hover:bg-slate-600'
-            );
+            this.classList.add('bg-indigo-600','text-white','shadow-sm','hover:bg-indigo-700');
+            this.classList.remove('bg-white','dark:bg-slate-700','border','border-slate-200',
+                'dark:border-slate-600','text-slate-700','dark:text-slate-300',
+                'hover:bg-slate-50','dark:hover:bg-slate-600');
             const activeBadge = this.querySelector('span');
             if (activeBadge) {
                 activeBadge.classList.add('bg-white/25');
-                activeBadge.classList.remove('bg-slate-100', 'dark:bg-slate-600');
+                activeBadge.classList.remove('bg-slate-100','dark:bg-slate-600');
             }
 
             applyFilters();
         });
     });
 
-    // ── Sinkronisasi dengan search box ──────────────────────────
     if (searchInput) {
         searchInput.addEventListener('input', applyFilters);
     }
 
-    // ── Default: tampilkan semua ─────────────────────────────────
     applyFilters();
 });
 </script>
