@@ -267,7 +267,7 @@ public function index(Request $request): View
             ->with('success', 'Password berhasil direset.');
     }
 
-// =========================================================================
+    // =========================================================================
     // HAPUS USER (Diperbaiki)
     // =========================================================================
 
@@ -893,9 +893,10 @@ public function index(Request $request): View
         return ($str === '' || $str === 'null') ? null : $str;
     }
 
-        /**
-     * Ambil kelas yang aktif, terurut — dipakai di semua method.
-     */
+    // =========================================================================
+    // HELPER BARU: Ambil Kelas dari StudyGroup (Digunakan di index & edit)
+    // =========================================================================
+
     private function getKelasList()
     {
         return StudyGroup::orderBy('grade')
