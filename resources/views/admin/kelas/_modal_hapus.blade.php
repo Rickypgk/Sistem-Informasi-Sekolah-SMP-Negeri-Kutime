@@ -25,7 +25,8 @@
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-[220px] leading-relaxed">
                 Kelas <strong id="deleteKelasName"
                               class="text-slate-700 dark:text-slate-300"></strong>
-                akan dihapus permanen. Data siswa yang terhubung akan kehilangan informasi kelasnya.
+                akan dihapus permanen beserta seluruh jadwal pelajaran yang terhubung.
+                Tindakan ini tidak dapat dibatalkan.
             </p>
         </div>
 

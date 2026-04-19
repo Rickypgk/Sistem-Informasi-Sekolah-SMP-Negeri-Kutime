@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ProfilController as AdminProfilController;
+use App\Http\Controllers\Admin\AcademicPlannerController;
+use App\Http\Controllers\Admin\StudyClassAssignmentController;
 use App\Http\Controllers\Admin\WebsiteController;
 use App\Http\Controllers\Admin\BeritaController;
 use App\Http\Controllers\Admin\GaleriController;
@@ -13,11 +15,13 @@ use App\Http\Controllers\Guru\DashboardController as GuruDashboardController;
 use App\Http\Controllers\Guru\ProfilController as GuruProfilController;
 use App\Http\Controllers\Guru\AbsensiSiswaController;
 use App\Http\Controllers\Guru\WaliKelasController;
+use App\Http\Controllers\Guru\JadwalMengajarController;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboardController;
 use App\Http\Controllers\Siswa\ProfilController as SiswaProfilController;
 use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\PublicBeritaController;
 use App\Http\Controllers\PublicGaleriController;
+use App\Http\Controllers\Siswa\JadwalPelajaranController;
 use Illuminate\Support\Facades\Route;
 
 // =================================================================
@@ -58,18 +62,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
     // Users
     Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/',                        [UserController::class, 'index'])          ->name('index');
-        Route::post('/',                       [UserController::class, 'store'])          ->name('store');
-        Route::get('/{user}',                  [UserController::class, 'show'])           ->name('show');
-        Route::get('/{user}/edit',             [UserController::class, 'edit'])           ->name('edit');
-        Route::put('/{user}',                  [UserController::class, 'update'])         ->name('update');
-        Route::patch('/{user}/reset-password', [UserController::class, 'resetPassword'])  ->name('reset-password');
-        Route::delete('/{user}',               [UserController::class, 'destroy'])        ->name('destroy');
- 
+        Route::get('/',                        [UserController::class, 'index'])->name('index');
+        Route::post('/',                       [UserController::class, 'store'])->name('store');
+        Route::get('/{user}',                  [UserController::class, 'show'])->name('show');
+        Route::get('/{user}/edit',             [UserController::class, 'edit'])->name('edit');
+        Route::put('/{user}',                  [UserController::class, 'update'])->name('update');
+        Route::patch('/{user}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
+        Route::delete('/{user}',               [UserController::class, 'destroy'])->name('destroy');
+
         // Import & Export
-        Route::post('/import',                 [UserController::class, 'import'])          ->name('import');
-        Route::get('/export/excel',            [UserController::class, 'exportExcel'])     ->name('export-excel');
-        Route::get('/export/pdf',              [UserController::class, 'exportPdf'])       ->name('export-pdf');
+        Route::post('/import',                 [UserController::class, 'import'])->name('import');
+        Route::get('/export/excel',            [UserController::class, 'exportExcel'])->name('export-excel');
+        Route::get('/export/pdf',              [UserController::class, 'exportPdf'])->name('export-pdf');
         Route::get('/template/import',         [UserController::class, 'downloadTemplate'])->name('template-import');
     });
 
@@ -91,7 +95,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/absensi-guru',              [AbsensiGuruController::class, 'index'])->name('absensi-guru.index');
     Route::post('/absensi-guru',             [AbsensiGuruController::class, 'store'])->name('absensi-guru.store');
     Route::delete('/absensi-guru/{absensiGuru}', [AbsensiGuruController::class, 'destroy'])->name('absensi-guru.destroy');
-    
+
     Route::get('/absensi-guru/export-excel', [App\Http\Controllers\Admin\AbsensiGuruController::class, 'exportExcel'])->name('absensi-guru.export-excel');
     Route::get('/absensi-guru/export-pdf', [App\Http\Controllers\Admin\AbsensiGuruController::class, 'exportPdf'])->name('absensi-guru.export-pdf');
 
@@ -106,8 +110,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/pengumuman/{pengumuman}',          [PengumumanController::class, 'adminShow'])->name('pengumuman.show');
     Route::patch('/pengumuman/{pengumuman}/toggle', [PengumumanController::class, 'adminToggle'])->name('pengumuman.toggle');
 
-    // ── Data Akademik (placeholder) ───────────────────────────────
-    Route::get('/data-akademik', fn() => view('admin.data-akademik.index'))->name('data-akademik.index');
+
 
     // ── Kelola Website ────────────────────────────────────────────
     Route::get('/kelola-website',                               [WebsiteController::class, 'kelolaWebsite'])->name('kelola-website');
@@ -139,6 +142,66 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         Route::delete('/{galeri}',              [GaleriController::class, 'destroy'])->name('destroy');
         Route::patch('/{galeri}/toggle-status', [GaleriController::class, 'toggleStatus'])->name('toggle-status');
     });
+
+
+    // ── Academic Planner (FIXED) ───────────────────────────────
+    Route::prefix('academic-planner')->name('academic-planner.')->group(function () {
+
+        // MAIN PAGE
+        Route::get('/', [AcademicPlannerController::class, 'index'])->name('index'); // admin.academic-planner.index
+
+        // Study Groups (Kelas)
+        Route::post('/study-group', [AcademicPlannerController::class, 'storeStudyGroup'])->name('study-group.store');
+        Route::put('/study-group/{id}', [AcademicPlannerController::class, 'updateStudyGroup'])->name('study-group.update');
+        Route::delete('/study-group/{id}', [AcademicPlannerController::class, 'destroyStudyGroup'])->name('study-group.destroy');
+        Route::get('/study-group/{id}', [AcademicPlannerController::class, 'showStudyGroup'])->name('study-group.show');
+        Route::get('/study-group/{id}', [AcademicPlannerController::class, 'showStudyGroup'])->name('show-study-group');
+        Route::get('/study-group/{id}', [AcademicPlannerController::class, 'show'])->name('study-group.show');
+
+        // ── Study Subjects ─────────────────────────
+        Route::prefix('study-subjects')->name('study-subjects.')->group(function () {
+            Route::get('/', [AcademicPlannerController::class, 'indexStudySubject'])->name('index');
+            Route::post('/', [AcademicPlannerController::class, 'storeStudySubject'])->name('store');
+            Route::get('/{id}/edit', [AcademicPlannerController::class, 'editStudySubject'])->name('edit');
+            Route::put('/{id}', [AcademicPlannerController::class, 'updateStudySubject'])->name('update');
+            Route::delete('/{id}', [AcademicPlannerController::class, 'destroyStudySubject'])->name('destroy');
+        });
+
+
+        // ── Timetables ─────────────────────────
+        Route::prefix('timetables')->group(function () {
+
+            Route::get('/create', [AcademicPlannerController::class, 'createTimetable'])->name('timetables.create');
+            Route::post('/', [AcademicPlannerController::class, 'storeTimetable'])->name('timetables.store');
+            Route::get('/{id}/edit', [AcademicPlannerController::class, 'editTimetable'])->name('timetables.edit');
+            Route::put('/{id}', [AcademicPlannerController::class, 'updateTimetable'])->name('timetables.update');
+            Route::delete('/{id}', [AcademicPlannerController::class, 'destroyTimetable'])->name('timetables.destroy');
+        });
+
+
+        // ── Assignments ─────────────────────────
+        Route::prefix('assignments')->group(function () {
+
+            Route::get('/create', [StudyClassAssignmentController::class, 'create'])
+                ->name('assignments.create');
+
+            Route::post('/', [StudyClassAssignmentController::class, 'store'])
+                ->name('assignments.store');
+
+            Route::get('/{id}/edit', [StudyClassAssignmentController::class, 'edit'])
+                ->name('assignments.edit');
+
+            Route::put('/{id}', [StudyClassAssignmentController::class, 'update'])
+                ->name('assignments.update');
+
+            Route::delete('/{id}', [StudyClassAssignmentController::class, 'destroy'])
+                ->name('assignments.destroy');
+
+            Route::post('/assign-teacher', [StudyClassAssignmentController::class, 'assignTeacher'])
+                ->name('assignments.assign-teacher');
+        });
+    }); // ✅ cukup satu penutup
+
 });
 
 // =================================================================
@@ -149,7 +212,7 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
     Route::get('/profil',      [GuruProfilController::class, 'show'])->name('profil');
     Route::get('/profil/edit', [GuruProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil',      [GuruProfilController::class, 'update'])->name('profil.update');
-    Route::get('/jadwal-mengajar', fn() => view('guru.jadwal-mengajar.index'))->name('jadwal-mengajar');
+    // Route::get('/jadwal-mengajar', fn() => view('guru.jadwal-mengajar.index'))->name('jadwal-mengajar');
     Route::get('/absensi-siswa',   fn() => view('guru.absensi-siswa.index'))->name('absensi-siswa');
     Route::get('/pengumuman',      fn() => view('guru.pengumuman.index'))->name('pengumuman');
 
@@ -159,6 +222,12 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
     Route::get('/absensi-siswa/rekap',    [AbsensiSiswaController::class, 'rekap'])->name('absensi-siswa.rekap');
 
     Route::get('/wali-kelas', [WaliKelasController::class, 'index'])->name('wali-kelas');
+
+    // Jadwal Mengajar
+    Route::get('jadwal-mengajar',          [JadwalMengajarController::class, 'index'])->name('jadwal-mengajar');
+    Route::post('jadwal-mengajar',         [JadwalMengajarController::class, 'store'])->name('jadwal-mengajar.store');
+    Route::put('jadwal-mengajar/{jadwalMengajar}',    [JadwalMengajarController::class, 'update'])->name('jadwal-mengajar.update');
+    Route::delete('jadwal-mengajar/{jadwalMengajar}', [JadwalMengajarController::class, 'destroy'])->name('jadwal-mengajar.destroy');
 });
 
 // =================================================================
@@ -169,6 +238,9 @@ Route::prefix('siswa')->name('siswa.')->middleware(['auth', 'role:siswa'])->grou
     Route::get('/profil',      [SiswaProfilController::class, 'show'])->name('profil');
     Route::get('/profil/edit', [SiswaProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil',      [SiswaProfilController::class, 'update'])->name('profil.update');
-    Route::get('/jadwal-pelajaran', fn() => view('siswa.jadwal-pelajaran.index'))->name('jadwal-pelajaran');
+    // Route::get('/jadwal-pelajaran', fn() => view('siswa.jadwal-pelajaran.index'))->name('jadwal-pelajaran');
     Route::get('/pengumuman',       fn() => view('siswa.pengumuman.index'))->name('pengumuman');
+
+    // Jadwal Pelajaran (read-only)
+    Route::get('jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran');
 });

@@ -601,6 +601,651 @@
         /* Section spacing dalam konten */
         #mainContent .content-section + .content-section { margin-top: 0.923rem; }
         #mainContent .space-content > * + * { margin-top: 0.769rem; }
+
+
+        /* ══════════════════════════════════════════
+           BOOTSTRAP COMPATIBILITY LAYER
+           Menyesuaikan kelas Bootstrap dengan sistem
+           desain Tailwind yang sudah ada di layout ini
+        ══════════════════════════════════════════ */
+
+        /* ── Container ── */
+        #mainContent .container,
+        #mainContent .container-fluid {
+            width: 100%;
+            padding-left: 0;
+            padding-right: 0;
+            margin: 0;
+        }
+
+        /* ── Spacing utils Bootstrap → layout scale ── */
+        #mainContent .py-4  { padding-top: 0.769rem;  padding-bottom: 0.769rem; }
+        #mainContent .py-3  { padding-top: 0.615rem;  padding-bottom: 0.615rem; }
+        #mainContent .px-4  { padding-left: 0.769rem; padding-right: 0.769rem; }
+        #mainContent .p-4   { padding: 0.769rem; }
+        #mainContent .p-3   { padding: 0.615rem; }
+        #mainContent .mb-4  { margin-bottom: 0.769rem; }
+        #mainContent .mb-3  { margin-bottom: 0.615rem; }
+        #mainContent .mb-2  { margin-bottom: 0.462rem; }
+        #mainContent .mb-1  { margin-bottom: 0.231rem; }
+        #mainContent .mt-4  { margin-top: 0.769rem; }
+        #mainContent .mt-3  { margin-top: 0.615rem; }
+        #mainContent .mt-2  { margin-top: 0.462rem; }
+        #mainContent .mt-1  { margin-top: 0.231rem; }
+        #mainContent .me-2  { margin-right: 0.385rem; }
+        #mainContent .me-1  { margin-right: 0.231rem; }
+        #mainContent .ms-2  { margin-left: 0.385rem; }
+        #mainContent .gap-2 { gap: 0.385rem; }
+        #mainContent .gap-3 { gap: 0.615rem; }
+        #mainContent .gap-1 { gap: 0.231rem; }
+
+        /* ── Bootstrap Card ── */
+        #mainContent .card {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        #mainContent .card-body {
+            padding: 0.769rem 0.923rem;
+            flex: 1;
+        }
+        #mainContent .card-header {
+            padding: 0.538rem 0.923rem;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 0.692rem 0.692rem 0 0;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .dark #mainContent .card-header {
+            background: #0f172a;
+            border-color: #334155;
+        }
+        #mainContent .card-footer {
+            padding: 0.462rem 0.923rem;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            border-radius: 0 0 0.692rem 0.692rem;
+        }
+        .dark #mainContent .card-footer {
+            background: #0f172a;
+            border-color: #334155;
+        }
+        #mainContent .card.border-0 { border: 1px solid #e2e8f0; }
+        #mainContent .card.shadow-sm { box-shadow: 0 1px 6px rgba(0,0,0,.06); }
+        #mainContent .card.h-100 { height: 100%; }
+
+        /* ── Bootstrap Grid ── */
+        #mainContent .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-left: -0.385rem;
+            margin-right: -0.385rem;
+        }
+        #mainContent .g-3 { gap: 0.615rem; margin-left: 0; margin-right: 0; }
+        #mainContent .g-3 > [class*="col"] { padding: 0; }
+        #mainContent [class*="col-"] {
+            padding-left: 0.385rem;
+            padding-right: 0.385rem;
+        }
+        #mainContent .col-12 { width: 100%; }
+        #mainContent .col-6  { width: 50%; }
+        #mainContent .col-7  { width: 58.333%; }
+        #mainContent .col-5  { width: 41.667%; }
+
+        @media (min-width: 576px) {
+            #mainContent .col-sm-12 { width: 100%; }
+        }
+        @media (min-width: 768px) {
+            #mainContent .col-md-3  { width: 25%; }
+            #mainContent .col-md-4  { width: 33.333%; }
+            #mainContent .col-md-6  { width: 50%; }
+            #mainContent .col-md-12 { width: 100%; }
+        }
+        @media (min-width: 992px) {
+            #mainContent .col-lg-3  { width: 25%; }
+            #mainContent .col-lg-4  { width: 33.333%; }
+            #mainContent .col-xl-4  { width: 33.333%; }
+        }
+        @media (min-width: 1200px) {
+            #mainContent .col-xl-4  { width: 33.333%; }
+        }
+
+        /* ── Flexbox Bootstrap utils ── */
+        #mainContent .d-flex           { display: flex !important; }
+        #mainContent .d-block          { display: block !important; }
+        #mainContent .d-none           { display: none !important; }
+        #mainContent .flex-wrap        { flex-wrap: wrap; }
+        #mainContent .align-items-center { align-items: center; }
+        #mainContent .align-items-start  { align-items: flex-start; }
+        #mainContent .justify-content-between { justify-content: space-between; }
+        #mainContent .justify-content-center  { justify-content: center; }
+        #mainContent .justify-content-end     { justify-content: flex-end; }
+        #mainContent .flex-column      { flex-direction: column; }
+        #mainContent .flex-grow-1      { flex-grow: 1; }
+        #mainContent .flex-shrink-0    { flex-shrink: 0; }
+        #mainContent .min-width-0,
+        #mainContent .min-w-0          { min-width: 0; }
+
+        @media (min-width: 576px) {
+            #mainContent .d-sm-block { display: block !important; }
+        }
+
+        /* ── Text utilities Bootstrap ── */
+        #mainContent .text-muted   { color: #64748b !important; }
+        #mainContent .text-dark    { color: #1e293b !important; }
+        #mainContent .text-white   { color: #ffffff !important; }
+        #mainContent .text-primary { color: #4f46e5 !important; }
+        #mainContent .text-success { color: #059669 !important; }
+        #mainContent .text-warning { color: #d97706 !important; }
+        #mainContent .text-danger  { color: #dc2626 !important; }
+        #mainContent .text-info    { color: #2563eb !important; }
+        #mainContent .text-center  { text-align: center !important; }
+        #mainContent .text-end     { text-align: right !important; }
+        #mainContent .text-start   { text-align: left !important; }
+        #mainContent .fw-bold      { font-weight: 700 !important; }
+        #mainContent .fw-semibold  { font-weight: 600 !important; }
+        #mainContent .fw-black     { font-weight: 900 !important; }
+        #mainContent .small        { font-size: 0.692rem !important; }
+        #mainContent .truncate,
+        #mainContent .text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #mainContent .text-decoration-none { text-decoration: none !important; }
+
+        /* Typography scale Bootstrap → layout */
+        #mainContent .h3,
+        #mainContent .h5,
+        #mainContent .h6 { font-weight: 600; color: #1e293b; line-height: 1.3; }
+        #mainContent .h3 { font-size: 1.077rem; margin-bottom: 0.3rem; }
+        #mainContent .h5 { font-size: 0.923rem; margin-bottom: 0.25rem; }
+        #mainContent .h6 { font-size: 0.846rem; margin-bottom: 0.2rem; }
+        .dark #mainContent .h3,
+        .dark #mainContent .h5,
+        .dark #mainContent .h6 { color: #e2e8f0; }
+
+        /* ── Bootstrap font sizes ── */
+        #mainContent .fs-1 { font-size: 1.2rem !important; }
+        #mainContent .fs-2 { font-size: 1.077rem !important; }
+        #mainContent .fs-3 { font-size: 0.923rem !important; }
+        #mainContent .fs-4 { font-size: 0.846rem !important; }
+        #mainContent .fs-5 { font-size: 0.769rem !important; }
+        #mainContent .fs-6 { font-size: 0.692rem !important; }
+
+        /* ── Bootstrap Buttons ── */
+        #mainContent .btn-warning {
+            background: #f59e0b;
+            color: #1e293b;
+            border-color: #f59e0b;
+        }
+        #mainContent .btn-warning:hover { background: #d97706; border-color: #d97706; }
+
+        #mainContent .btn-success {
+            background: #059669;
+            color: #ffffff;
+            border-color: #059669;
+        }
+        #mainContent .btn-success:hover { background: #047857; border-color: #047857; }
+
+        #mainContent .btn-info {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+        #mainContent .btn-info:hover { background: #1d4ed8; border-color: #1d4ed8; }
+
+        #mainContent .btn-light {
+            background: #f8fafc;
+            color: #475569;
+            border-color: #e2e8f0;
+        }
+        #mainContent .btn-light:hover { background: #f1f5f9; }
+
+        /* Outline variants */
+        #mainContent .btn-outline-primary {
+            background: transparent;
+            color: #4f46e5;
+            border-color: #4f46e5;
+        }
+        #mainContent .btn-outline-primary:hover { background: #eef2ff; }
+
+        #mainContent .btn-outline-warning {
+            background: transparent;
+            color: #d97706;
+            border-color: #d97706;
+        }
+        #mainContent .btn-outline-warning:hover { background: #fffbeb; }
+
+        #mainContent .btn-outline-danger {
+            background: transparent;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+        #mainContent .btn-outline-danger:hover { background: #fef2f2; }
+
+        #mainContent .btn-outline-info {
+            background: transparent;
+            color: #2563eb;
+            border-color: #bfdbfe;
+        }
+        #mainContent .btn-outline-info:hover { background: #eff6ff; }
+
+        #mainContent .btn-outline-secondary {
+            background: transparent;
+            color: #475569;
+            border-color: #e2e8f0;
+        }
+        #mainContent .btn-outline-secondary:hover { background: #f8fafc; }
+
+        #mainContent .btn-close {
+            width: 1.2rem;
+            height: 1.2rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.308rem;
+            padding: 0;
+            opacity: 0.6;
+            transition: opacity .15s;
+            flex-shrink: 0;
+        }
+        #mainContent .btn-close::before { content: '✕'; }
+        #mainContent .btn-close:hover { opacity: 1; background: #f1f5f9; }
+
+        /* Sizing modifiers */
+        #mainContent .btn-lg {
+            padding: 0.538rem 1rem;
+            font-size: 0.846rem;
+            border-radius: 0.538rem;
+        }
+        #mainContent .px-4.btn { padding-left: 0.923rem; padding-right: 0.923rem; }
+        #mainContent .w-100 { width: 100%; }
+
+        /* ── Bootstrap Badge ── */
+        #mainContent .badge.bg-primary   { background: #4f46e5 !important; color: #fff; border: none; text-transform: none; letter-spacing: 0; }
+        #mainContent .badge.bg-success   { background: #059669 !important; color: #fff; border: none; text-transform: none; }
+        #mainContent .badge.bg-warning   { background: #f59e0b !important; color: #1e293b; border: none; text-transform: none; }
+        #mainContent .badge.bg-danger    { background: #dc2626 !important; color: #fff; border: none; text-transform: none; }
+        #mainContent .badge.bg-info      { background: #2563eb !important; color: #fff; border: none; text-transform: none; }
+        #mainContent .badge.bg-secondary { background: #64748b !important; color: #fff; border: none; text-transform: none; }
+        #mainContent .badge.bg-light     { background: #f1f5f9 !important; color: #475569; border: 1px solid #e2e8f0; text-transform: none; }
+        #mainContent .badge.bg-primary.bg-opacity-10 { background: #eef2ff !important; color: #4f46e5; }
+        #mainContent .badge.text-white   { color: #fff !important; }
+        #mainContent .badge.text-muted   { color: #64748b !important; }
+        #mainContent .badge.text-primary { color: #4f46e5 !important; }
+
+        /* ── Bootstrap Alert ── */
+        #mainContent .alert-dismissible { position: relative; padding-right: 2rem; }
+        #mainContent .alert-dismissible .btn-close {
+            position: absolute;
+            top: 50%;
+            right: 0.615rem;
+            transform: translateY(-50%);
+        }
+        #mainContent .alert.fade       { opacity: 0; transition: opacity .15s; }
+        #mainContent .alert.show       { opacity: 1; }
+
+        /* ── Bootstrap Form ── */
+        #mainContent .form-label {
+            font-size: 0.692rem;
+            font-weight: 600;
+            color: #374151;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+        .dark #mainContent .form-label { color: #94a3b8; }
+
+        #mainContent .form-control,
+        #mainContent .form-select {
+            font-size: 0.769rem;
+            padding: 0.385rem 0.615rem;
+            border-radius: 0.462rem;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #1e293b;
+            width: 100%;
+            transition: border-color .15s, box-shadow .15s;
+            outline: none;
+            line-height: 1.5;
+        }
+        .dark #mainContent .form-control,
+        .dark #mainContent .form-select { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+        #mainContent .form-control:focus,
+        #mainContent .form-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+        }
+        #mainContent .form-control.is-invalid,
+        #mainContent .form-select.is-invalid { border-color: #dc2626; }
+        #mainContent .invalid-feedback {
+            font-size: 0.615rem;
+            color: #dc2626;
+            margin-top: 0.2rem;
+            display: block;
+        }
+        #mainContent .form-text {
+            font-size: 0.615rem;
+            color: #94a3b8;
+            margin-top: 0.2rem;
+            display: block;
+        }
+        #mainContent .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.385rem;
+            padding: 0;
+        }
+        #mainContent .form-check-input {
+            width: 0.923rem;
+            height: 0.923rem;
+            padding: 0;
+            flex-shrink: 0;
+            border-radius: 0.231rem;
+            accent-color: #4f46e5;
+            cursor: pointer;
+        }
+        #mainContent .form-check-label {
+            font-size: 0.769rem;
+            font-weight: 500;
+            color: #374151;
+            margin: 0;
+            cursor: pointer;
+        }
+        .dark #mainContent .form-check-label { color: #cbd5e1; }
+
+        /* ── Bootstrap Table overrides ── */
+        #mainContent .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        #mainContent .table-hover tbody tr:hover { background: #f8fafc; }
+        #mainContent .table-borderless td,
+        #mainContent .table-borderless th { border: none; padding: 0.3rem 0.462rem; }
+        #mainContent .table-light th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 0.615rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        #mainContent .align-middle td,
+        #mainContent .align-middle th { vertical-align: middle; }
+
+        /* ── Bootstrap Breadcrumb ── */
+        #mainContent .breadcrumb {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0;
+            margin: 0 0 0.615rem;
+            list-style: none;
+            font-size: 0.615rem;
+        }
+        #mainContent .breadcrumb-item { display: flex; align-items: center; color: #94a3b8; }
+        #mainContent .breadcrumb-item a { color: #4f46e5; text-decoration: none; }
+        #mainContent .breadcrumb-item a:hover { color: #4338ca; text-decoration: underline; }
+        #mainContent .breadcrumb-item + .breadcrumb-item::before {
+            content: '/';
+            margin-right: 0.2rem;
+            color: #cbd5e1;
+        }
+        #mainContent .breadcrumb-item.active { color: #475569; font-weight: 500; }
+
+        /* ── Bootstrap Bootstrap Modal inside layout ── */
+        /* Bootstrap modals already sit above layout via fixed positioning */
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .modal.show { display: block; }
+        .modal.fade { opacity: 0; transition: opacity .15s; }
+        .modal.fade.show { opacity: 1; }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 199;
+            background: rgba(0,0,0,.5);
+        }
+        .modal-backdrop.fade { opacity: 0; transition: opacity .15s; }
+        .modal-backdrop.show { opacity: 1; }
+        .modal-dialog {
+            position: relative;
+            width: auto;
+            margin: 1.5rem auto;
+            max-width: 28rem;
+            pointer-events: none;
+        }
+        .modal-dialog.modal-lg { max-width: 42rem; }
+        .modal-dialog.modal-sm { max-width: 20rem; }
+        .modal-content {
+            position: relative;
+            background: #fff;
+            border-radius: 0.769rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 16px 48px rgba(0,0,0,.18);
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .dark .modal-content { background: #1e293b; border-color: #334155; }
+        .modal .modal-header {
+            padding: 0.769rem 0.923rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 0.769rem 0.769rem 0 0;
+            background: #fff;
+        }
+        .dark .modal .modal-header { background: #1e293b; border-color: #334155; }
+        .modal .modal-title {
+            font-size: 0.846rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+        .dark .modal .modal-title { color: #e2e8f0; }
+        .modal .modal-body {
+            padding: 0.769rem 0.923rem;
+            font-size: 0.769rem;
+            color: #374151;
+            flex: 1;
+        }
+        .dark .modal .modal-body { color: #cbd5e1; }
+        .modal .modal-footer {
+            padding: 0.615rem 0.923rem;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.385rem;
+            border-radius: 0 0 0.769rem 0.769rem;
+            background: #fff;
+        }
+        .dark .modal .modal-footer { background: #1e293b; border-color: #334155; }
+        .modal .btn-close {
+            position: static;
+            transform: none;
+        }
+
+        /* ── Bootstrap Pagination align dengan sistem desain ── */
+        #mainContent nav[aria-label="Page navigation"] { margin-top: 0.615rem; }
+        #mainContent .pagination.page-item,
+        #mainContent ul.pagination { margin: 0; padding: 0; list-style: none; }
+        #mainContent .pagination li.page-item { display: inline-flex; }
+        #mainContent .pagination li .page-link,
+        #mainContent .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.692rem;
+            height: 1.692rem;
+            padding: 0 0.462rem;
+            border-radius: 0.385rem !important;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.615rem;
+            font-weight: 500;
+            transition: all .15s;
+            margin: 0 1px;
+            background: #fff;
+        }
+        #mainContent .page-link:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        #mainContent .page-item.active .page-link {
+            background: #4f46e5;
+            color: #fff;
+            border-color: #4f46e5;
+            font-weight: 700;
+        }
+        #mainContent .page-item.disabled .page-link { opacity: .4; pointer-events: none; }
+        #mainContent .pagination-info {
+            font-size: 0.615rem;
+            color: #64748b;
+            padding: 0.3rem 0.615rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.385rem;
+            font-weight: 500;
+        }
+
+        /* ── Bootstrap Icons ── */
+        #mainContent [class^="bi-"],
+        #mainContent [class*=" bi-"] { font-size: inherit; }
+
+        /* ── Background color utilities ── */
+        #mainContent .bg-primary          { background-color: #4f46e5 !important; }
+        #mainContent .bg-success          { background-color: #059669 !important; }
+        #mainContent .bg-warning          { background-color: #f59e0b !important; }
+        #mainContent .bg-danger           { background-color: #dc2626 !important; }
+        #mainContent .bg-info             { background-color: #2563eb !important; }
+        #mainContent .bg-secondary        { background-color: #64748b !important; }
+        #mainContent .bg-light            { background-color: #f8fafc !important; }
+        #mainContent .bg-white            { background-color: #ffffff !important; }
+        #mainContent .bg-transparent      { background-color: transparent !important; }
+        #mainContent .bg-primary.bg-opacity-10 { background-color: #eef2ff !important; }
+        #mainContent .bg-success.bg-opacity-10 { background-color: #ecfdf5 !important; }
+        #mainContent .bg-warning.bg-opacity-10 { background-color: #fffbeb !important; }
+        #mainContent .bg-info.bg-opacity-10    { background-color: #eff6ff !important; }
+
+        /* ── Border utilities ── */
+        #mainContent .border-0      { border: none !important; }
+        #mainContent .border-bottom { border-bottom: 1px solid #e2e8f0 !important; }
+        #mainContent .border-2      { border-width: 2px !important; }
+        #mainContent .border-dashed { border-style: dashed !important; border-color: #cbd5e1 !important; }
+        #mainContent .border-secondary { border-color: #cbd5e1 !important; }
+
+        /* ── Rounded utilities ── */
+        #mainContent .rounded-3    { border-radius: 0.538rem !important; }
+        #mainContent .rounded-2    { border-radius: 0.385rem !important; }
+        #mainContent .rounded-pill { border-radius: 99px !important; }
+
+        /* ── Shadow ── */
+        #mainContent .shadow-sm { box-shadow: 0 1px 6px rgba(0,0,0,.06) !important; }
+
+        /* ── Width / Height ── */
+        #mainContent .w-100 { width: 100% !important; }
+        #mainContent .h-100 { height: 100% !important; }
+
+        /* ── Opacity ── */
+        #mainContent .opacity-50 { opacity: 0.5 !important; }
+
+        /* ── Overflow ── */
+        #mainContent .overflow-hidden { overflow: hidden !important; }
+
+        /* ── Position ── */
+        #mainContent .position-relative { position: relative !important; }
+        #mainContent .position-absolute { position: absolute !important; }
+
+        /* ── Misc layout ── */
+        #mainContent .ps-3 { padding-left: 0.769rem; }
+        #mainContent .pt-0 { padding-top: 0; }
+        #mainContent .pb-0 { padding-bottom: 0; }
+        #mainContent .p-0  { padding: 0; }
+
+        /* ── Bootstrap-style input group / inline form fixes ── */
+        #mainContent .col-6 input,
+        #mainContent .col-5 input,
+        #mainContent .col-7 input,
+        #mainContent .col-6 select,
+        #mainContent .col-5 select,
+        #mainContent .col-7 select { width: 100%; }
+
+        /* ── Card hover effect (untuk academic planner) ── */
+        #mainContent .card-hover {
+            transition: transform .15s, box-shadow .15s;
+            text-decoration: none;
+        }
+        #mainContent .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,.1) !important;
+        }
+
+        /* ── Timetable item style ── */
+        #mainContent .timetable-item {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 0.615rem 0.769rem;
+            transition: background .15s;
+        }
+        #mainContent .timetable-item:last-child { border-bottom: none; }
+        #mainContent .timetable-item:hover { background: #f8fafc; }
+        .dark #mainContent .timetable-item { border-color: #1e293b; }
+        .dark #mainContent .timetable-item:hover { background: #0f172a; }
+
+        #mainContent .timetable-color-strip {
+            width: 4px;
+            min-height: 2.5rem;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        #mainContent .timetable-subject {
+            font-size: 0.769rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.15rem;
+        }
+        .dark #mainContent .timetable-subject { color: #e2e8f0; }
+        #mainContent .timetable-time,
+        #mainContent .timetable-teacher {
+            font-size: 0.615rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        #mainContent .timetable-actions {
+            flex-shrink: 0;
+            display: flex;
+            gap: 0.3rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        #mainContent .timetable-actions .btn {
+            padding: 0.2rem 0.462rem;
+            font-size: 0.615rem;
+            min-width: auto;
+        }
+
+        /* ── Nav / Breadcrumb inside content ── */
+        #mainContent nav[aria-label="breadcrumb"] { margin-bottom: 0.615rem; }
+
+        /* ── Responsive: Sembunyikan kolom pada mobile ── */
+        @media (max-width: 640px) {
+            #mainContent .col-md-3,
+            #mainContent .col-md-4,
+            #mainContent .col-md-6 { width: 100%; }
+            #mainContent .timetable-actions { flex-direction: column; }
+            #mainContent .timetable-actions .btn { width: 100%; justify-content: center; }
+        }
+
+        /* ── Bootstrap Icons CDN load ── */
+        /* Pastikan Bootstrap Icons tersedia via CDN di bawah */
+
     </style>
 </head>
 
@@ -686,7 +1331,7 @@
                          'icon'=>'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'],
                         ['route'=>'admin.absensi-guru.index',   'label'=>'Absensi Guru',     'match'=>'admin.absensi-guru*',
                          'icon'=>'M8 7V3m8 4V3M5 11h14M5 19h14M5 5h2m10 0h2'],
-                        ['route'=>'admin.data-akademik.index',  'label'=>'Data Akademik',    'match'=>'admin.data-akademik*',
+                        ['route'=>'admin.academic-planner.index',  'label'=>'Data Akademik',    'match'=>'admin.data-akademik*',
                          'icon'=>'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
                         ['route'=>'admin.kelola-website',       'label'=>'Kelola Website',   'match'=>'admin.kelola-website*',
                          'icon'=>'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
@@ -749,7 +1394,7 @@
                         ['route'=>'siswa.jadwal-pelajaran', 'label'=>'Jadwal Pelajaran', 'match'=>'siswa.jadwal-pelajaran*',
                          'icon'=>'M8 7V3m8 4V3M5 11h14M5 19h14M5 5h2m10 0h2'],
                         ['route'=>'siswa.pengumuman',       'label'=>'Pengumuman',        'match'=>'siswa.pengumuman*',
-                         'icon'=>'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'],
+                         'icon'=>'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.165 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'],
                         ['route'=>'siswa.profil',           'label'=>'Data Diri',         'match'=>'siswa.profil*',
                          'icon'=>'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
                     ];
@@ -963,6 +1608,12 @@
         </main>
     </div>
 </div>
+
+{{-- Bootstrap Icons CDN — dibutuhkan oleh konten academic planner --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+{{-- Bootstrap JS Bundle — dibutuhkan untuk modal & komponen Bootstrap di konten --}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 @stack('scripts')

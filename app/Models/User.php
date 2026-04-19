@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -28,7 +29,7 @@ class User extends Authenticatable
         'password'          => 'hashed',
     ];
 
-    // ── Role helpers (dipakai di layout sidebar & middleware) ──
+    // ── Role helpers ───────────────────────────────────────────
 
     public function isAdmin(): bool
     {
@@ -55,5 +56,12 @@ class User extends Authenticatable
     public function siswa(): HasOne
     {
         return $this->hasOne(Siswa::class);
+    }
+
+    // ── Relasi wali kelas (FIX ERROR DI BLADE) ─────────────────
+
+    public function homeroomGroups(): HasMany
+    {
+        return $this->hasMany(StudyGroup::class, 'homeroom_teacher_id');
     }
 }
