@@ -12,7 +12,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
@@ -147,7 +148,7 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // UPDATE — simpan perubahan data user (Diperbaiki)
+    // UPDATE — simpan perubahan data user (Diperbaiki & Lebih Aman)
     // =========================================================================
 
     public function update(Request $request, User $user): RedirectResponse
@@ -160,9 +161,22 @@ public function index(Request $request): View
 
         // Tambahan validasi khusus untuk siswa agar menghindari foreign key error
         if ($user->role === 'siswa') {
-            $validationRules['kelas_id'] = 'nullable|integer|exists:study_groups,id';
-            // Fallback jika masih menggunakan tabel kelas lama
-            // $validationRules['kelas_id'] = 'nullable|integer|exists:study_groups,id|exists:kelas,id';
+            $validationRules['kelas_id'] = [
+                'nullable',
+                'integer',
+                function ($attribute, $value, $fail) {
+                    if (empty($value) || $value === 'null' || $value === '') {
+                        return;
+                    }
+
+                    $existsInStudyGroup = StudyGroup::where('id', $value)->exists();
+                    $existsInKelas      = Kelas::where('id', $value)->exists();
+
+                    if (!$existsInStudyGroup && !$existsInKelas) {
+                        $fail('Kelas yang dipilih tidak ditemukan. Silakan pilih kelas yang tersedia dari daftar.');
+                    }
+                }
+            ];
         }
 
         $request->validate($validationRules);
@@ -185,6 +199,7 @@ public function index(Request $request): View
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+            
             // Pesan error yang lebih informatif
             $errorMessage = 'Gagal memperbarui user: ' . $e->getMessage();
             
