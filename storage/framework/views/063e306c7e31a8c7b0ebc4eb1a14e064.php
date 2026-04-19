@@ -1,4 +1,4 @@
-{{-- resources/views/admin/users/_modal_tambah.blade.php --}}
+
 <div id="modalTambahUser"
     class="fixed inset-0 z-50 hidden items-center justify-center p-4"
     role="dialog" aria-modal="true" aria-labelledby="titleTambahUser">
@@ -9,7 +9,7 @@
     <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md
                 max-h-[92vh] flex flex-col">
 
-        {{-- Header --}}
+        
         <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center shrink-0">
@@ -33,7 +33,7 @@
             </button>
         </div>
 
-        {{-- Body --}}
+        
         <div class="overflow-y-auto px-6 py-5 flex-1 space-y-4">
 
             <div class="flex items-start gap-2.5 px-3 py-3 bg-indigo-50 dark:bg-indigo-950/30
@@ -46,11 +46,11 @@
                 <span>Profil lengkap dapat diperbarui melalui tombol Edit setelah akun dibuat.</span>
             </div>
 
-            <form id="formTambahUser" action="{{ route('admin.users.store') }}" method="POST" class="space-y-4">
-                @csrf
+            <form id="formTambahUser" action="<?php echo e(route('admin.users.store')); ?>" method="POST" class="space-y-4">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="_form_context" value="tambah">
 
-                {{-- Role --}}
+                
                 <div>
                     <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Role <span class="text-red-500">*</span>
@@ -93,56 +93,92 @@
                             </div>
                         </label>
                     </div>
-                    @error('role')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                    <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-xs text-red-500 mt-1"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
-                {{-- Nama --}}
+                
                 <div>
                     <label for="inp_name" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Nama <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="name" id="inp_name" value="{{ old('name') }}" required
+                    <input type="text" name="name" id="inp_name" value="<?php echo e(old('name')); ?>" required
                         placeholder="Nama lengkap pengguna"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm
                                   bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300
                                   focus:outline-none focus:ring-2 focus:ring-indigo-300 transition
-                                  @error('name') border-red-400 bg-red-50 @enderror">
-                    @error('name')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                                  <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> border-red-400 bg-red-50 <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                    <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-xs text-red-500 mt-1"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
-                {{-- Email --}}
+                
                 <div>
                     <label for="inp_email" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Email <span class="text-red-500">*</span>
                     </label>
-                    <input type="email" name="email" id="inp_email" value="{{ old('email') }}" required
+                    <input type="email" name="email" id="inp_email" value="<?php echo e(old('email')); ?>" required
                         placeholder="contoh@sekolah.sch.id"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 text-sm
                                   bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300
                                   focus:outline-none focus:ring-2 focus:ring-indigo-300 transition
-                                  @error('email') border-red-400 bg-red-50 @enderror">
-                    @error('email')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                                  <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> border-red-400 bg-red-50 <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                    <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-xs text-red-500 mt-1"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
-                {{-- Kelas (khusus siswa) --}}
+                
                 <div id="kelasFieldWrap" class="hidden">
                     <label for="inp_kelas" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Kelas <span class="text-slate-400 text-xs font-normal">(opsional)</span>
                     </label>
-                    @if(isset($kelasList) && $kelasList->count())
+                    <?php if(isset($kelasList) && $kelasList->count()): ?>
                     <select name="kelas_id" id="inp_kelas"
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5
                                        text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300
                                        focus:outline-none focus:ring-2 focus:ring-indigo-300 transition">
                         <option value="">— Pilih Kelas (opsional) —</option>
-                        @foreach($kelasList as $kelas)
-                        <option value="{{ $kelas->id }}" {{ old('kelas_id') == $kelas->id ? 'selected' : '' }}>
-                            {{ $kelas->name }}
-                            @if($kelas->grade) — Kelas {{ $kelas->grade }}{{ $kelas->section ? ' '.$kelas->section : '' }} @endif
+                        <?php $__currentLoopData = $kelasList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kelas): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($kelas->id); ?>" <?php echo e(old('kelas_id') == $kelas->id ? 'selected' : ''); ?>>
+                            <?php echo e($kelas->name); ?>
+
+                            <?php if($kelas->grade): ?> — Kelas <?php echo e($kelas->grade); ?><?php echo e($kelas->section ? ' '.$kelas->section : ''); ?> <?php endif; ?>
                         </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
-                    @else
+                    <?php else: ?>
                     <div class="flex items-start gap-2 px-3 py-3 bg-amber-50 dark:bg-amber-950/30
                                     border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400">
                         <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,15 +186,22 @@
                                 d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                         </svg>
                         <span>Belum ada kelas. Buat terlebih dahulu di
-                            <a href="{{ route('admin.kelas.index') }}" class="font-semibold underline" target="_blank">Kelola Kelas</a>.
+                            <a href="<?php echo e(route('admin.kelas.index')); ?>" class="font-semibold underline" target="_blank">Kelola Kelas</a>.
                         </span>
                     </div>
                     <input type="hidden" name="kelas_id" value="">
-                    @endif
-                    @error('kelas_id')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                    <?php endif; ?>
+                    <?php $__errorArgs = ['kelas_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-xs text-red-500 mt-1"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
-                {{-- Password --}}
+                
                 <div>
                     <label for="pwdNew" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Password <span class="text-red-500">*</span>
@@ -168,7 +211,14 @@
                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2.5 pr-10
                                       text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300 transition
-                                      @error('password') border-red-400 bg-red-50 @enderror">
+                                      <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> border-red-400 bg-red-50 <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
                         <button type="button" onclick="togglePwd('pwdNew')" tabindex="-1"
                             class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,10 +228,17 @@
                             </svg>
                         </button>
                     </div>
-                    @error('password')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                    <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><p class="text-xs text-red-500 mt-1"><?php echo e($message); ?></p><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
-                {{-- Konfirmasi Password --}}
+                
                 <div>
                     <label for="pwdConfirm" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Konfirmasi Password <span class="text-red-500">*</span>
@@ -205,7 +262,7 @@
             </form>
         </div>
 
-        {{-- Footer --}}
+        
         <div class="flex gap-2 px-6 py-4 border-t border-slate-100 dark:border-slate-700
                     bg-slate-50/50 dark:bg-slate-900/20 rounded-b-2xl shrink-0">
             <button type="button" onclick="closeModal('modalTambahUser')"
@@ -223,7 +280,7 @@
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
     (function() {
         'use strict';
@@ -248,33 +305,17 @@
                 if (isActive) {
                     card.classList.add('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-950/30', 'dark:border-indigo-500');
                     card.classList.remove('border-slate-200', 'bg-white', 'dark:bg-slate-700/30', 'dark:border-slate-600');
-
-                    title?.classList.add('text-indigo-700');
-                    title?.classList.remove('text-slate-600');
-
-                    sub?.classList.add('text-indigo-400');
-                    sub?.classList.remove('text-slate-400');
-
-                    icon?.classList.add('bg-indigo-100');
-                    icon?.classList.remove('bg-slate-100');
-
-                    svg?.classList.add('text-indigo-600');
-                    svg?.classList.remove('text-slate-500');
+                    title?.classList.replace('text-slate-600', 'text-indigo-700');
+                    sub?.classList.replace('text-slate-400', 'text-indigo-400');
+                    icon?.classList.replace('bg-slate-100', 'bg-indigo-100');
+                    svg?.classList.replace('text-slate-500', 'text-indigo-600');
                 } else {
                     card.classList.remove('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-950/30', 'dark:border-indigo-500');
                     card.classList.add('border-slate-200', 'bg-white', 'dark:bg-slate-700/30', 'dark:border-slate-600');
-
-                    title?.classList.remove('text-indigo-700');
-                    title?.classList.add('text-slate-600');
-
-                    sub?.classList.remove('text-indigo-400');
-                    sub?.classList.add('text-slate-400');
-
-                    icon?.classList.remove('bg-indigo-100');
-                    icon?.classList.add('bg-slate-100');
-
-                    svg?.classList.remove('text-indigo-600');
-                    svg?.classList.add('text-slate-500');
+                    title?.classList.replace('text-indigo-700', 'text-slate-600');
+                    sub?.classList.replace('text-indigo-400', 'text-slate-400');
+                    icon?.classList.replace('bg-indigo-100', 'bg-slate-100');
+                    svg?.classList.replace('text-indigo-600', 'text-slate-500');
                 }
             });
         }
@@ -283,34 +324,29 @@
             card.addEventListener('click', () => {
                 const input = card.querySelector('input[type="radio"]');
                 if (!input) return;
-
                 input.checked = true;
                 toggleKelas(input.value);
                 styleRoleCards(input.value);
             });
         });
 
-        // init default
+        // Inisialisasi awal
         const checked = document.querySelector('#formTambahUser input[name="role"]:checked');
         if (checked) {
             toggleKelas(checked.value);
             styleRoleCards(checked.value);
         }
 
-        // restore old value (FIXED)
-        @if($errors->any() && old('role'))
-            const oldRole = "{{ old('role') }}";
-            const oldInput = document.querySelector(
-                `#formTambahUser input[name="role"][value="${oldRole}"]`
-            );
-
-            if (oldInput) {
-                oldInput.checked = true;
-                toggleKelas(oldRole);
-                styleRoleCards(oldRole);
-            }
-        @endif
-
+        // Restore old value jika ada error validasi
+        <?php if($errors -> any()() && old('role')): ?>
+        const oldRole = "<?php echo e(old('role')); ?>";
+        const oldInput = document.querySelector(`#formTambahUser input[name="role"][value="${oldRole}"]`);
+        if (oldInput) {
+            oldInput.checked = true;
+            toggleKelas(oldRole);
+            styleRoleCards(oldRole);
+        }
+        <?php endif; ?>
     })();
 </script>
-@endpush
+<?php $__env->stopPush(); ?><?php /**PATH C:\PA 3\smpn-kutime\resources\views/admin/users/_modal_tambah.blade.php ENDPATH**/ ?>
