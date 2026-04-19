@@ -7,6 +7,7 @@ use App\Models\Kelas;
 use App\Models\User;
 use App\Models\Guru;
 use App\Models\Siswa;
+use App\Models\StudyGroup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
