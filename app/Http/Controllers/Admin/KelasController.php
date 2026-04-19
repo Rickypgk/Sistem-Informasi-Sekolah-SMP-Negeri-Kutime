@@ -16,7 +16,7 @@ class KelasController extends Controller
      */
     public function index()
     {
-        $kelas = StudyGroup::with(['homeroomTeacher', 'homeroomTeacher.guru'])
+        $kelas = StudyGroup::with(['homeroomTeacher', 'homeroomTeacher.guru', 'timetables'])
             ->withCount('timetables')
             ->orderBy('grade')
             ->orderBy('name')
@@ -30,7 +30,6 @@ class KelasController extends Controller
 
         return view('admin.kelas.index', compact('kelas', 'gurus'));
     }
-
     /**
      * Simpan kelas baru. Jika wali kelas dipilih, update profil guru.
      */
