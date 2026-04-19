@@ -181,6 +181,18 @@ class KelasController extends Controller
 
         Guru::where('user_id', $userId)
             ->where('kelas_id', $studyGroupId)
-            ->update(['kelas_id' => null]);
+            ->orWhere('study_group_id', $studyGroupId)
+            ->update([
+                'kelas_id'       => null,
+                'study_group_id' => null
+            ]);
     }
+
+     /**
+      * Helper untuk mengubah string kosong atau 'null' menjadi null.
+      */
+     private function nullIfEmptyOrNullString(?string $str): ?string
+     {
+         return ($str === '' || $str === 'null') ? null : $str;
+     }  
 }
