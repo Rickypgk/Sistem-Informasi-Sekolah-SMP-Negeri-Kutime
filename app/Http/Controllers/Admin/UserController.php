@@ -127,16 +127,16 @@ public function index(Request $request): View
             ->with('success', 'User berhasil ditambahkan.');
     }
 
-    // =========================================================================
+// =========================================================================
     // EDIT — tampilkan data user untuk modal edit (JSON)
     // =========================================================================
 
     public function edit(User $user)
     {
-        $user->load(['guru.kelas', 'siswa.kelas']);
+        $user->load(['guru.studyGroup', 'guru.kelas', 'siswa.kelas', 'siswa.studyGroup']);
 
-        $kelasList = Kelas::orderBy('nama')->get();
-        $profile   = $user->role === 'guru' ? $user->guru : $user->siswa;
+        $kelasList = $this->getKelasList();
+        $profile   = $user->role === 'siswa' ? $user->siswa : $user->guru;
 
         return response()->json([
             'user'      => $user,
