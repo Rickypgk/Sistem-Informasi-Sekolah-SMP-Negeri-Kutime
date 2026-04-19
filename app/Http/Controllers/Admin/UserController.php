@@ -630,6 +630,10 @@ public function index(Request $request): View
         $kpsRaw  = strtolower(trim((string) ($row[20] ?? '')));
         $isKps   = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true'], true) ? 'Ya' : 'Tidak';
 
+        if ($kelasId && !StudyGroup::where('id', $kelasId)->exists() && !Kelas::where('id', $kelasId)->exists()) {
+        $kelasId = null;
+        }
+
         $user->siswa()->create([
             'nama'               => $user->name,
             'nidn'               => $this->cleanString($row[3]  ?? null),
