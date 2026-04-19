@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\StudyGroup;
 use App\Models\User;
-use App\Models\Guru;
+use App\Models\Guru;          // model profil guru (tabel gurus)
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +16,7 @@ class KelasController extends Controller
      */
     public function index()
     {
-        $kelas = StudyGroup::with(['homeroomTeacher', 'homeroomTeacher.guru', 'timetables'])
+        $kelas = StudyGroup::with(['homeroomTeacher', 'homeroomTeacher.guru'])
             ->withCount('timetables')
             ->orderBy('grade')
             ->orderBy('name')
@@ -37,21 +37,39 @@ class KelasController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'                => 'required|string|max:100',
-            'grade'               => 'required|integer|in:7,8,9',
-            'academic_year'       => 'required|string|max:9',
-            'semester'            => 'required|integer|in:1,2',
+            'name'                => 'required|string|max:50',
+            'grade'               => 'required|in:7,8,9',
             'section'             => 'nullable|string|max:10',
-            'room'                => 'nullable|string|max:50',
+            'academic_year'       => ['required', 'string', 'max:9', 'regex:/^\d{4}\/\d{4}$/'],
+            'semester'            => 'required|in:1,2',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
+            'room'                => 'nullable|string|max:50',
             'capacity'            => 'nullable|integer|min:1|max:60',
-            'is_active'           => 'boolean',
+            'is_active'           => 'nullable|boolean',
         ]);
 
-        $validated['is_active'] = $request->boolean('is_active');
+        DB::transaction(function () use ($validated, $request) {
 
-        DB::transaction(function () use ($validated) {
-            $group = StudyGroup::create($validated);
+            // Jika ada guru yang sebelumnya menjadi wali kelas di kelas lain
+            // dengan guru_id yang sama, lepaskan dulu (opsional — uncomment jika diperlukan)
+            // if (!empty($validated['homeroom_teacher_id'])) {
+            //     StudyGroup::where('homeroom_teacher_id', $validated['homeroom_teacher_id'])
+            //               ->update(['homeroom_teacher_id' => null]);
+            // }
+
+            $group = StudyGroup::create([
+                'name'                => $validated['name'],
+                'grade'               => $validated['grade'],
+                'section'             => $validated['section']             ?? null,
+                'academic_year'       => $validated['academic_year'],
+                'semester'            => $validated['semester'],
+                'homeroom_teacher_id' => $validated['homeroom_teacher_id'] ?? null,
+                'room'                => $validated['room']                ?? null,
+                'capacity'            => $validated['capacity']            ?? 30,
+                'is_active'           => $request->boolean('is_active'),
+            ]);
+
+            // Sinkronisasi ke profil guru: set kelas_id
             $this->syncHomeroomToGuruProfile($group->homeroom_teacher_id, $group->id);
         });
 
@@ -65,25 +83,35 @@ class KelasController extends Controller
     public function update(Request $request, StudyGroup $kelas)
     {
         $validated = $request->validate([
-            'name'                => 'required|string|max:100',
-            'grade'               => 'required|integer|in:7,8,9',
-            'academic_year'       => 'required|string|max:9',
-            'semester'            => 'required|integer|in:1,2',
+            'name'                => 'required|string|max:50',
+            'grade'               => 'required|in:7,8,9',
             'section'             => 'nullable|string|max:10',
-            'room'                => 'nullable|string|max:50',
+            'academic_year'       => ['required', 'string', 'max:9', 'regex:/^\d{4}\/\d{4}$/'],
+            'semester'            => 'required|in:1,2',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
+            'room'                => 'nullable|string|max:50',
             'capacity'            => 'nullable|integer|min:1|max:60',
-            'is_active'           => 'boolean',
+            'is_active'           => 'nullable|boolean',
         ]);
 
-        $validated['is_active'] = $request->boolean('is_active');
+        DB::transaction(function () use ($validated, $request, $kelas) {
 
-        DB::transaction(function () use ($validated, $kelas) {
             $oldTeacherId = $kelas->homeroom_teacher_id;
             $newTeacherId = $validated['homeroom_teacher_id'] ?? null;
 
-            $kelas->update($validated);
+            $kelas->update([
+                'name'                => $validated['name'],
+                'grade'               => $validated['grade'],
+                'section'             => $validated['section']  ?? null,
+                'academic_year'       => $validated['academic_year'],
+                'semester'            => $validated['semester'],
+                'homeroom_teacher_id' => $newTeacherId,
+                'room'                => $validated['room']     ?? null,
+                'capacity'            => $validated['capacity'] ?? 30,
+                'is_active'           => $request->boolean('is_active'),
+            ]);
 
+            // Jika wali kelas berubah: lepas yang lama, set yang baru
             if ($oldTeacherId && $oldTeacherId !== $newTeacherId) {
                 $this->clearHomeroomFromGuruProfile($oldTeacherId, $kelas->id);
             }
@@ -112,32 +140,50 @@ class KelasController extends Controller
     }
 
     /* ──────────────────────────────────────────────────────────────
-     | PRIVATE HELPERS — Sinkronisasi wali kelas ↔ profil guru
+     | PRIVATE HELPERS
+     | Sinkronisasi wali kelas ↔ profil guru (tabel gurus)
      ─────────────────────────────────────────────────────────────── */
 
+    /**
+     * Set kelas_id pada profil guru yang menjadi wali kelas.
+     *
+     * @param int|null $userId      ID user (tabel users) yang menjadi wali
+     * @param int      $studyGroupId ID study_groups
+     */
     private function syncHomeroomToGuruProfile(?int $userId, ?int $studyGroupId): void
     {
-        if (!$userId || !$studyGroupId) return;
+        // 🚫 Stop kalau data tidak valid
+        if (!$userId || !$studyGroupId) {
+            return;
+        }
 
+        // 🔍 Ambil user (optional safety)
         $user = User::find($userId);
-        if (!$user) return;
+        if (!$user) {
+            return;
+        }
 
+        // ✅ Pastikan profil guru ada
         $guruProfile = Guru::firstOrCreate(
             ['user_id' => $userId],
             ['nama' => $user->name ?? '']
         );
 
+        // ✅ Update relasi ke study group
         $guruProfile->update([
-            'study_group_id' => $studyGroupId   // ubah ke 'kelas_id' jika kolom di tabel gurus bernama kelas_id
+            'study_group_id' => $studyGroupId
         ]);
     }
 
+    /**
+     * Hapus kelas_id dari profil guru lama jika masih menunjuk kelas ini.
+     */
     private function clearHomeroomFromGuruProfile(?int $userId, int $studyGroupId): void
     {
         if (!$userId) return;
 
         Guru::where('user_id', $userId)
-            ->where('study_group_id', $studyGroupId)   // ubah ke kelas_id jika perlu
-            ->update(['study_group_id' => null]);
+            ->where('kelas_id', $studyGroupId)
+            ->update(['kelas_id' => null]);
     }
 }
