@@ -40,6 +40,35 @@
         </div>
     </div>
 
+    {{-- ── Alert session ──────────────────────────────────────── --}}
+    @if(session('success'))
+        <div class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-50
+                    dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+            <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none"
+                 stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
+                {{ session('success') }}
+            </p>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-50
+                    dark:bg-red-900/20 border border-red-100 dark:border-red-800">
+            <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none"
+                 stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0
+                         001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+            <p class="text-[11px] text-red-700 dark:text-red-300 font-medium">
+                {{ session('error') }}
+            </p>
+        </div>
+    @endif
+
     {{-- ── Info Banner: sinkronisasi ──────────────────────────── --}}
     <div class="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-indigo-50
                 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800">
@@ -51,14 +80,16 @@
         <p class="text-[10px] text-indigo-700 dark:text-indigo-300 leading-relaxed">
             Data kelas di halaman ini tersinkron langsung dengan
             <a href="{{ route('admin.academic-planner.index') }}"
-               class="font-semibold underline underline-offset-2">Data Akademik</a>.
+               class="font-semibold underline underline-offset-2">Data Akademik</a>
+            dan
+            <a href="{{ route('admin.users.index') }}"
+               class="font-semibold underline underline-offset-2">Kelola User</a>.
             Kelas yang ditambah, diedit, atau dihapus di sini akan otomatis tercermin di sana.
         </p>
     </div>
 
     {{-- ── Filter & Search ─────────────────────────────────────── --}}
     <div class="flex flex-col sm:flex-row gap-2">
-        {{-- Search --}}
         <div class="relative flex-1 max-w-xs">
             <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,12 +98,11 @@
             </svg>
             <input type="text" id="searchInput"
                    placeholder="Cari kelas, wali kelas..."
-                   class="w-full pl-8 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600
-                          bg-white dark:bg-slate-800 text-xs
+                   class="w-full pl-8 pr-4 py-2 rounded-xl border border-slate-200
+                          dark:border-slate-600 bg-white dark:bg-slate-800 text-xs
                           focus:outline-none focus:ring-2 focus:ring-indigo-300
                           placeholder:text-slate-400 transition">
         </div>
-        {{-- Filter Semester --}}
         <select id="filterSemester"
                 class="rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2 text-xs
                        bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300
@@ -81,7 +111,6 @@
             <option value="1">Semester 1</option>
             <option value="2">Semester 2</option>
         </select>
-        {{-- Filter Tingkat --}}
         <select id="filterTingkat"
                 class="rounded-xl border border-slate-200 dark:border-slate-600 px-3 py-2 text-xs
                        bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300
@@ -143,16 +172,20 @@
                             data-semester="{{ $k->semester }}"
                             data-tingkat="{{ $k->grade }}">
 
-                            {{-- No --}}
                             <td class="px-3 py-2.5 text-[10px] text-slate-400">{{ $i + 1 }}</td>
 
                             {{-- Nama Kelas --}}
                             <td class="px-3 py-2.5">
                                 <a href="{{ route('admin.academic-planner.study-group.show', $k->id) }}"
-                                   class="text-xs font-semibold text-indigo-600 dark:text-indigo-400
-                                          hover:underline underline-offset-2">
+                                   class="text-xs font-semibold text-indigo-600
+                                          dark:text-indigo-400 hover:underline underline-offset-2">
                                     {{ $k->name }}
                                 </a>
+                                @if($k->section)
+                                    <span class="text-[10px] text-slate-400 ml-1">
+                                        ({{ $k->section }})
+                                    </span>
+                                @endif
                             </td>
 
                             {{-- Tingkat --}}
@@ -191,12 +224,12 @@
                                     <div class="flex items-center gap-2">
                                         <div class="w-6 h-6 rounded-lg bg-indigo-100
                                                     dark:bg-indigo-900/40 flex items-center
-                                                    justify-content-center text-indigo-600
-                                                    dark:text-indigo-400 text-[10px] font-bold shrink-0
-                                                    flex items-center justify-center">
+                                                    justify-center text-indigo-600
+                                                    dark:text-indigo-400 text-[10px] font-bold shrink-0">
                                             {{ strtoupper(substr($k->homeroomTeacher->name, 0, 1)) }}
                                         </div>
-                                        <span class="text-xs text-slate-700 dark:text-slate-300 truncate max-w-[120px]">
+                                        <span class="text-xs text-slate-700 dark:text-slate-300
+                                                     truncate max-w-[120px]">
                                             {{ $k->homeroomTeacher->name }}
                                         </span>
                                     </div>
@@ -212,7 +245,7 @@
                                 {{ $k->room ?? '—' }}
                             </td>
 
-                            {{-- Jumlah Jadwal --}}
+                            {{-- Jadwal --}}
                             <td class="px-3 py-2.5 text-center">
                                 <a href="{{ route('admin.academic-planner.study-group.show', $k->id) }}"
                                    class="inline-flex items-center justify-center
@@ -223,7 +256,7 @@
                                 </a>
                             </td>
 
-                            {{-- Status Aktif --}}
+                            {{-- Status --}}
                             <td class="px-3 py-2.5 text-center">
                                 @if($k->is_active)
                                     <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5
@@ -247,7 +280,6 @@
                             {{-- Aksi --}}
                             <td class="px-3 py-2.5">
                                 <div class="flex items-center justify-center gap-0.5">
-                                    {{-- Lihat Jadwal --}}
                                     <a href="{{ route('admin.academic-planner.study-group.show', $k->id) }}"
                                        title="Lihat Jadwal"
                                        class="p-1.5 rounded-lg text-slate-400
@@ -264,8 +296,7 @@
                                                      7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                     </a>
-                                    {{-- Edit --}}
-                                    <button onclick="openEditModal({{ $k->id }})"
+                                    <button onclick="openEditKelasModal({{ $k->id }})"
                                             title="Edit Kelas"
                                             class="p-1.5 rounded-lg text-slate-400
                                                    hover:text-amber-600 hover:bg-amber-50
@@ -280,7 +311,6 @@
                                                      15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                     </button>
-                                    {{-- Hapus --}}
                                     <button onclick="openDeleteModal({{ $k->id }}, '{{ addslashes($k->name) }}')"
                                             title="Hapus Kelas"
                                             class="p-1.5 rounded-lg text-slate-400
@@ -339,7 +369,7 @@
 
 </div>
 
-{{-- Data JSON untuk modal edit — menggunakan field StudyGroup --}}
+{{-- ── Data JSON untuk modal edit ── --}}
 <script id="kelasData" type="application/json">
 {!! json_encode($kelas->map(fn($k) => [
     'id'                  => $k->id,
@@ -377,67 +407,80 @@ const KELAS_DATA = JSON.parse(document.getElementById('kelasData').textContent);
 
 /* ── Modal helpers ── */
 function openModal(id) {
-    var el = document.getElementById(id);
-    el.classList.remove('hidden'); el.classList.add('flex');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('hidden');
+    el.classList.add('flex');
     document.body.style.overflow = 'hidden';
 }
 function closeModal(id) {
-    var el = document.getElementById(id);
-    el.classList.add('hidden'); el.classList.remove('flex');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('hidden');
+    el.classList.remove('flex');
     document.body.style.overflow = '';
 }
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape')
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
         ['modalTambahKelas','modalEditKelas','modalHapusKelas'].forEach(closeModal);
+    }
 });
 
-/* ── Buka modal edit — isi field sesuai StudyGroup ── */
-function openEditModal(kelasId) {
-    var d = KELAS_DATA[kelasId];
+/* ── Buka modal edit — isi semua field termasuk semester, tahun ajaran, ruang ── */
+function openEditKelasModal(kelasId) {
+    const d = KELAS_DATA[kelasId];
     if (!d) return;
 
-    document.getElementById('editKelasName').value              = d.name        ?? '';
-    document.getElementById('editKelasGrade').value             = d.grade       ?? '';
-    document.getElementById('editKelasSection').value           = d.section     ?? '';
-    document.getElementById('editKelasAcademicYear').value      = d.academic_year ?? '';
-    document.getElementById('editKelasSemester').value          = d.semester    ?? '';
-    document.getElementById('editKelasHomeroomTeacher').value   = d.homeroom_teacher_id ?? '';
-    document.getElementById('editKelasRoom').value              = d.room        ?? '';
-    document.getElementById('editKelasCapacity').value          = d.capacity    ?? 30;
-    document.getElementById('editKelasIsActive').checked        = !!d.is_active;
+    // Field utama
+    document.getElementById('editKelasName').value        = d.name          ?? '';
+    document.getElementById('editKelasGrade').value       = d.grade         ?? '';
+    document.getElementById('editKelasSection').value     = d.section       ?? '';
+    document.getElementById('editKelasAcademicYear').value= d.academic_year ?? '';
+    document.getElementById('editKelasSemester').value    = d.semester      ?? '';
+    document.getElementById('editKelasRoom').value        = d.room          ?? '';
+    document.getElementById('editKelasCapacity').value    = d.capacity      ?? 30;
+    document.getElementById('editKelasIsActive').checked  = !!d.is_active;
 
-    /* Action mengarah ke route admin.kelas.update (PUT) */
-    document.getElementById('formEditKelas').action = '{{ url("admin/kelas") }}/' + kelasId;
+    // Wali kelas
+    const waliEl = document.getElementById('editKelasHomeroomTeacher');
+    if (waliEl) waliEl.value = d.homeroom_teacher_id ?? '';
+
+    // Action form
+    document.getElementById('formEditKelas').action =
+        '{{ url("admin/kelas") }}/' + kelasId;
+
     openModal('modalEditKelas');
 }
 
 /* ── Buka modal hapus ── */
 function openDeleteModal(kelasId, kelasNama) {
     document.getElementById('deleteKelasName').textContent = kelasNama;
-    document.getElementById('formHapusKelas').action = '{{ url("admin/kelas") }}/' + kelasId;
+    document.getElementById('formHapusKelas').action =
+        '{{ url("admin/kelas") }}/' + kelasId;
     openModal('modalHapusKelas');
 }
 
 /* ── Search & filter ── */
 function filterRows() {
-    var q   = document.getElementById('searchInput').value.toLowerCase();
-    var sem = document.getElementById('filterSemester').value;
-    var tkt = document.getElementById('filterTingkat').value;
+    const q   = (document.getElementById('searchInput')?.value ?? '').toLowerCase();
+    const sem = document.getElementById('filterSemester')?.value ?? '';
+    const tkt = document.getElementById('filterTingkat')?.value  ?? '';
 
-    document.querySelectorAll('.searchable-row').forEach(function(row) {
-        var matchText = row.textContent.toLowerCase().includes(q);
-        var matchSem  = !sem || row.dataset.semester === sem;
-        var matchTkt  = !tkt || row.dataset.tingkat  === tkt;
+    document.querySelectorAll('.searchable-row').forEach(row => {
+        const matchText = row.textContent.toLowerCase().includes(q);
+        const matchSem  = !sem || row.dataset.semester === sem;
+        const matchTkt  = !tkt || row.dataset.tingkat  === tkt;
         row.style.display = (matchText && matchSem && matchTkt) ? '' : 'none';
     });
 }
-document.getElementById('searchInput').addEventListener('input', filterRows);
-document.getElementById('filterSemester').addEventListener('change', filterRows);
-document.getElementById('filterTingkat').addEventListener('change', filterRows);
+
+document.getElementById('searchInput')?.addEventListener('input', filterRows);
+document.getElementById('filterSemester')?.addEventListener('change', filterRows);
+document.getElementById('filterTingkat')?.addEventListener('change', filterRows);
 
 /* ── Buka modal tambah jika ada validation error ── */
 @if($errors->any())
-document.addEventListener('DOMContentLoaded', function() { openModal('modalTambahKelas'); });
+    document.addEventListener('DOMContentLoaded', () => openModal('modalTambahKelas'));
 @endif
 </script>
 @endpush

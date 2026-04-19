@@ -869,4 +869,14 @@ class UserController extends Controller
         $str = trim((string) $value);
         return ($str === '' || $str === 'null') ? null : $str;
     }
+
+        /**
+     * Ambil kelas yang aktif, terurut — dipakai di semua method.
+     */
+    private function getKelasList()
+    {
+        return StudyGroup::orderBy('grade')
+            ->orderBy('name')
+            ->get();
+    }
 }
