@@ -128,8 +128,10 @@ class JadwalMengajarController extends Controller
      */
     public function destroy(Timetable $jadwalMengajar)
     {
+        
         abort_unless($jadwalMengajar->teacher_id === Auth::id(), 403);
         $jadwalMengajar->delete();
+        $nama = $jadwalMengajar->name;
 
         return redirect()->route('guru.jadwal-mengajar')
             ->with('success', 'Jadwal berhasil dihapus.');
