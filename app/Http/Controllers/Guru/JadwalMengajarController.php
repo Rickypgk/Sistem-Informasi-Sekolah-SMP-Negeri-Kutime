@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Timetable;   // alias StudyTimetable — sesuaikan nama model Anda
+use App\Models\Timetable;
 use App\Models\StudySubject;
 use App\Models\StudyGroup;
 use Illuminate\Http\Request;
@@ -33,7 +33,7 @@ class JadwalMengajarController extends Controller
         $totalKelas       = $allTimetables->unique('study_group_id')->count();
         $totalMapel       = $allTimetables->unique('study_subject_id')->count();
 
-        // Hitung total jam per minggu (durasi dalam menit → jam)
+        // Hitung total jam per minggu
         $totalJamPerMinggu = $allTimetables->sum(function ($t) {
             $start = \Carbon\Carbon::createFromFormat('H:i:s', $t->start_time);
             $end   = \Carbon\Carbon::createFromFormat('H:i:s', $t->end_time);
@@ -73,22 +73,13 @@ class JadwalMengajarController extends Controller
             'academic_year'    => ['required', 'regex:/^\d{4}\/\d{4}$/'],
             'semester'         => 'required|in:1,2',
             'notes'            => 'nullable|string|max:500',
-            'name'        => 'required|string|max:100',
-            'code'        => 'required|string|max:20',
-            'color'       => 'nullable|string|max:7',
-            'description' => 'nullable|string|max:200',
         ]);
 
         Timetable::create(array_merge($validated, [
             'teacher_id' => Auth::id(),
         ]));
 
-                // Opsional: kaitkan ke guru yang sedang login
-        $data['teacher_id'] = Auth::id(); // sesuaikan dengan kolom di tabel Anda
-
-        StudySubject::create($data);
-
-        return redirect()->route('guru.jadwal-mengajar')
+        return redirect()->route('guru.jadwal-mengajar.index')
             ->with('success', 'Jadwal berhasil ditambahkan.');
     }
 
@@ -97,13 +88,9 @@ class JadwalMengajarController extends Controller
      */
     public function update(Request $request, Timetable $jadwalMengajar)
     {
-        // Pastikan hanya pemilik yang bisa edit
         if ($jadwalMengajar->teacher_id !== Auth::id()) {
-            abort(403);
+            abort(403, 'Anda tidak berhak mengedit jadwal ini.');
         }
-
-        // Pastikan guru hanya bisa edit jadwalnya sendiri
-        abort_unless($jadwalMengajar->teacher_id === Auth::id(), 403);
 
         $validated = $request->validate([
             'study_subject_id' => 'required|exists:study_subjects,id',
@@ -116,15 +103,11 @@ class JadwalMengajarController extends Controller
             'academic_year'    => ['required', 'regex:/^\d{4}\/\d{4}$/'],
             'semester'         => 'required|in:1,2',
             'notes'            => 'nullable|string|max:500',
-            'name'        => 'required|string|max:100',
-            'code'        => 'required|string|max:20',
-            'color'       => 'nullable|string|max:7',
-            'description' => 'nullable|string|max:200',
         ]);
 
         $jadwalMengajar->update($validated);
 
-        return redirect()->route('guru.jadwal-mengajar')
+        return redirect()->route('guru.jadwal-mengajar.index')
             ->with('success', 'Jadwal berhasil diperbarui.');
     }
 
@@ -134,14 +117,12 @@ class JadwalMengajarController extends Controller
     public function destroy(Timetable $jadwalMengajar)
     {
         if ($jadwalMengajar->teacher_id !== Auth::id()) {
-            abort(403);
+            abort(403, 'Anda tidak berhak menghapus jadwal ini.');
         }
-        abort_unless($jadwalMengajar->teacher_id === Auth::id(), 403);
-        $jadwalMengajar->delete();
-        $nama = $jadwalMengajar->name;
 
-        return redirect()->route('guru.jadwal-mengajar')
+        $jadwalMengajar->delete();
+
+        return redirect()->route('guru.jadwal-mengajar.index')
             ->with('success', 'Jadwal berhasil dihapus.');
     }
 }
-

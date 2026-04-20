@@ -208,12 +208,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 // GURU
 // =================================================================
 Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(function () {
+
     Route::get('/dashboard',   [GuruDashboardController::class, 'index'])->name('dashboard');
     Route::get('/profil',      [GuruProfilController::class, 'show'])->name('profil');
     Route::get('/profil/edit', [GuruProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil',      [GuruProfilController::class, 'update'])->name('profil.update');
-    
-    Route::get('/jadwal-mengajar', fn() => view('guru.jadwal-mengajar.index'))->name('jadwal-mengajar');
+
     Route::get('/absensi-siswa',   fn() => view('guru.absensi-siswa.index'))->name('absensi-siswa');
     Route::get('/pengumuman',      fn() => view('guru.pengumuman.index'))->name('pengumuman');
 
@@ -224,19 +224,20 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
 
     Route::get('/wali-kelas', [WaliKelasController::class, 'index'])->name('wali-kelas');
 
-    // Jadwal Mengajar
-    Route::get('jadwal-mengajar',          [JadwalMengajarController::class, 'index'])->name('jadwal-mengajar');
+    // =================================================================
+    // JADWAL MENGAJAR
+    // =================================================================
+    // Route manual (tetap dipertahankan)
+    Route::get('jadwal-mengajar',          [JadwalMengajarController::class, 'index'])->name('jadwal-mengajar.index');
     Route::post('jadwal-mengajar',         [JadwalMengajarController::class, 'store'])->name('jadwal-mengajar.store');
     Route::put('jadwal-mengajar/{jadwalMengajar}',    [JadwalMengajarController::class, 'update'])->name('jadwal-mengajar.update');
     Route::delete('jadwal-mengajar/{jadwalMengajar}', [JadwalMengajarController::class, 'destroy'])->name('jadwal-mengajar.destroy');
 
-    // ─────────────────────────────────────────────────────────────
-    // PERBAIKAN ROUTE RESOURCE (INI YANG MENYEBABKAN ERROR)
-    // ─────────────────────────────────────────────────────────────
-    Route::resource('jadwal-mengajar', App\Http\Controllers\Guru\JadwalMengajarController::class)
+    // Route::resource (diperbaiki agar tidak conflict dan nama route benar)
+    Route::resource('jadwal-mengajar', JadwalMengajarController::class)
          ->names([
              'index'   => 'jadwal-mengajar.index',
-             'store'   => 'jadwal-mengajar.store',     // ← Ini yang diperbaiki
+             'store'   => 'jadwal-mengajar.store',
              'update'  => 'jadwal-mengajar.update',
              'destroy' => 'jadwal-mengajar.destroy',
          ])
