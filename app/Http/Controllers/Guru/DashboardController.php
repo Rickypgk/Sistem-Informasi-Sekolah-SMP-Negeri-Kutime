@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pengumuman;
 use App\Models\Siswa;
 use App\Models\AbsensiSiswa;
-use App\Models\Timetable;           // Model jadwal mengajar
+use App\Models\Timetable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 
@@ -22,74 +22,69 @@ class DashboardController extends Controller
             ->limit(4)
             ->get();
 
-        $guru = Auth::user();
+        $user = Auth::user();
+        $guru = $user->guru; // relasi dari User ke model Guru
 
-        // Jika tidak ada relasi guru atau belum punya kelas
-        if (!$guru || !$guru->guru || !$guru->guru->kelas_id) {
+        // Default values jika belum ada data guru
+        if (!$guru) {
             return view('guru.dashboard', compact('widgetPengumuman'))
                 ->with([
-                    'totalSiswa'       => 0,
-                    'kehadiranPct'     => 0,
-                    'rataNilai'        => 0,
-                    'siswaRisiko'      => 0,
-                    'chartKehadiran'   => [0, 0, 0, 0, 0, 0, 0],
-                    'siswaBerisiko'    => collect(),
-                    'jadwalHariIni'    => collect(),   // Tambahan baru
+                    'totalSiswa'     => 0,
+                    'kehadiranPct'   => 0,
+                    'rataNilai'      => 0,
+                    'siswaRisiko'    => 0,
+                    'chartKehadiran' => [0,0,0,0,0,0,0],
+                    'siswaBerisiko'  => collect(),
+                    'jadwalHariIni'  => collect(),
                 ]);
         }
 
-        $guruModel = $guru->guru;
-        $kelasId = $guruModel->kelas_id;
+        $kelasId = $guru->kelas_id ?? null;
 
-        $siswaIds = Siswa::where('kelas_id', $kelasId)->pluck('id');
+        $siswaIds = $kelasId 
+            ? Siswa::where('kelas_id', $kelasId)->pluck('id') 
+            : collect();
 
-        // === Data Lama (Performance, Kehadiran, dll) ===
+        // === Data Performance (tetap) ===
         $totalSiswa = $siswaIds->count();
 
         $bulanIni = Carbon::now()->startOfMonth();
 
         $totalHariEfektif = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
             ->whereDate('tanggal', '>=', $bulanIni)
-            ->distinct('tanggal')
-            ->count('tanggal');
+            ->distinct('tanggal')->count('tanggal');
 
         $hadirBulanIni = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
             ->whereDate('tanggal', '>=', $bulanIni)
-            ->where('status', 'hadir')
-            ->count();
+            ->where('status', 'hadir')->count();
 
-        $kehadiranPct = ($totalHariEfektif > 0 && $totalSiswa > 0)
-            ? round(($hadirBulanIni / ($totalHariEfektif * $totalSiswa)) * 100, 1)
+        $kehadiranPct = ($totalHariEfektif > 0 && $totalSiswa > 0) 
+            ? round(($hadirBulanIni / ($totalHariEfektif * $totalSiswa)) * 100, 1) 
             : 0;
 
-        $rataNilai = 78.5; // Ganti dengan query real jika ada tabel nilai
+        $rataNilai = 78.5; // placeholder
 
-        // Siswa Berisiko
+        // Siswa Berisiko (tetap)
         $siswaBerisiko = collect();
         $siswaRisiko = 0;
 
         if ($totalSiswa > 0) {
             $siswaBerisiko = Siswa::whereIn('id', $siswaIds)
-                ->with(['user'])
+                ->with('user')
                 ->get()
                 ->map(function ($siswa) use ($bulanIni) {
                     $hadir = AbsensiSiswa::where('siswa_id', $siswa->id)
                         ->whereDate('tanggal', '>=', $bulanIni)
-                        ->where('status', 'hadir')
-                        ->count();
+                        ->where('status', 'hadir')->count();
 
                     $totalHariSiswa = AbsensiSiswa::where('siswa_id', $siswa->id)
                         ->whereDate('tanggal', '>=', $bulanIni)
-                        ->distinct('tanggal')
-                        ->count('tanggal') ?: 1;
+                        ->distinct('tanggal')->count('tanggal') ?: 1;
 
                     $siswa->kehadiran = round(($hadir / $totalHariSiswa) * 100, 1);
                     $siswa->terlambat_count = AbsensiSiswa::where('siswa_id', $siswa->id)
                         ->whereDate('tanggal', '>=', $bulanIni)
-                        ->where('status', 'terlambat')
-                        ->count();
-
-                    $siswa->nilai_rata = 75.0;
+                        ->where('status', 'terlambat')->count();
 
                     return $siswa;
                 })
@@ -100,31 +95,26 @@ class DashboardController extends Controller
             $siswaRisiko = $siswaBerisiko->count();
         }
 
-        // Chart Kehadiran 7 Hari Terakhir
+        // Chart 7 hari
         $chartKehadiran = [];
         for ($i = 6; $i >= 0; $i--) {
             $tgl = Carbon::today()->subDays($i);
             $hadir = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                ->whereDate('tanggal', $tgl)
-                ->where('status', 'hadir')
-                ->count();
-            $totalHari = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                ->whereDate('tanggal', $tgl)
-                ->count();
-            $pct = $totalHari > 0 ? round(($hadir / $totalHari) * 100, 0) : 0;
-            $chartKehadiran[] = $pct;
+                ->whereDate('tanggal', $tgl)->where('status', 'hadir')->count();
+            $total = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
+                ->whereDate('tanggal', $tgl)->count();
+            $chartKehadiran[] = $total > 0 ? round(($hadir / $total) * 100) : 0;
         }
 
-        // === JADWAL MENGAJAR HARI INI (Baru) ===
-        $hariIni = Carbon::now()->locale('id')->translatedFormat('l'); // Senin, Selasa, dst.
+        // === JADWAL MENGAJAR HARI INI ===
+        $hariIniNama = Carbon::now()->locale('id')->translatedFormat('l'); // Senin, Selasa, dst.
 
         $jadwalHariIni = Timetable::with(['studySubject', 'studyGroup'])
-            ->where('teacher_id', $guru->id)
-            ->where('day_of_week', $hariIni)
+            ->where('teacher_id', $user->id)
+            ->where('day_of_week', $hariIniNama)
             ->orderBy('start_time')
             ->get();
 
-        // Kirim ke view
         return view('guru.dashboard', compact(
             'widgetPengumuman',
             'totalSiswa',
@@ -133,7 +123,7 @@ class DashboardController extends Controller
             'siswaRisiko',
             'chartKehadiran',
             'siswaBerisiko',
-            'jadwalHariIni'          // Data jadwal hari ini
+            'jadwalHariIni'
         ));
     }
 }
