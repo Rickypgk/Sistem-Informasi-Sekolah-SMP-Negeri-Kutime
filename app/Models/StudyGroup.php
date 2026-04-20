@@ -18,19 +18,11 @@ class StudyGroup extends Model
         'section', 
         'capacity',
         'homeroom_teacher_id', 
-        'room', 
         'description', 
-        'is_active',
-        'name',
-        'grade',
-        'section',
-        'homeroom_teacher_id',
         'room',           // ← ruang kelas
         'academic_year',  // ← tahun ajaran
         'semester',       // ← semester
-        'capacity',
         'is_active',
-        'description',
         'notes',
     ];
 
@@ -42,14 +34,6 @@ class StudyGroup extends Model
 
         protected $table = 'study_groups';
  
-    /**
-     * PENTING: Semua kolom yang bisa diisi harus ada di sini.
-     * Inilah penyebab utama field tidak tersimpan — jika tidak ada di $fillable,
-     * Laravel akan diam-diam mengabaikan field tersebut.
-     */
-    protected $fillable = [
-        
-    ];
  
     protected $casts = [
         'grade'     => 'integer',
