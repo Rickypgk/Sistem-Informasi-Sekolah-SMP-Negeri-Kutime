@@ -1,7 +1,7 @@
 {{-- resources/views/admin/kelas/_modal_edit.blade.php --}}
 <div id="modalEditKelas"
-    class="fixed inset-0 z-50 hidden items-center justify-center p-4"
-    role="dialog" aria-modal="true">
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+     role="dialog" aria-modal="true">
 
     <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
          onclick="closeModal('modalEditKelas')"></div>
@@ -18,8 +18,8 @@
                     <svg class="w-4 h-4 text-amber-600 dark:text-amber-400"
                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
-                               m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
+                                 m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
                 </div>
                 <div>
@@ -43,6 +43,10 @@
 
         {{-- Body --}}
         <div class="overflow-y-auto px-5 py-4 flex-1">
+            {{--
+                Action form diisi oleh JS: document.getElementById('formEditKelas').action = '/admin/kelas/' + id
+                Method PUT dikirim via _method hidden field.
+            --}}
             <form id="formEditKelas" method="POST" class="space-y-3">
                 @csrf
                 @method('PUT')
@@ -51,8 +55,8 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2 sm:col-span-1">
                         <label for="editKelasName"
-                               class="block text-[10px] font-semibold text-slate-500
-                                      dark:text-slate-400 uppercase tracking-wide mb-1">
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
                             Nama Kelas <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="name" id="editKelasName" required
@@ -62,10 +66,11 @@
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
                                       bg-white dark:bg-slate-700 dark:text-slate-200">
                     </div>
+
                     <div class="col-span-2 sm:col-span-1">
                         <label for="editKelasGrade"
-                               class="block text-[10px] font-semibold text-slate-500
-                                      dark:text-slate-400 uppercase tracking-wide mb-1">
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
                             Tingkat <span class="text-red-500">*</span>
                         </label>
                         <select name="grade" id="editKelasGrade" required
@@ -82,28 +87,40 @@
                 </div>
 
                 {{-- Row 2: Tahun Ajaran + Semester --}}
+                {{--
+                    ID elemen harus SAMA PERSIS dengan yang ada di JS openEditKelasModal():
+                    editKelasAcademicYear  → name="academic_year"
+                    editKelasSemester      → name="semester"
+                --}}
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="editKelasAcademicYear"
-                               class="block text-[10px] font-semibold text-slate-500
-                                      dark:text-slate-400 uppercase tracking-wide mb-1">
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
                             Tahun Ajaran <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="academic_year" id="editKelasAcademicYear"
-                               required placeholder="2025/2026" maxlength="9"
+                        <input type="text"
+                               name="academic_year"
+                               id="editKelasAcademicYear"
+                               required
+                               placeholder="2025/2026"
+                               maxlength="9"
                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                       px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
                                       bg-white dark:bg-slate-700 dark:text-slate-200">
                         <p class="text-[9px] text-slate-400 mt-0.5">Format: YYYY/YYYY</p>
                     </div>
+
                     <div>
                         <label for="editKelasSemester"
-                               class="block text-[10px] font-semibold text-slate-500
-                                      dark:text-slate-400 uppercase tracking-wide mb-1">
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
                             Semester <span class="text-red-500">*</span>
                         </label>
-                        <select name="semester" id="editKelasSemester" required
+                        <select name="semester"
+                                id="editKelasSemester"
+                                required
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                        px-3 py-2 text-xs transition
                                        focus:outline-none focus:ring-2 focus:ring-indigo-300
@@ -118,12 +135,13 @@
                 {{-- Wali Kelas --}}
                 <div>
                     <label for="editKelasHomeroomTeacher"
-                           class="block text-[10px] font-semibold text-slate-500
-                                  dark:text-slate-400 uppercase tracking-wide mb-1">
+                           class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                  uppercase tracking-wide mb-1">
                         Wali Kelas
                         <span class="normal-case font-normal text-slate-400">(opsional)</span>
                     </label>
-                    <select name="homeroom_teacher_id" id="editKelasHomeroomTeacher"
+                    <select name="homeroom_teacher_id"
+                            id="editKelasHomeroomTeacher"
                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                    px-3 py-2 text-xs transition
                                    focus:outline-none focus:ring-2 focus:ring-indigo-300
@@ -144,30 +162,42 @@
                 </div>
 
                 {{-- Row 3: Jurusan/Seksi + Ruang --}}
+                {{--
+                    ID editKelasRoom → name="room" harus sesuai kolom study_groups.room
+                    dan ada di $fillable model StudyGroup.
+                --}}
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="editKelasSection"
-                               class="block text-[10px] font-semibold text-slate-500
-                                      dark:text-slate-400 uppercase tracking-wide mb-1">
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
                             Jurusan / Seksi
                             <span class="normal-case font-normal text-slate-400">(opsional)</span>
                         </label>
-                        <input type="text" name="section" id="editKelasSection"
-                               placeholder="mis. A, IPA, IPS" maxlength="10"
+                        <input type="text"
+                               name="section"
+                               id="editKelasSection"
+                               placeholder="mis. A, IPA, IPS"
+                               maxlength="10"
                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                       px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
                                       bg-white dark:bg-slate-700 dark:text-slate-200">
                     </div>
+
                     <div>
                         <label for="editKelasRoom"
-                               class="block text-[10px] font-semibold text-slate-500
-                                      dark:text-slate-400 uppercase tracking-wide mb-1">
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
                             Ruang Kelas
                             <span class="normal-case font-normal text-slate-400">(opsional)</span>
                         </label>
-                        <input type="text" name="room" id="editKelasRoom"
-                               placeholder="mis. Lab Komputer" maxlength="50"
+                        {{-- name="room" sesuai kolom study_groups.room --}}
+                        <input type="text"
+                               name="room"
+                               id="editKelasRoom"
+                               placeholder="mis. Lab Komputer, R.12"
+                               maxlength="50"
                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                       px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
@@ -179,22 +209,27 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="editKelasCapacity"
-                               class="block text-[10px] font-semibold text-slate-500
-                                      dark:text-slate-400 uppercase tracking-wide mb-1">
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
                             Kapasitas Siswa
                         </label>
-                        <input type="number" name="capacity" id="editKelasCapacity"
+                        <input type="number"
+                               name="capacity"
+                               id="editKelasCapacity"
                                min="1" max="60"
                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                       px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
                                       bg-white dark:bg-slate-700 dark:text-slate-200">
                     </div>
+
                     <div class="flex items-end pb-2">
                         <label class="flex items-center gap-2 cursor-pointer select-none">
-                            <div class="relative inline-flex items-center">
+                            <div class="relative">
                                 <input type="hidden" name="is_active" value="0">
-                                <input type="checkbox" name="is_active" id="editKelasIsActive"
+                                <input type="checkbox"
+                                       name="is_active"
+                                       id="editKelasIsActive"
                                        value="1"
                                        class="sr-only peer">
                                 <div class="w-8 h-4 rounded-full bg-slate-200 dark:bg-slate-600

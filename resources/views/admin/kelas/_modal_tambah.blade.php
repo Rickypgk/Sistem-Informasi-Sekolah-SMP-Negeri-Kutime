@@ -1,10 +1,10 @@
 {{-- resources/views/admin/kelas/_modal_tambah.blade.php --}}
 <div id="modalTambahKelas"
-    class="fixed inset-0 z-50 hidden items-center justify-center p-4"
-    role="dialog" aria-modal="true">
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+     role="dialog" aria-modal="true">
 
     <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-        onclick="closeModal('modalTambahKelas')"></div>
+         onclick="closeModal('modalTambahKelas')"></div>
 
     <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg
                 max-h-[92vh] flex flex-col animate-modal">
@@ -16,11 +16,11 @@
                 <div class="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900/40
                             flex items-center justify-center shrink-0">
                     <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9
                                  0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1
-                                 1 0 011 1v5m-4 0h4" />
+                                 1 0 011 1v5m-4 0h4"/>
                     </svg>
                 </div>
                 <div>
@@ -33,11 +33,11 @@
                 </div>
             </div>
             <button onclick="closeModal('modalTambahKelas')"
-                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600
+                    class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600
                            hover:bg-slate-100 dark:hover:bg-slate-700 transition shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12" />
+                          d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>
         </div>
@@ -45,39 +45,39 @@
         {{-- Body --}}
         <div class="overflow-y-auto px-5 py-4 flex-1">
             <form id="formTambahKelas"
-                action="{{ route('admin.kelas.store') }}"
-                method="POST"
-                class="space-y-3">
+                  action="{{ route('admin.kelas.store') }}"
+                  method="POST"
+                  class="space-y-3">
                 @csrf
 
                 {{-- Row 1: Nama Kelas + Tingkat --}}
                 <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2 sm:col-span-1">
                         <label for="tambahKelasName"
-                            class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                       uppercase tracking-wide mb-1">
                             Nama Kelas <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="name" id="tambahKelasName"
-                            value="{{ old('name') }}" required
-                            placeholder="mis. VII A"
-                            class="w-full rounded-xl border px-3 py-2 text-xs transition
+                               value="{{ old('name') }}" required
+                               placeholder="mis. VII A"
+                               class="w-full rounded-xl border px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
-                                      dark:bg-slate-700 dark:text-slate-200
+                                      bg-white dark:bg-slate-700 dark:text-slate-200
                                       @error('name') border-red-400 bg-red-50 @else border-slate-200 dark:border-slate-600 @enderror">
                         @error('name')
-                        <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
+                            <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div class="col-span-2 sm:col-span-1">
                         <label for="tambahKelasGrade"
-                            class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                       uppercase tracking-wide mb-1">
                             Tingkat <span class="text-red-500">*</span>
                         </label>
                         <select name="grade" id="tambahKelasGrade" required
-                            class="w-full rounded-xl border px-3 py-2 text-xs transition
+                                class="w-full rounded-xl border px-3 py-2 text-xs transition
                                        focus:outline-none focus:ring-2 focus:ring-indigo-300
                                        bg-white dark:bg-slate-700 dark:text-slate-200
                                        @error('grade') border-red-400 @else border-slate-200 dark:border-slate-600 @enderror">
@@ -87,40 +87,44 @@
                             <option value="9" {{ old('grade') == '9' ? 'selected' : '' }}>IX (Kelas 9)</option>
                         </select>
                         @error('grade')
-                        <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
+                            <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
 
                 {{-- Row 2: Tahun Ajaran + Semester --}}
+                {{--
+                    PENTING: name="academic_year" dan name="semester" harus persis sama
+                    dengan kolom di tabel study_groups dan $fillable di model.
+                --}}
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="tambahKelasAcademicYear"
-                            class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                       uppercase tracking-wide mb-1">
                             Tahun Ajaran <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="academic_year" id="tambahKelasAcademicYear"
-                            value="{{ old('academic_year', date('Y').'/'.((int)date('Y')+1)) }}"
-                            required placeholder="2025/2026" maxlength="9"
-                            class="w-full rounded-xl border px-3 py-2 text-xs transition
+                               value="{{ old('academic_year', date('Y').'/'.((int)date('Y')+1)) }}"
+                               required placeholder="2025/2026" maxlength="9"
+                               class="w-full rounded-xl border px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
-                                      dark:bg-slate-700 dark:text-slate-200
+                                      bg-white dark:bg-slate-700 dark:text-slate-200
                                       @error('academic_year') border-red-400 bg-red-50 @else border-slate-200 dark:border-slate-600 @enderror">
                         <p class="text-[9px] text-slate-400 mt-0.5">Format: YYYY/YYYY</p>
                         @error('academic_year')
-                        <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
+                            <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div>
                         <label for="tambahKelasSemester"
-                            class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                       uppercase tracking-wide mb-1">
                             Semester <span class="text-red-500">*</span>
                         </label>
                         <select name="semester" id="tambahKelasSemester" required
-                            class="w-full rounded-xl border px-3 py-2 text-xs transition
+                                class="w-full rounded-xl border px-3 py-2 text-xs transition
                                        focus:outline-none focus:ring-2 focus:ring-indigo-300
                                        bg-white dark:bg-slate-700 dark:text-slate-200
                                        @error('semester') border-red-400 @else border-slate-200 dark:border-slate-600 @enderror">
@@ -129,7 +133,7 @@
                             <option value="2" {{ old('semester') == '2' ? 'selected' : '' }}>Semester 2 (Genap)</option>
                         </select>
                         @error('semester')
-                        <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
+                            <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
@@ -137,65 +141,72 @@
                 {{-- Wali Kelas --}}
                 <div>
                     <label for="tambahKelasHomeroomTeacher"
-                        class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                           class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                   uppercase tracking-wide mb-1">
                         Wali Kelas
                         <span class="normal-case font-normal text-slate-400">(opsional)</span>
                     </label>
                     <select name="homeroom_teacher_id" id="tambahKelasHomeroomTeacher"
-                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                    px-3 py-2 text-xs transition
                                    focus:outline-none focus:ring-2 focus:ring-indigo-300
                                    bg-white dark:bg-slate-700 dark:text-slate-200">
                         <option value="">— Pilih wali kelas —</option>
                         @foreach($gurus as $guru)
-                        <option value="{{ $guru->id }}"
-                            {{ old('homeroom_teacher_id') == $guru->id ? 'selected' : '' }}>
-                            {{ $guru->name }}
-                            @if($guru->guru && $guru->guru->nip) — NIP: {{ $guru->guru->nip }} @endif
-                        </option>
+                            <option value="{{ $guru->id }}"
+                                    {{ old('homeroom_teacher_id') == $guru->id ? 'selected' : '' }}>
+                                {{ $guru->name }}
+                                @if($guru->guru && $guru->guru->nip)
+                                    — NIP: {{ $guru->guru->nip }}
+                                @endif
+                            </option>
                         @endforeach
                     </select>
                     @error('homeroom_teacher_id')
-                    <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
+                        <p class="text-[10px] text-red-500 mt-1">{{ $message }}</p>
                     @enderror
                     <p class="text-[9px] text-slate-400 mt-0.5">
                         Memilih wali kelas akan otomatis memperbarui data guru tersebut.
                     </p>
                 </div>
 
-                {{-- Row 3: Jurusan + Ruang --}}
+                {{-- Row 3: Jurusan/Seksi + Ruang --}}
+                {{--
+                    PENTING: name="room" harus persis sama dengan kolom di study_groups
+                    dan ada di $fillable model StudyGroup.
+                --}}
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="tambahKelasSection"
-                            class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                       uppercase tracking-wide mb-1">
                             Jurusan / Seksi
                             <span class="normal-case font-normal text-slate-400">(opsional)</span>
                         </label>
                         <input type="text" name="section" id="tambahKelasSection"
-                            value="{{ old('section') }}"
-                            placeholder="mis. A, IPA, IPS" maxlength="10"
-                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                               value="{{ old('section') }}"
+                               placeholder="mis. A, IPA, IPS" maxlength="10"
+                               class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                       px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
-                                      dark:bg-slate-700 dark:text-slate-200">
+                                      bg-white dark:bg-slate-700 dark:text-slate-200">
                     </div>
 
                     <div>
                         <label for="tambahKelasRoom"
-                            class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                       uppercase tracking-wide mb-1">
                             Ruang Kelas
                             <span class="normal-case font-normal text-slate-400">(opsional)</span>
                         </label>
+                        {{-- name="room" sesuai kolom study_groups.room --}}
                         <input type="text" name="room" id="tambahKelasRoom"
-                            value="{{ old('room') }}"
-                            placeholder="mis. Lab Komputer" maxlength="50"
-                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                               value="{{ old('room') }}"
+                               placeholder="mis. Lab Komputer, R.12" maxlength="50"
+                               class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                       px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
-                                      dark:bg-slate-700 dark:text-slate-200">
+                                      bg-white dark:bg-slate-700 dark:text-slate-200">
                     </div>
                 </div>
 
@@ -203,25 +214,26 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="tambahKelasCapacity"
-                            class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                               class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                       uppercase tracking-wide mb-1">
                             Kapasitas Siswa
                         </label>
                         <input type="number" name="capacity" id="tambahKelasCapacity"
-                            value="{{ old('capacity', 30) }}" min="1" max="60"
-                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                               value="{{ old('capacity', 30) }}" min="1" max="60"
+                               class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                       px-3 py-2 text-xs transition
                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
-                                      dark:bg-slate-700 dark:text-slate-200">
+                                      bg-white dark:bg-slate-700 dark:text-slate-200">
                     </div>
 
                     <div class="flex items-end pb-2">
                         <label class="flex items-center gap-2 cursor-pointer select-none">
-                            <div class="relative inline-flex items-center">
+                            <div class="relative">
+                                {{-- Hidden input pastikan value 0 terkirim saat tidak dicentang --}}
                                 <input type="hidden" name="is_active" value="0">
                                 <input type="checkbox" name="is_active" id="tambahKelasIsActive"
-                                    value="1" {{ old('is_active', true) ? 'checked' : '' }}
-                                    class="sr-only peer">
+                                       value="1" {{ old('is_active', true) ? 'checked' : '' }}
+                                       class="sr-only peer">
                                 <div class="w-8 h-4 rounded-full bg-slate-200 dark:bg-slate-600
                                             peer-checked:bg-indigo-500 transition-colors cursor-pointer
                                             relative">
@@ -244,13 +256,13 @@
         <div class="flex gap-2 px-5 py-3.5 border-t border-slate-100 dark:border-slate-700
                     bg-slate-50/50 dark:bg-slate-900/20 rounded-b-2xl shrink-0">
             <button type="button" onclick="closeModal('modalTambahKelas')"
-                class="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600
+                    class="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600
                            text-slate-600 dark:text-slate-400 text-xs font-medium
                            hover:bg-white dark:hover:bg-slate-700 transition">
                 Batal
             </button>
             <button type="submit" form="formTambahKelas"
-                class="flex-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold
+                    class="flex-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold
                            hover:bg-indigo-700 active:scale-95 transition">
                 Simpan Kelas
             </button>
