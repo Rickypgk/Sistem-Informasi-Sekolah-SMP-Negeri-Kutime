@@ -97,6 +97,8 @@ class JadwalMengajarController extends Controller
      */
     public function update(Request $request, Timetable $jadwalMengajar)
     {
+    
+
         // Pastikan guru hanya bisa edit jadwalnya sendiri
         abort_unless($jadwalMengajar->teacher_id === Auth::id(), 403);
 
@@ -128,7 +130,9 @@ class JadwalMengajarController extends Controller
      */
     public function destroy(Timetable $jadwalMengajar)
     {
-
+        if ($jadwalMengajar->teacher_id !== Auth::id()) {
+            abort(403);
+        }
         abort_unless($jadwalMengajar->teacher_id === Auth::id(), 403);
         $jadwalMengajar->delete();
         $nama = $jadwalMengajar->name;
@@ -137,3 +141,4 @@ class JadwalMengajarController extends Controller
             ->with('success', 'Jadwal berhasil dihapus.');
     }
 }
+
