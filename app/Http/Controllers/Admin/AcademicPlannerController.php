@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Kelas;
 use App\Models\StudyGroup;
 use App\Models\StudySubject;
 use App\Models\Timetable;
@@ -10,25 +11,24 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
 
 class AcademicPlannerController extends Controller
 {
-    // ──────────────────────────────────────────────
+    // =========================================================================
     // DASHBOARD
-    // ──────────────────────────────────────────────
+    // =========================================================================
 
     public function index(): View
     {
         $stats = [
-            'total_groups'    => StudyGroup::where('is_active', true)->count(),
-            'total_subjects'  => StudySubject::where('is_active', true)->count(),
+            'total_groups'     => StudyGroup::where('is_active', true)->count(),
+            'total_subjects'   => StudySubject::where('is_active', true)->count(),
             'total_timetables' => Timetable::where('is_active', true)->count(),
-            'total_teachers'  => User::where('role', 'guru')->count(),
+            'total_teachers'   => User::where('role', 'guru')->count(),
         ];
 
-        // Kelompokkan kelas per tingkat (grade)
         $groupsByGrade = StudyGroup::where('is_active', true)
             ->with('homeroomTeacher')
             ->orderBy('grade')
@@ -39,18 +39,18 @@ class AcademicPlannerController extends Controller
         return view('admin.academic-planner.index', compact('stats', 'groupsByGrade'));
     }
 
-    // ──────────────────────────────────────────────
-    // STUDY GROUPS
-    // ──────────────────────────────────────────────
+    // =========================================================================
+    // STUDY GROUPS — SHOW
+    // =========================================================================
 
     public function showStudyGroup($id): View
     {
         $studyGroup = StudyGroup::with(['homeroomTeacher', 'timetables.studySubject', 'timetables.teacher'])
-            ->findOrFail((int)$id);
+            ->findOrFail((int) $id);
 
         $timetables = $studyGroup->timetables->where('is_active', true);
 
-        $days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $days           = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         $timetableByDay = [];
         foreach ($days as $day) {
             $timetableByDay[$day] = $timetables
@@ -61,6 +61,12 @@ class AcademicPlannerController extends Controller
 
         return view('admin.academic-planner.show-study-group', compact('studyGroup', 'timetables', 'timetableByDay', 'days'));
     }
+
+    // =========================================================================
+    // STUDY GROUPS — STORE
+    // Setelah simpan ke study_groups, otomatis sinkron ke tabel `kelas`
+    // agar FK siswas.kelas_id terpenuhi
+    // =========================================================================
 
     public function storeStudyGroup(Request $request): RedirectResponse
     {
@@ -75,21 +81,37 @@ class AcademicPlannerController extends Controller
             'is_active'           => 'sometimes|boolean',
         ]);
 
-        // Handle checkbox - if not checked, set to false
         $validated['is_active'] = $request->has('is_active');
 
-        StudyGroup::create($validated);
+        DB::transaction(function () use ($validated) {
+            $group = StudyGroup::create($validated);
+
+            // Sinkron ke tabel `kelas` agar FK siswas.kelas_id tidak error
+            $this->syncToKelasTable($group);
+        });
 
         return redirect()->route('academic-planner.index')
             ->with('success', "Kelas {$validated['name']} berhasil ditambahkan.");
     }
 
+    // =========================================================================
+    // STUDY GROUPS — EDIT
+    // =========================================================================
+
     public function editStudyGroup(int $id): View
     {
         $studyGroup = StudyGroup::findOrFail($id);
-        $teachers   = User::whereIn('role', ['kepala_sekolah', 'guru'])->where('is_active', true)->orderBy('name')->get();
+        $teachers   = User::whereIn('role', ['kepala_sekolah', 'guru'])
+                          ->where('is_active', true)
+                          ->orderBy('name')
+                          ->get();
+
         return view('admin.academic-planner.edit-study-group', compact('studyGroup', 'teachers'));
     }
+
+    // =========================================================================
+    // STUDY GROUPS — UPDATE
+    // =========================================================================
 
     public function updateStudyGroup(Request $request, int $id): RedirectResponse
     {
@@ -106,39 +128,61 @@ class AcademicPlannerController extends Controller
             'is_active'           => 'sometimes|boolean',
         ]);
 
-        // Handle checkbox - if not checked, set to false
         $validated['is_active'] = $request->has('is_active');
 
-        $studyGroup->update($validated);
+        DB::transaction(function () use ($validated, $studyGroup) {
+            $studyGroup->update($validated);
+
+            // Sinkron perubahan ke tabel `kelas`
+            $this->syncToKelasTable($studyGroup->fresh());
+        });
 
         return redirect()->route('academic-planner.show-study-group', $id)
             ->with('success', "Kelas {$validated['name']} berhasil diperbarui.");
     }
 
+    // =========================================================================
+    // STUDY GROUPS — DESTROY
+    // =========================================================================
+
     public function destroyStudyGroup(int $id): RedirectResponse
     {
         $studyGroup = StudyGroup::findOrFail($id);
-        $name = $studyGroup->name;
-        $studyGroup->delete();
+        $name       = $studyGroup->name;
+
+        DB::transaction(function () use ($studyGroup) {
+            // Hapus juga di tabel kelas (siswa akan SET NULL karena ON DELETE SET NULL)
+            Kelas::where('id', $studyGroup->id)->delete();
+
+            $studyGroup->delete();
+        });
 
         return redirect()->route('academic-planner.index')
             ->with('success', "Kelas {$name} berhasil dihapus.");
     }
 
-    // ──────────────────────────────────────────────
-    // STUDY SUBJECTS
-    // ──────────────────────────────────────────────
-
-    public function createStudySubject(): View
-    {
-        return view('admin.academic-planner.create-study-subject');
-    }
+    // =========================================================================
+    // STUDY SUBJECTS — INDEX
+    // =========================================================================
 
     public function indexStudySubject(): View
     {
         $subjects = StudySubject::orderBy('name')->paginate(20);
         return view('admin.academic-planner.study-subjects', compact('subjects'));
     }
+
+    // =========================================================================
+    // STUDY SUBJECTS — CREATE
+    // =========================================================================
+
+    public function createStudySubject(): View
+    {
+        return view('admin.academic-planner.create-study-subject');
+    }
+
+    // =========================================================================
+    // STUDY SUBJECTS — STORE
+    // =========================================================================
 
     public function storeStudySubject(Request $request): RedirectResponse
     {
@@ -151,7 +195,6 @@ class AcademicPlannerController extends Controller
             'is_active'    => 'sometimes|boolean',
         ]);
 
-        // Handle checkbox - if not checked, set to false
         $validated['is_active'] = $request->has('is_active');
 
         StudySubject::create($validated);
@@ -160,15 +203,23 @@ class AcademicPlannerController extends Controller
             ->with('success', "Mata pelajaran {$validated['name']} berhasil ditambahkan.");
     }
 
+    // =========================================================================
+    // STUDY SUBJECTS — EDIT
+    // =========================================================================
+
     public function editStudySubject(int $id): View
     {
         $subject = StudySubject::findOrFail($id);
         return view('admin.academic-planner.edit-study-subject', compact('subject'));
     }
 
+    // =========================================================================
+    // STUDY SUBJECTS — UPDATE
+    // =========================================================================
+
     public function updateStudySubject(Request $request, int $id): RedirectResponse
     {
-        $subject   = StudySubject::findOrFail($id);
+        $subject = StudySubject::findOrFail($id);
 
         $validated = $request->validate([
             'name'         => 'required|string|max:100',
@@ -179,7 +230,6 @@ class AcademicPlannerController extends Controller
             'is_active'    => 'sometimes|boolean',
         ]);
 
-        // Handle checkbox - if not checked, set to false
         $validated['is_active'] = $request->has('is_active');
 
         $subject->update($validated);
@@ -188,52 +238,58 @@ class AcademicPlannerController extends Controller
             ->with('success', "Mata pelajaran {$validated['name']} berhasil diperbarui.");
     }
 
+    // =========================================================================
+    // STUDY SUBJECTS — DESTROY
+    // =========================================================================
+
     public function destroyStudySubject(int $id): RedirectResponse
     {
-        \Log::info("=== DESTROY STUDY SUBJECT ===");
-        \Log::info("Subject ID: " . $id);
+        Log::info("=== DESTROY STUDY SUBJECT === ID: {$id}");
 
         try {
-            $subject = StudySubject::findOrFail($id);
-            $name    = $subject->name;
+            $subject        = StudySubject::findOrFail($id);
+            $name           = $subject->name;
+            $timetableCount = Timetable::where('study_subject_id', $id)->count();
 
-            \Log::info("Subject found: " . $name);
-
-            // Check if subject is being used in timetables
-            $timetableCount = \App\Models\Timetable::where('study_subject_id', $id)->count();
-            \Log::info("Timetable count: " . $timetableCount);
+            Log::info("Subject: {$name}, Timetable count: {$timetableCount}");
 
             if ($timetableCount > 0) {
-                \Log::warning("Subject is used in timetables, cannot delete");
                 return redirect()->route('academic-planner.study-subjects.index')
                     ->with('error', "Mata pelajaran {$name} tidak dapat dihapus karena masih digunakan dalam jadwal.");
             }
 
             $subject->delete();
-            \Log::info("Subject deleted successfully");
 
             return redirect()->route('academic-planner.study-subjects.index')
                 ->with('success', "Mata pelajaran {$name} berhasil dihapus.");
+
         } catch (\Exception $e) {
-            \Log::error("Error deleting subject: " . $e->getMessage());
+            Log::error("Error deleting subject: " . $e->getMessage());
             return redirect()->route('academic-planner.study-subjects.index')
                 ->with('error', "Terjadi kesalahan saat menghapus mata pelajaran: " . $e->getMessage());
         }
     }
 
-    // ──────────────────────────────────────────────
-    // TIMETABLES
-    // ──────────────────────────────────────────────
+    // =========================================================================
+    // TIMETABLES — CREATE
+    // =========================================================================
 
     public function createTimetable(Request $request): View
     {
         $studyGroups   = StudyGroup::where('is_active', true)->orderBy('grade')->orderBy('section')->get();
         $studySubjects = StudySubject::where('is_active', true)->orderBy('name')->get();
-        $teachers      = User::whereIn('role', ['kepala_sekolah', 'guru'])->where('is_active', true)->orderBy('name')->get();
+        $teachers      = User::whereIn('role', ['kepala_sekolah', 'guru'])
+                             ->where('is_active', true)
+                             ->orderBy('name')
+                             ->get();
         $selectedGroup = $request->get('study_group_id');
 
         return view('admin.academic-planner.create-timetable', compact('studyGroups', 'studySubjects', 'teachers', 'selectedGroup'));
     }
+
+    // =========================================================================
+    // TIMETABLES — STORE
+    // =========================================================================
 
     public function storeTimetable(Request $request): RedirectResponse
     {
@@ -251,7 +307,6 @@ class AcademicPlannerController extends Controller
             'notes'            => 'nullable|string|max:500',
         ]);
 
-        // Cek konflik jadwal
         if (Timetable::hasConflict(
             $validated['study_group_id'],
             $validated['day_of_week'],
@@ -268,36 +323,34 @@ class AcademicPlannerController extends Controller
             ->with('success', 'Jadwal berhasil ditambahkan.');
     }
 
+    // =========================================================================
+    // TIMETABLES — EDIT
+    // =========================================================================
+
     public function editTimetable(int $id): View
     {
         $timetable     = Timetable::with(['studyGroup', 'studySubject', 'teacher'])->findOrFail($id);
         $studyGroups   = StudyGroup::where('is_active', true)->orderBy('grade')->orderBy('section')->get();
         $studySubjects = StudySubject::where('is_active', true)->orderBy('name')->get();
-        $teachers      = User::whereIn('role', ['kepala_sekolah', 'guru'])->where('is_active', true)->orderBy('name')->get();
+        $teachers      = User::whereIn('role', ['kepala_sekolah', 'guru'])
+                             ->where('is_active', true)
+                             ->orderBy('name')
+                             ->get();
 
         return view('admin.academic-planner.edit-timetable', compact('timetable', 'studyGroups', 'studySubjects', 'teachers'));
     }
 
-    public function updateTimetable(Request $request, int $id): RedirectResponse
+    // =========================================================================
+    // TIMETABLES — UPDATE
+    // =========================================================================
+
+    public function updateTimetable(Request $request, int $id)
     {
+        Log::info('=== UPDATE TIMETABLE === ID: ' . $id);
+        Log::info('Request data:', $request->all());
+
         try {
-            // Debug: Log semua request data
-            \Log::info('=== UPDATE TIMETABLE DEBUG ===');
-            \Log::info('Request Method: ' . $request->method());
-            \Log::info('Request URL: ' . $request->fullUrl());
-            \Log::info('Request Headers:', $request->headers->all());
-            \Log::info('Request Data:', $request->all());
-            \Log::info('Request Files:', $request->allFiles());
-            \Log::info('Timetable ID: ' . $id);
-
-            // Cek CSRF token
-            if (!$request->has('_token')) {
-                \Log::error('CSRF token missing');
-                return response('<html><body><div class="error">CSRF token missing</div></body></html>', 419);
-            }
-
             $timetable = Timetable::findOrFail($id);
-            \Log::info('Timetable found:', $timetable->toArray());
 
             $validated = $request->validate([
                 'study_group_id'   => 'required|exists:study_groups,id',
@@ -312,79 +365,74 @@ class AcademicPlannerController extends Controller
                 'semester'         => 'required|in:1,2',
                 'notes'            => 'nullable|string|max:500',
             ], [
-                'study_group_id.required' => 'Kelas wajib diisi',
+                'study_group_id.required'   => 'Kelas wajib diisi',
                 'study_subject_id.required' => 'Mata pelajaran wajib diisi',
-                'teacher_id.required' => 'Guru wajib diisi',
-                'day_of_week.required' => 'Hari wajib diisi',
-                'start_time.required' => 'Jam mulai wajib diisi',
-                'end_time.required' => 'Jam selesai wajib diisi',
-                'session_type.required' => 'Sesi wajib diisi',
-                'academic_year.required' => 'Tahun ajaran wajib diisi',
-                'semester.required' => 'Semester wajib diisi',
+                'teacher_id.required'       => 'Guru wajib diisi',
+                'day_of_week.required'      => 'Hari wajib diisi',
+                'start_time.required'       => 'Jam mulai wajib diisi',
+                'end_time.required'         => 'Jam selesai wajib diisi',
+                'session_type.required'     => 'Sesi wajib diisi',
+                'academic_year.required'    => 'Tahun ajaran wajib diisi',
+                'semester.required'         => 'Semester wajib diisi',
             ]);
 
-            \Log::info('Validation passed:', $validated);
+            Log::info('Validation passed:', $validated);
 
-            // Cek konflik (kecuali dirinya sendiri) - DISABLED FOR TESTING
-            /*
-            if (Timetable::hasConflict(
-                $validated['study_group_id'],
-                $validated['day_of_week'],
-                $validated['start_time'],
-                $validated['end_time'],
-                $id
-            )) {
-                \Log::info('Conflict detected');
-                return response('<html><body><div class="error">Jadwal bentrok dengan jadwal lain di kelas yang sama.</div></body></html>', 422);
-            }
-            */
+            $timetable->update($validated);
 
-            // Update data
-            \Log::info('Before update - Current timetable:', $timetable->toArray());
-            \Log::info('Updating with data:', $validated);
+            Log::info('Timetable updated successfully');
 
-            $updateResult = $timetable->update($validated);
-
-            \Log::info('Update result: ' . ($updateResult ? 'SUCCESS' : 'FAILED'));
-            \Log::info('After update - Updated timetable:', $timetable->fresh()->toArray());
-
-            // Check if request is from modal (AJAX)
-            if ($request->has('ajax_request') || $request->ajax() || $request->wantsJson()) {
-                \Log::info('Returning JSON response');
+            // Respons AJAX / JSON
+            if ($request->ajax() || $request->wantsJson() || $request->has('ajax_request')) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Jadwal berhasil diperbarui.',
-                    'data' => $timetable->fresh()
+                    'data'    => $timetable->fresh(),
                 ]);
             }
 
-            \Log::info('Returning HTML response for iframe');
+            // Respons HTML untuk iframe
+            $html = '<html><body>'
+                  . '<div class="success">Jadwal berhasil diperbarui.</div>'
+                  . '<script>window.parent.postMessage({success:true,message:"Jadwal berhasil diperbarui."},"*");</script>'
+                  . '</body></html>';
 
-            // Return HTML response for iframe
-            $html = '<html><body><div class="success">Jadwal berhasil diperbarui.</div><script>window.parent.postMessage({success: true, message: "Jadwal berhasil diperbarui."}, "*");</script></body></html>';
-            return response($html)
-                ->header('Content-Type', 'text/html');
+            return response($html)->header('Content-Type', 'text/html');
+
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation error: ' . $e->getMessage());
-            \Log::error('Validation errors:', $e->errors());
+            Log::error('Validation error:', $e->errors());
 
-            $errorHtml = '<html><body><div class="error">Validation error:<ul>';
-            foreach ($e->errors()->all() as $error) {
-                $errorHtml .= '<li>' . htmlspecialchars($error) . '</li>';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+            }
+
+            $errorHtml = '<html><body><div class="error"><ul>';
+            foreach ($e->errors()->all() as $err) {
+                $errorHtml .= '<li>' . htmlspecialchars($err) . '</li>';
             }
             $errorHtml .= '</ul></div></body></html>';
 
-            return response($errorHtml, 422)
-                ->header('Content-Type', 'text/html');
-        } catch (\Exception $e) {
-            \Log::error('General error: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response($errorHtml, 422)->header('Content-Type', 'text/html');
 
-            $errorHtml = '<html><body><div class="error">Terjadi kesalahan: ' . htmlspecialchars($e->getMessage()) . '</div></body></html>';
-            return response($errorHtml, 500)
-                ->header('Content-Type', 'text/html');
+        } catch (\Exception $e) {
+            Log::error('Error updating timetable: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+
+            $errorHtml = '<html><body><div class="error">Terjadi kesalahan: '
+                       . htmlspecialchars($e->getMessage())
+                       . '</div></body></html>';
+
+            return response($errorHtml, 500)->header('Content-Type', 'text/html');
         }
     }
+
+    // =========================================================================
+    // TIMETABLES — DESTROY
+    // =========================================================================
 
     public function destroyTimetable(int $id): RedirectResponse
     {
@@ -394,5 +442,52 @@ class AcademicPlannerController extends Controller
 
         return redirect()->route('academic-planner.show-study-group', $groupId)
             ->with('success', 'Jadwal berhasil dihapus.');
+    }
+
+    // =========================================================================
+    // PRIVATE HELPER: SINKRONISASI STUDY_GROUP → TABEL KELAS
+    //
+    // Tabel `siswas` punya FK ke tabel `kelas`, bukan ke `study_groups`.
+    // Setiap kali study_group dibuat/diupdate, pastikan ada entri yang sama
+    // di tabel `kelas` dengan ID yang sama agar FK tidak pernah gagal.
+    // =========================================================================
+
+    private function syncToKelasTable(StudyGroup $group): void
+    {
+        $kelasName = $group->name
+            ?: ((string) $group->grade . ($group->section ?? ''));
+
+        // Ambil academic_year dari study_group jika ada, fallback otomatis
+        $tahunAjaran = (!empty($group->academic_year))
+            ? $group->academic_year
+            : $this->getDefaultAcademicYear();
+
+        Kelas::updateOrCreate(
+            ['id' => $group->id],
+            [
+                'nama'         => $kelasName,
+                'tingkat'      => (string) $group->grade,
+                'rombel'       => $group->section ?? null,
+                'tahun_ajaran' => $tahunAjaran,
+                'guru_id'      => $group->homeroom_teacher_id ?? null,
+            ]
+        );
+
+        Log::info("syncToKelasTable: study_group id={$group->id} nama={$kelasName} berhasil disinkron ke tabel kelas.");
+    }
+
+    // =========================================================================
+    // PRIVATE HELPER: TAHUN AJARAN DEFAULT OTOMATIS
+    // - Bulan Juli–Desember → tahun ini / tahun depan
+    // - Bulan Januari–Juni  → tahun lalu / tahun ini
+    // =========================================================================
+
+    private function getDefaultAcademicYear(): string
+    {
+        $bulan = now()->month;
+
+        return $bulan >= 7
+            ? now()->year . '/' . (now()->year + 1)
+            : (now()->year - 1) . '/' . now()->year;
     }
 }
