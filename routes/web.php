@@ -213,7 +213,7 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
     Route::get('/profil/edit', [GuruProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil',      [GuruProfilController::class, 'update'])->name('profil.update');
     
-    // Route::get('/jadwal-mengajar', fn() => view('guru.jadwal-mengajar.index'))->name('jadwal-mengajar');
+    Route::get('/jadwal-mengajar', fn() => view('guru.jadwal-mengajar.index'))->name('jadwal-mengajar');
     Route::get('/absensi-siswa',   fn() => view('guru.absensi-siswa.index'))->name('absensi-siswa');
     Route::get('/pengumuman',      fn() => view('guru.pengumuman.index'))->name('pengumuman');
 
