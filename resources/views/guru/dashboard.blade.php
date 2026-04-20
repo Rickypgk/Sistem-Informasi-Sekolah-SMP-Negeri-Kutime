@@ -23,6 +23,9 @@
             {{-- Siswa Berisiko --}}
             @include('guru.dashboard.at-risk-students')
 
+            {{-- JADWAL MENGAJAR HARI INI (Baru) --}}
+            @include('guru.dashboard.jadwal-mengajar')
+
         </div>
 
         {{-- Kolom kanan: Widget Pengumuman --}}
