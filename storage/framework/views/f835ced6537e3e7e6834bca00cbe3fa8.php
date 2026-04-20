@@ -13,16 +13,34 @@
                 Kelola jadwal kelas yang Anda ampu.
             </p>
         </div>
-        <button onclick="openModal('modalTambahJadwal')"
-            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600
-                       text-white text-xs font-semibold hover:bg-indigo-700
-                       active:scale-95 transition shadow-sm w-fit">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 4v16m8-8H4" />
-            </svg>
-            Tambah Jadwal
-        </button>
+        <div class="flex items-center gap-2">
+            
+            <button onclick="openModal('modalKelolaMapel')"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800
+                           border border-slate-200 dark:border-slate-700
+                           text-slate-700 dark:text-slate-200 text-xs font-semibold
+                           hover:bg-slate-50 dark:hover:bg-slate-700
+                           active:scale-95 transition shadow-sm w-fit">
+                <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168
+                             18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5
+                             16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5
+                             18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Mata Pelajaran
+            </button>
+            <button onclick="openModal('modalTambahJadwal')"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600
+                           text-white text-xs font-semibold hover:bg-indigo-700
+                           active:scale-95 transition shadow-sm w-fit">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4v16m8-8H4" />
+                </svg>
+                Tambah Jadwal
+            </button>
+        </div>
     </div>
 
     
@@ -146,7 +164,6 @@
                                 <?php echo e($tt->studySubject->name); ?>
 
                             </p>
-                            
                             <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded-md shrink-0
                                                  <?php echo e($tt->session_type === 'praktikum'
                                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
@@ -170,7 +187,6 @@
                         </div>
 
                         <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            
                             <span class="inline-flex items-center gap-0.5 text-[10px] font-medium
                                                  text-indigo-700 dark:text-indigo-300">
                                 <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor"
@@ -259,22 +275,395 @@
 
 
 <script id="jadwalData" type="application/json">
-    {
-        !!json_encode($allTimetables - > map(fn($t) => [
-            'id' => $t - > id,
-            'study_subject_id' => $t - > study_subject_id,
-            'study_group_id' => $t - > study_group_id,
-            'day_of_week' => $t - > day_of_week,
-            'start_time' => substr($t - > start_time, 0, 5),
-            'end_time' => substr($t - > end_time, 0, 5),
-            'room' => $t - > room,
-            'session_type' => $t - > session_type,
-            'academic_year' => $t - > academic_year,
-            'semester' => $t - > semester,
-            'notes' => $t - > notes,
-        ]) - > keyBy('id')) !!
-    }
+    <?php echo json_encode($allTimetables->map(fn($t) => [
+        'id'               => $t->id,
+        'study_subject_id' => $t->study_subject_id,
+        'study_group_id'   => $t->study_group_id,
+        'day_of_week'      => $t->day_of_week,
+        'start_time'       => substr($t->start_time, 0, 5),
+        'end_time'         => substr($t->end_time, 0, 5),
+        'room'             => $t->room,
+        'session_type'     => $t->session_type,
+        'academic_year'    => $t->academic_year,
+        'semester'         => $t->semester,
+        'notes'            => $t->notes,
+    ])->keyBy('id')); ?>
+
 </script>
+
+
+<script id="mapelData" type="application/json">
+    <?php echo json_encode($studySubjects->map(fn($s) => [
+        'id'          => $s->id,
+        'name'        => $s->name,
+        'code'        => $s->code,
+        'color'       => $s->color ?? '#6366f1',
+        'description' => $s->description ?? '',
+    ])->keyBy('id')); ?>
+
+</script>
+
+
+
+<div id="modalKelolaMapel"
+    class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+    role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        onclick="closeModal('modalKelolaMapel')"></div>
+
+    <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg
+                max-h-[92vh] flex flex-col animate-modal">
+
+        
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100
+                    dark:border-slate-700 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30
+                            flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477
+                                 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5
+                                 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477
+                                 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746
+                                 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                        Kelola Mata Pelajaran
+                    </h2>
+                    <p class="text-[10px] text-slate-400 mt-0.5">
+                        Tambah, edit, atau hapus mata pelajaran Anda
+                    </p>
+                </div>
+            </div>
+            <button onclick="closeModal('modalKelolaMapel')"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600
+                           hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        
+        <div class="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+
+            
+            <div id="daftarMapelList" class="space-y-2">
+                <?php $__empty_1 = true; $__currentLoopData = $studySubjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subj): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <div id="mapelRow_<?php echo e($subj->id); ?>"
+                    class="flex items-center gap-3 p-3 rounded-xl border border-slate-100
+                               dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20
+                               hover:bg-white dark:hover:bg-slate-700/30 transition group">
+                    
+                    <div class="w-3 h-3 rounded-full shrink-0 ring-2 ring-white dark:ring-slate-800"
+                        style="background:<?php echo e($subj->color ?? '#6366f1'); ?>"></div>
+                    
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
+                            <?php echo e($subj->name); ?>
+
+                        </p>
+                        <p class="text-[10px] text-slate-400"><?php echo e($subj->code); ?></p>
+                    </div>
+                    
+                    <div class="flex items-center gap-0.5 shrink-0">
+                        <button onclick="openEditMapel(<?php echo e($subj->id); ?>)"
+                            title="Edit"
+                            class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600
+                                           hover:bg-amber-50 dark:hover:bg-amber-900/30 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0
+                                             002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828
+                                             15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
+                        <button onclick="openDeleteMapel(<?php echo e($subj->id); ?>, '<?php echo e(addslashes($subj->name)); ?>')"
+                            title="Hapus"
+                            class="p-1.5 rounded-lg text-slate-400 hover:text-red-600
+                                           hover:bg-red-50 dark:hover:bg-red-900/30 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0
+                                             01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0
+                                             00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <div id="emptyMapelMsg"
+                    class="flex flex-col items-center justify-center py-8 text-slate-300 dark:text-slate-600">
+                    <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477
+                                 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5
+                                 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477
+                                 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746
+                                 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <p class="text-[10px]">Belum ada mata pelajaran</p>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            
+            <div class="flex items-center gap-2 pt-1">
+                <div class="flex-1 h-px bg-slate-100 dark:bg-slate-700"></div>
+                <span class="text-[10px] text-slate-400 font-medium">Tambah Baru</span>
+                <div class="flex-1 h-px bg-slate-100 dark:bg-slate-700"></div>
+            </div>
+
+            
+            <form id="formTambahMapel"
+                action="<?php echo e(route('guru.study-subject.store')); ?>"
+                method="POST"
+                class="space-y-3 bg-indigo-50/40 dark:bg-indigo-900/10 rounded-xl
+                           border border-indigo-100 dark:border-indigo-800/40 p-4">
+                <?php echo csrf_field(); ?>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
+                            Nama Mata Pelajaran <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="name" required maxlength="100"
+                            placeholder="cth: Matematika"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                                       px-3 py-2 text-xs focus:outline-none focus:ring-2
+                                       focus:ring-indigo-300 bg-white dark:bg-slate-700
+                                       dark:text-slate-200 transition">
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
+                            Kode <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="code" required maxlength="20"
+                            placeholder="cth: MTK"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                                       px-3 py-2 text-xs focus:outline-none focus:ring-2
+                                       focus:ring-indigo-300 bg-white dark:bg-slate-700
+                                       dark:text-slate-200 transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
+                            Warna Label
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" name="color" value="#6366f1"
+                                class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600
+                                           cursor-pointer p-0.5 bg-white dark:bg-slate-700">
+                            <span class="text-[10px] text-slate-400">Pilih warna penanda</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
+                            Deskripsi
+                        </label>
+                        <input type="text" name="description" maxlength="200"
+                            placeholder="Opsional"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                                       px-3 py-2 text-xs focus:outline-none focus:ring-2
+                                       focus:ring-indigo-300 bg-white dark:bg-slate-700
+                                       dark:text-slate-200 transition">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold
+                               hover:bg-indigo-700 active:scale-95 transition flex items-center
+                               justify-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4v16m8-8H4" />
+                    </svg>
+                    Simpan Mata Pelajaran
+                </button>
+            </form>
+        </div>
+
+        
+        <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-700
+                    bg-slate-50/50 dark:bg-slate-900/20 rounded-b-2xl shrink-0">
+            <button type="button" onclick="closeModal('modalKelolaMapel')"
+                class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600
+                           text-slate-600 dark:text-slate-400 text-xs font-medium
+                           hover:bg-white dark:hover:bg-slate-700 transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+<div id="modalEditMapel"
+    class="fixed inset-0 z-[60] hidden items-center justify-center p-4"
+    role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        onclick="closeModal('modalEditMapel')"></div>
+
+    <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm
+                animate-modal">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100
+                    dark:border-slate-700">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30
+                            flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0
+                                 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828
+                                 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                </div>
+                <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                    Edit Mata Pelajaran
+                </h2>
+            </div>
+            <button onclick="closeModal('modalEditMapel')"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600
+                           hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="px-5 py-4">
+            <form id="formEditMapel" method="POST" class="space-y-3">
+                <?php echo csrf_field(); ?> <?php echo method_field('PUT'); ?>
+
+                <div>
+                    <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                  uppercase tracking-wide mb-1">
+                        Nama Mata Pelajaran <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="name" id="editMapelName" required maxlength="100"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                                   px-3 py-2 text-xs focus:outline-none focus:ring-2
+                                   focus:ring-indigo-300 bg-white dark:bg-slate-700
+                                   dark:text-slate-200 transition">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
+                            Kode <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="code" id="editMapelCode" required maxlength="20"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                                       px-3 py-2 text-xs focus:outline-none focus:ring-2
+                                       focus:ring-indigo-300 bg-white dark:bg-slate-700
+                                       dark:text-slate-200 transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide mb-1">
+                            Warna Label
+                        </label>
+                        <input type="color" name="color" id="editMapelColor"
+                            class="w-full h-[34px] rounded-xl border border-slate-200
+                                       dark:border-slate-600 cursor-pointer p-0.5
+                                       bg-white dark:bg-slate-700">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                  uppercase tracking-wide mb-1">
+                        Deskripsi
+                    </label>
+                    <input type="text" name="description" id="editMapelDesc" maxlength="200"
+                        class="w-full rounded-xl border border-slate-200 dark:border-slate-600
+                                   px-3 py-2 text-xs focus:outline-none focus:ring-2
+                                   focus:ring-indigo-300 bg-white dark:bg-slate-700
+                                   dark:text-slate-200 transition">
+                </div>
+
+            </form>
+        </div>
+
+        <div class="flex gap-2 px-5 py-3.5 border-t border-slate-100 dark:border-slate-700
+                    bg-slate-50/50 dark:bg-slate-900/20 rounded-b-2xl">
+            <button type="button" onclick="closeModal('modalEditMapel')"
+                class="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600
+                           text-slate-600 dark:text-slate-400 text-xs font-medium
+                           hover:bg-white dark:hover:bg-slate-700 transition">
+                Batal
+            </button>
+            <button type="submit" form="formEditMapel"
+                class="flex-1 px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold
+                           hover:bg-amber-600 active:scale-95 transition">
+                Simpan Perubahan
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+<div id="modalHapusMapel"
+    class="fixed inset-0 z-[60] hidden items-center justify-center p-4"
+    role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        onclick="closeModal('modalHapusMapel')"></div>
+    <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl
+                w-full max-w-xs p-5 animate-modal text-center">
+        <div class="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-900/30
+                    flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732
+                         4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        </div>
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Hapus Mata Pelajaran?</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 mb-1 leading-relaxed">
+            <strong id="hapusMapelName" class="text-slate-700 dark:text-slate-300"></strong>
+            akan dihapus permanen.
+        </p>
+        <p class="text-[10px] text-red-500 mb-4">
+            Semua jadwal yang menggunakan mata pelajaran ini juga akan terpengaruh.
+        </p>
+        <form id="formHapusMapel" method="POST">
+            <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeModal('modalHapusMapel')"
+                    class="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600
+                               text-slate-600 dark:text-slate-400 text-xs font-medium
+                               hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                    Batal
+                </button>
+                <button type="submit"
+                    class="flex-1 px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-semibold
+                               hover:bg-red-700 active:scale-95 transition">
+                    Hapus
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
 
 <div id="modalTambahJadwal"
@@ -323,11 +712,23 @@
 
                 
                 <div>
-                    <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
-                                  uppercase tracking-wide mb-1">
-                        Mata Pelajaran <span class="text-red-500">*</span>
-                    </label>
-                    <select name="study_subject_id" required
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide">
+                            Mata Pelajaran <span class="text-red-500">*</span>
+                        </label>
+                        <button type="button"
+                            onclick="closeModal('modalTambahJadwal'); openModal('modalKelolaMapel')"
+                            class="text-[10px] text-indigo-500 hover:text-indigo-700 hover:underline
+                                       flex items-center gap-0.5 transition">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            Kelola
+                        </button>
+                    </div>
+                    <select name="study_subject_id" id="tambahJadwalSubject" required
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                    px-3 py-2 text-xs focus:outline-none focus:ring-2
                                    focus:ring-indigo-300 bg-white dark:bg-slate-700
@@ -341,7 +742,12 @@
                     </select>
                     <?php if($studySubjects->isEmpty()): ?>
                     <p class="text-[10px] text-amber-600 mt-1">
-                        Mata pelajaran belum tersedia. Hubungi admin.
+                        Belum ada mata pelajaran.
+                        <button type="button"
+                            onclick="closeModal('modalTambahJadwal'); openModal('modalKelolaMapel')"
+                            class="underline font-semibold">
+                            Tambah sekarang
+                        </button>
                     </p>
                     <?php endif; ?>
                 </div>
@@ -507,6 +913,7 @@
 </div>
 
 
+
 <div id="modalEditJadwal"
     class="fixed inset-0 z-50 hidden items-center justify-center p-4"
     role="dialog" aria-modal="true">
@@ -545,10 +952,24 @@
                 <?php echo csrf_field(); ?> <?php echo method_field('PUT'); ?>
 
                 <div>
-                    <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
-                                  uppercase tracking-wide mb-1">
-                        Mata Pelajaran <span class="text-red-500">*</span>
-                    </label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
+                                      uppercase tracking-wide">
+                            Mata Pelajaran <span class="text-red-500">*</span>
+                        </label>
+                        <button type="button"
+                            onclick="closeModal('modalEditJadwal'); openModal('modalKelolaMapel')"
+                            class="text-[10px] text-indigo-500 hover:text-indigo-700 hover:underline
+                                       flex items-center gap-0.5 transition">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0
+                                             002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828
+                                             15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Kelola
+                        </button>
+                    </div>
                     <select name="study_subject_id" id="editJadwalSubject" required
                         class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                    px-3 py-2 text-xs focus:outline-none focus:ring-2
@@ -693,6 +1114,7 @@
 </div>
 
 
+
 <div id="modalHapusJadwal"
     class="fixed inset-0 z-50 hidden items-center justify-center p-4"
     role="dialog" aria-modal="true">
@@ -732,6 +1154,7 @@
     </div>
 </div>
 
+
 <?php $__env->startPush('styles'); ?>
 <style>
     .animate-modal {
@@ -754,8 +1177,11 @@
 
 <?php $__env->startPush('scripts'); ?>
 <script>
+    /* ── Data ─────────────────────────────────────────────────── */
     const JADWAL_DATA = JSON.parse(document.getElementById('jadwalData').textContent);
+    let   MAPEL_DATA  = JSON.parse(document.getElementById('mapelData').textContent);
 
+    /* ── Modal helpers ────────────────────────────────────────── */
     function openModal(id) {
         document.getElementById(id).classList.remove('hidden');
         document.getElementById(id).classList.add('flex');
@@ -767,42 +1193,96 @@
         document.getElementById(id).classList.remove('flex');
         document.body.style.overflow = '';
     }
+
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape')
-            ['modalTambahJadwal', 'modalEditJadwal', 'modalHapusJadwal'].forEach(closeModal);
+        if (e.key === 'Escape') {
+            ['modalTambahJadwal','modalEditJadwal','modalHapusJadwal',
+             'modalKelolaMapel','modalEditMapel','modalHapusMapel'].forEach(closeModal);
+        }
     });
 
-    // Tambah jadwal dengan hari sudah terisi
+    /* ── Jadwal: Tambah dengan hari terisi ────────────────────── */
     function openTambahHari(hari) {
         document.getElementById('tambahJadwalHari').value = hari;
         openModal('modalTambahJadwal');
     }
 
-    // Edit jadwal
+    /* ── Jadwal: Edit ─────────────────────────────────────────── */
     function openEditJadwal(id) {
         const d = JADWAL_DATA[id];
         if (!d) return;
         document.getElementById('formEditJadwal').action =
             '<?php echo e(url("guru/jadwal-mengajar")); ?>/' + id;
-        document.getElementById('editJadwalSubject').value = d.study_subject_id ?? '';
-        document.getElementById('editJadwalGroup').value = d.study_group_id ?? '';
-        document.getElementById('editJadwalHari').value = d.day_of_week ?? '';
-        document.getElementById('editJadwalStart').value = d.start_time ?? '';
-        document.getElementById('editJadwalEnd').value = d.end_time ?? '';
-        document.getElementById('editJadwalRoom').value = d.room ?? '';
-        document.getElementById('editJadwalSession').value = d.session_type ?? 'teori';
-        document.getElementById('editJadwalYear').value = d.academic_year ?? '';
+        document.getElementById('editJadwalSubject').value  = d.study_subject_id ?? '';
+        document.getElementById('editJadwalGroup').value    = d.study_group_id ?? '';
+        document.getElementById('editJadwalHari').value     = d.day_of_week ?? '';
+        document.getElementById('editJadwalStart').value    = d.start_time ?? '';
+        document.getElementById('editJadwalEnd').value      = d.end_time ?? '';
+        document.getElementById('editJadwalRoom').value     = d.room ?? '';
+        document.getElementById('editJadwalSession').value  = d.session_type ?? 'teori';
+        document.getElementById('editJadwalYear').value     = d.academic_year ?? '';
         document.getElementById('editJadwalSemester').value = d.semester ?? '1';
-        document.getElementById('editJadwalNotes').value = d.notes ?? '';
+        document.getElementById('editJadwalNotes').value    = d.notes ?? '';
         openModal('modalEditJadwal');
     }
 
-    // Hapus jadwal
+    /* ── Jadwal: Hapus ────────────────────────────────────────── */
     function openDeleteJadwal(id, nama) {
         document.getElementById('hapusJadwalName').textContent = nama;
         document.getElementById('formHapusJadwal').action =
             '<?php echo e(url("guru/jadwal-mengajar")); ?>/' + id;
         openModal('modalHapusJadwal');
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       MATA PELAJARAN
+       ══════════════════════════════════════════════════════════ */
+
+    /* ── Mapel: Edit ──────────────────────────────────────────── */
+    function openEditMapel(id) {
+        const d = MAPEL_DATA[id];
+        if (!d) return;
+        document.getElementById('formEditMapel').action =
+            '<?php echo e(url("guru/study-subject")); ?>/' + id;
+        document.getElementById('editMapelName').value  = d.name ?? '';
+        document.getElementById('editMapelCode').value  = d.code ?? '';
+        document.getElementById('editMapelColor').value = d.color ?? '#6366f1';
+        document.getElementById('editMapelDesc').value  = d.description ?? '';
+        openModal('modalEditMapel');
+    }
+
+    /* ── Mapel: Hapus ─────────────────────────────────────────── */
+    function openDeleteMapel(id, nama) {
+        document.getElementById('hapusMapelName').textContent = nama;
+        document.getElementById('formHapusMapel').action =
+            '<?php echo e(url("guru/study-subject")); ?>/' + id;
+        openModal('modalHapusMapel');
+    }
+
+    /* ── Sync dropdown mata pelajaran setelah operasi AJAX/reload */
+    /* Jika Anda menggunakan full-page reload, tidak perlu fungsi ini.
+       Namun jika ingin update DOM tanpa reload, gunakan fungsi di bawah. */
+
+    /**
+     * Refresh semua <select> mata pelajaran di halaman
+     * Dipanggil setelah AJAX berhasil tambah/edit/hapus mapel.
+     * (Opsional – hanya jika Anda mengimplementasikan AJAX.)
+     */
+    function refreshMapelDropdowns(newList) {
+        // newList = array of {id, name, code}
+        const selectors = ['#tambahJadwalSubject', '#editJadwalSubject'];
+        selectors.forEach(sel => {
+            const el = document.querySelector(sel);
+            if (!el) return;
+            const current = el.value;
+            // Hapus semua option kecuali placeholder
+            while (el.options.length > 1) el.remove(1);
+            newList.forEach(s => {
+                const opt = new Option(`${s.name} (${s.code})`, s.id);
+                el.add(opt);
+            });
+            el.value = current; // pertahankan pilihan sebelumnya bila masih ada
+        });
     }
 </script>
 <?php $__env->stopPush(); ?>
