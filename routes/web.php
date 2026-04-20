@@ -212,6 +212,7 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
     Route::get('/profil',      [GuruProfilController::class, 'show'])->name('profil');
     Route::get('/profil/edit', [GuruProfilController::class, 'edit'])->name('profil.edit');
     Route::put('/profil',      [GuruProfilController::class, 'update'])->name('profil.update');
+    
     // Route::get('/jadwal-mengajar', fn() => view('guru.jadwal-mengajar.index'))->name('jadwal-mengajar');
     Route::get('/absensi-siswa',   fn() => view('guru.absensi-siswa.index'))->name('absensi-siswa');
     Route::get('/pengumuman',      fn() => view('guru.pengumuman.index'))->name('pengumuman');
@@ -229,11 +230,22 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
     Route::put('jadwal-mengajar/{jadwalMengajar}',    [JadwalMengajarController::class, 'update'])->name('jadwal-mengajar.update');
     Route::delete('jadwal-mengajar/{jadwalMengajar}', [JadwalMengajarController::class, 'destroy'])->name('jadwal-mengajar.destroy');
 
-    // Jadwal Mengajar
-    Route::resource('/jadwal-mengajar', App\Http\Controllers\Guru\JadwalMengajarController::class)->names('guru.jadwal-mengajar.store');
+    // ─────────────────────────────────────────────────────────────
+    // PERBAIKAN ROUTE RESOURCE (INI YANG MENYEBABKAN ERROR)
+    // ─────────────────────────────────────────────────────────────
+    Route::resource('jadwal-mengajar', App\Http\Controllers\Guru\JadwalMengajarController::class)
+         ->names([
+             'index'   => 'jadwal-mengajar.index',
+             'store'   => 'jadwal-mengajar.store',     // ← Ini yang diperbaiki
+             'update'  => 'jadwal-mengajar.update',
+             'destroy' => 'jadwal-mengajar.destroy',
+         ])
+         ->only(['index', 'store', 'update', 'destroy']);
 
     // Mata Pelajaran (oleh guru sendiri)
-    Route::resource('study-subject', App\Http\Controllers\Guru\StudySubjectController::class)->names('study-subject')->only(['store', 'update', 'destroy']);
+    Route::resource('study-subject', App\Http\Controllers\Guru\StudySubjectController::class)
+         ->names('study-subject')
+         ->only(['store', 'update', 'destroy']);
 });
 
 // =================================================================
