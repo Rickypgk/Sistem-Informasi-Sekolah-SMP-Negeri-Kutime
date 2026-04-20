@@ -15,6 +15,10 @@ class Kelas extends Model
         'tingkat',
         'tahun_ajaran',
         'guru_id',
+        'tahun_ajaran',   // ← tahun ajaran
+        'semester',       // ← semester (1 atau 2)
+        'guru_id',        // ← wali kelas (FK ke users)
+        'ruang', 
     ];
 
     /** Wali kelas → relasi ke tabel gurus */
