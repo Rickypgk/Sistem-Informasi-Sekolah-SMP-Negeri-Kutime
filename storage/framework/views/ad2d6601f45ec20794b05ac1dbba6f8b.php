@@ -28,7 +28,7 @@
             <button onclick="openModal('modalTambahKelas')"
                     class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600
                            text-white text-xs font-semibold hover:bg-indigo-700
-                           active:scale-95 transition shadow-sm w-fit">
+                           active:scale-95 transition shadow-sm">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M12 4v16m8-8H4"/>
@@ -53,6 +53,7 @@
             </p>
         </div>
     <?php endif; ?>
+
     <?php if(session('error')): ?>
         <div class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-50
                     dark:bg-red-900/20 border border-red-100 dark:border-red-800">
@@ -69,6 +70,23 @@
         </div>
     <?php endif; ?>
 
+    <?php if($errors->any()): ?>
+        <div class="px-3.5 py-2.5 rounded-xl bg-red-50 dark:bg-red-900/20
+                    border border-red-100 dark:border-red-800">
+            <p class="text-[10px] font-bold text-red-600 dark:text-red-400 mb-1">
+                Terdapat kesalahan input:
+            </p>
+            <ul class="space-y-0.5">
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li class="text-[10px] text-red-600 dark:text-red-400 list-disc ml-4">
+                        <?php echo e($error); ?>
+
+                    </li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
     
     <div class="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-indigo-50
                 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800">
@@ -78,13 +96,12 @@
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         <p class="text-[10px] text-indigo-700 dark:text-indigo-300 leading-relaxed">
-            Data kelas di halaman ini tersinkron langsung dengan
+            Data kelas tersinkron dengan
             <a href="<?php echo e(route('admin.academic-planner.index')); ?>"
                class="font-semibold underline underline-offset-2">Data Akademik</a>
             dan
             <a href="<?php echo e(route('admin.users.index')); ?>"
                class="font-semibold underline underline-offset-2">Kelola User</a>.
-            Kelas yang ditambah, diedit, atau dihapus di sini akan otomatis tercermin di sana.
         </p>
     </div>
 
@@ -97,7 +114,7 @@
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
             </svg>
             <input type="text" id="searchInput"
-                   placeholder="Cari kelas, wali kelas..."
+                   placeholder="Cari kelas, wali kelas, ruang..."
                    class="w-full pl-8 pr-4 py-2 rounded-xl border border-slate-200
                           dark:border-slate-600 bg-white dark:bg-slate-800 text-xs
                           focus:outline-none focus:ring-2 focus:ring-indigo-300
@@ -149,7 +166,9 @@
                             Wali Kelas
                         </th>
                         <th class="px-3 py-2.5 text-[10px] font-semibold text-slate-500
-                                   dark:text-slate-400 uppercase tracking-wide">Ruang</th>
+                                   dark:text-slate-400 uppercase tracking-wide min-w-[80px]">
+                            Ruang
+                        </th>
                         <th class="px-3 py-2.5 text-[10px] font-semibold text-slate-500
                                    dark:text-slate-400 uppercase tracking-wide text-center">
                             Jadwal
@@ -167,8 +186,7 @@
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
 
                     <?php $__empty_1 = true; $__currentLoopData = $kelas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $k): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20
-                                   transition-colors searchable-row"
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors searchable-row"
                             data-semester="<?php echo e($k->semester); ?>"
                             data-tingkat="<?php echo e($k->grade); ?>">
 
@@ -203,8 +221,7 @@
                             
                             <td class="px-3 py-2.5">
                                 <?php if($k->semester): ?>
-                                    <span class="inline-flex px-1.5 py-0.5 rounded-lg text-[10px]
-                                                 font-semibold
+                                    <span class="inline-flex px-1.5 py-0.5 rounded-lg text-[10px] font-semibold
                                                  <?php echo e($k->semester == 1
                                                     ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800'
                                                     : 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-100 dark:border-violet-800'); ?>">
@@ -217,7 +234,7 @@
                             </td>
 
                             
-                            <td class="px-3 py-2.5 text-[10px] text-slate-600 dark:text-slate-400">
+                            <td class="px-3 py-2.5 text-[10px] text-slate-600 dark:text-slate-400 whitespace-nowrap">
                                 <?php echo e($k->academic_year ?? '—'); ?>
 
                             </td>
@@ -226,9 +243,8 @@
                             <td class="px-3 py-2.5">
                                 <?php if($k->homeroomTeacher): ?>
                                     <div class="flex items-center gap-2">
-                                        <div class="w-6 h-6 rounded-lg bg-indigo-100
-                                                    dark:bg-indigo-900/40 flex items-center
-                                                    justify-center text-indigo-600
+                                        <div class="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-900/40
+                                                    flex items-center justify-center text-indigo-600
                                                     dark:text-indigo-400 text-[10px] font-bold shrink-0">
                                             <?php echo e(strtoupper(substr($k->homeroomTeacher->name, 0, 1))); ?>
 
@@ -240,8 +256,8 @@
                                         </span>
                                     </div>
                                 <?php else: ?>
-                                    <span class="text-[10px] text-slate-300 dark:text-slate-600">
-                                        — Belum ditentukan
+                                    <span class="text-[10px] text-slate-300 dark:text-slate-600 italic">
+                                        Belum ditentukan
                                     </span>
                                 <?php endif; ?>
                             </td>
@@ -255,11 +271,11 @@
                             
                             <td class="px-3 py-2.5 text-center">
                                 <a href="<?php echo e(route('admin.academic-planner.study-group.show', $k->id)); ?>"
-                                   class="inline-flex items-center justify-center
-                                          min-w-[1.6rem] h-5 px-1.5 rounded-full text-[10px] font-semibold
+                                   class="inline-flex items-center justify-center min-w-[1.6rem] h-5 px-1.5
+                                          rounded-full text-[10px] font-semibold
                                           bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30
                                           dark:text-indigo-300 hover:bg-indigo-100 transition">
-                                    <?php echo e($k->timetables_count ?? ($k->timetables ? $k->timetables->count() : 0)); ?>
+                                    <?php echo e($k->timetables_count ?? 0); ?>
 
                                 </a>
                             </td>
@@ -269,16 +285,15 @@
                                 <?php if($k->is_active): ?>
                                     <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5
                                                  rounded-full text-[10px] font-semibold
-                                                 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30
-                                                 dark:text-emerald-300">
+                                                 bg-emerald-50 text-emerald-700
+                                                 dark:bg-emerald-900/30 dark:text-emerald-300">
                                         <span class="w-1 h-1 rounded-full bg-emerald-500 inline-block"></span>
                                         Aktif
                                     </span>
                                 <?php else: ?>
                                     <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5
                                                  rounded-full text-[10px] font-semibold
-                                                 bg-slate-100 text-slate-500 dark:bg-slate-700
-                                                 dark:text-slate-400">
+                                                 bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400">
                                         <span class="w-1 h-1 rounded-full bg-slate-400 inline-block"></span>
                                         Nonaktif
                                     </span>
@@ -290,26 +305,23 @@
                                 <div class="flex items-center justify-center gap-0.5">
                                     <a href="<?php echo e(route('admin.academic-planner.study-group.show', $k->id)); ?>"
                                        title="Lihat Jadwal"
-                                       class="p-1.5 rounded-lg text-slate-400
-                                              hover:text-blue-600 hover:bg-blue-50
-                                              dark:hover:text-blue-400 dark:hover:bg-blue-900/30
-                                              transition">
+                                       class="p-1.5 rounded-lg text-slate-400 hover:text-blue-600
+                                              hover:bg-blue-50 dark:hover:text-blue-400
+                                              dark:hover:bg-blue-900/30 transition">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                              viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                   stroke-width="2"
-                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458
-                                                     12C3.732 7.943 7.523 5 12 5c4.478 0 8.268
-                                                     2.943 9.542 7-1.274 4.057-5.064 7-9.542
-                                                     7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732
+                                                     7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542
+                                                     7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                     </a>
                                     <button onclick="openEditKelasModal(<?php echo e($k->id); ?>)"
                                             title="Edit Kelas"
-                                            class="p-1.5 rounded-lg text-slate-400
-                                                   hover:text-amber-600 hover:bg-amber-50
-                                                   dark:hover:text-amber-400 dark:hover:bg-amber-900/30
-                                                   transition">
+                                            class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600
+                                                   hover:bg-amber-50 dark:hover:text-amber-400
+                                                   dark:hover:bg-amber-900/30 transition">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                              viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -321,10 +333,9 @@
                                     </button>
                                     <button onclick="openDeleteModal(<?php echo e($k->id); ?>, '<?php echo e(addslashes($k->name)); ?>')"
                                             title="Hapus Kelas"
-                                            class="p-1.5 rounded-lg text-slate-400
-                                                   hover:text-red-600 hover:bg-red-50
-                                                   dark:hover:text-red-400 dark:hover:bg-red-900/30
-                                                   transition">
+                                            class="p-1.5 rounded-lg text-slate-400 hover:text-red-600
+                                                   hover:bg-red-50 dark:hover:text-red-400
+                                                   dark:hover:bg-red-900/30 transition">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                              viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -358,11 +369,8 @@
                                             Belum ada data kelas
                                         </p>
                                         <p class="text-[10px] mt-0.5 text-slate-400">
-                                            Gunakan tombol
-                                            <strong class="text-slate-600 dark:text-slate-300">
-                                                + Tambah Kelas
-                                            </strong>
-                                            untuk menambahkan kelas.
+                                            Gunakan tombol <strong class="text-slate-600 dark:text-slate-300">
+                                            + Tambah Kelas</strong> untuk menambahkan.
                                         </p>
                                     </div>
                                 </div>
@@ -378,19 +386,22 @@
 </div>
 
 
+
 <script id="kelasData" type="application/json">
-<?php echo json_encode($kelas->map(fn($k) => [
-    'id'                  => $k->id,
-    'name'                => $k->name,
-    'grade'               => $k->grade,
-    'section'             => $k->section,
-    'academic_year'       => $k->academic_year,
-    'semester'            => $k->semester,
-    'homeroom_teacher_id' => $k->homeroom_teacher_id,
-    'room'                => $k->room,
-    'is_active'           => $k->is_active,
-    'capacity'            => $k->capacity,
-])->keyBy('id')); ?>
+<?php echo json_encode(
+    $kelas->map(fn($k) => [
+        'id'                  => $k->id,
+        'name'                => $k->name,
+        'grade'               => (string) $k->grade,
+        'section'             => $k->section        ?? '',
+        'academic_year'       => $k->academic_year  ?? '',
+        'semester'            => (string) ($k->semester ?? ''),
+        'homeroom_teacher_id' => $k->homeroom_teacher_id ? (string) $k->homeroom_teacher_id : '',
+        'room'                => $k->room            ?? '',
+        'is_active'           => (bool) $k->is_active,
+        'capacity'            => $k->capacity        ?? 30,
+    ])->keyBy('id')
+); ?>
 
 </script>
 
@@ -412,6 +423,7 @@
 
 <?php $__env->startPush('scripts'); ?>
 <script>
+// ── Data kelas dari server ────────────────────────────────────────────────────
 const KELAS_DATA = JSON.parse(document.getElementById('kelasData').textContent);
 
 /* ── Modal helpers ── */
@@ -422,6 +434,7 @@ function openModal(id) {
     el.classList.add('flex');
     document.body.style.overflow = 'hidden';
 }
+
 function closeModal(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -429,47 +442,58 @@ function closeModal(id) {
     el.classList.remove('flex');
     document.body.style.overflow = '';
 }
+
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-        ['modalTambahKelas','modalEditKelas','modalHapusKelas'].forEach(closeModal);
+        ['modalTambahKelas', 'modalEditKelas', 'modalHapusKelas'].forEach(closeModal);
     }
 });
 
-/* ── Buka modal edit — isi semua field termasuk semester, tahun ajaran, ruang ── */
+// ── Buka modal edit — isi SEMUA field termasuk semester, tahun ajaran, ruang ──
 function openEditKelasModal(kelasId) {
     const d = KELAS_DATA[kelasId];
-    if (!d) return;
+    if (!d) {
+        alert('Data kelas tidak ditemukan.');
+        return;
+    }
 
-    // Field utama
-    document.getElementById('editKelasName').value        = d.name          ?? '';
-    document.getElementById('editKelasGrade').value       = d.grade         ?? '';
-    document.getElementById('editKelasSection').value     = d.section       ?? '';
-    document.getElementById('editKelasAcademicYear').value= d.academic_year ?? '';
-    document.getElementById('editKelasSemester').value    = d.semester      ?? '';
-    document.getElementById('editKelasRoom').value        = d.room          ?? '';
-    document.getElementById('editKelasCapacity').value    = d.capacity      ?? 30;
-    document.getElementById('editKelasIsActive').checked  = !!d.is_active;
+    // Helper: set value atau fallback ke string kosong
+    const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = (val !== null && val !== undefined) ? String(val) : '';
+    };
 
-    // Wali kelas
-    const waliEl = document.getElementById('editKelasHomeroomTeacher');
-    if (waliEl) waliEl.value = d.homeroom_teacher_id ?? '';
+    const setCheck = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!val;
+    };
 
-    // Action form
+    // ── Isi semua field ──────────────────────────────────────────
+    set('editKelasName',            d.name);
+    set('editKelasGrade',           d.grade);
+    set('editKelasSection',         d.section);
+    set('editKelasAcademicYear',    d.academic_year);   // ← FIELD UTAMA YG SERING HILANG
+    set('editKelasSemester',        d.semester);        // ← FIELD UTAMA YG SERING HILANG
+    set('editKelasRoom',            d.room);            // ← FIELD UTAMA YG SERING HILANG
+    set('editKelasCapacity',        d.capacity);
+    set('editKelasHomeroomTeacher', d.homeroom_teacher_id);
+    setCheck('editKelasIsActive',   d.is_active);
+
+    // ── Set action form ke URL edit yang benar ───────────────────
     document.getElementById('formEditKelas').action =
-        '<?php echo e(url("admin/kelas")); ?>/' + kelasId;
+        '/admin/kelas/' + kelasId;
 
     openModal('modalEditKelas');
 }
 
-/* ── Buka modal hapus ── */
+// ── Buka modal hapus ──────────────────────────────────────────────────────────
 function openDeleteModal(kelasId, kelasNama) {
     document.getElementById('deleteKelasName').textContent = kelasNama;
-    document.getElementById('formHapusKelas').action =
-        '<?php echo e(url("admin/kelas")); ?>/' + kelasId;
+    document.getElementById('formHapusKelas').action = '/admin/kelas/' + kelasId;
     openModal('modalHapusKelas');
 }
 
-/* ── Search & filter ── */
+// ── Search & filter ───────────────────────────────────────────────────────────
 function filterRows() {
     const q   = (document.getElementById('searchInput')?.value ?? '').toLowerCase();
     const sem = document.getElementById('filterSemester')?.value ?? '';
@@ -487,7 +511,7 @@ document.getElementById('searchInput')?.addEventListener('input', filterRows);
 document.getElementById('filterSemester')?.addEventListener('change', filterRows);
 document.getElementById('filterTingkat')?.addEventListener('change', filterRows);
 
-/* ── Buka modal tambah jika ada validation error ── */
+// ── Auto-buka modal tambah jika ada validation error ─────────────────────────
 <?php if($errors->any()): ?>
     document.addEventListener('DOMContentLoaded', () => openModal('modalTambahKelas'));
 <?php endif; ?>

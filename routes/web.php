@@ -157,7 +157,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         Route::get('/study-group/{id}', [AcademicPlannerController::class, 'showStudyGroup'])->name('study-group.show');
         Route::get('/study-group/{id}', [AcademicPlannerController::class, 'showStudyGroup'])->name('show-study-group');
         Route::get('/study-group/{id}', [AcademicPlannerController::class, 'show'])->name('study-group.show');
-        Route::get('study-group/{id}', [AcademicPlannerController::class, 'show'])->name('admin.academic-planner.study-group.show');
+        Route::get('/study-group/{id}', [AcademicPlannerController::class, 'show'])->name('admin.academic-planner.study-group.show');
 
         // ── Study Subjects ─────────────────────────
         Route::prefix('study-subjects')->name('study-subjects.')->group(function () {
