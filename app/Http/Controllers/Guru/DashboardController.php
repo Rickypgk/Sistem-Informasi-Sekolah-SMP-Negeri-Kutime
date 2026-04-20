@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pengumuman;
 use App\Models\Siswa;
 use App\Models\AbsensiSiswa;
+use App\Models\Timetable;           // Model jadwal mengajar
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 
@@ -13,7 +14,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. Pengumuman untuk widget dashboard (tetap sama)
+        // Pengumuman untuk widget
         $widgetPengumuman = Pengumuman::where('is_active', 1)
             ->where('show_di_dashboard', 1)
             ->whereIn('target_audience', ['guru', 'semua'])
@@ -21,11 +22,10 @@ class DashboardController extends Controller
             ->limit(4)
             ->get();
 
-        // Ambil data guru yang sedang login
-        $guru = Auth::user()->guru;
+        $guru = Auth::user();
 
-        // Jika guru belum ditugaskan sebagai wali kelas
-        if (!$guru || !$guru->kelas_id) {
+        // Jika tidak ada relasi guru atau belum punya kelas
+        if (!$guru || !$guru->guru || !$guru->guru->kelas_id) {
             return view('guru.dashboard', compact('widgetPengumuman'))
                 ->with([
                     'totalSiswa'       => 0,
@@ -34,21 +34,20 @@ class DashboardController extends Controller
                     'siswaRisiko'      => 0,
                     'chartKehadiran'   => [0, 0, 0, 0, 0, 0, 0],
                     'siswaBerisiko'    => collect(),
+                    'jadwalHariIni'    => collect(),   // Tambahan baru
                 ]);
         }
 
-        $kelasId = $guru->kelas_id;
+        $guruModel = $guru->guru;
+        $kelasId = $guruModel->kelas_id;
 
-        // Ambil semua ID siswa di kelas wali tersebut
         $siswaIds = Siswa::where('kelas_id', $kelasId)->pluck('id');
 
-        // 2. Total siswa di kelas
+        // === Data Lama (Performance, Kehadiran, dll) ===
         $totalSiswa = $siswaIds->count();
 
-        // 3. Bulan berjalan
         $bulanIni = Carbon::now()->startOfMonth();
 
-        // 4. Hitung persentase kehadiran bulan ini
         $totalHariEfektif = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
             ->whereDate('tanggal', '>=', $bulanIni)
             ->distinct('tanggal')
@@ -63,11 +62,9 @@ class DashboardController extends Controller
             ? round(($hadirBulanIni / ($totalHariEfektif * $totalSiswa)) * 100, 1)
             : 0;
 
-        // 5. Rata-rata nilai kelas (placeholder — sesuaikan dengan tabel nilai Anda)
-        $rataNilai = 78.5; // GANTI DENGAN QUERY REAL, contoh:
-        // $rataNilai = Nilai::whereIn('siswa_id', $siswaIds)->avg('nilai_akhir') ?? 0;
+        $rataNilai = 78.5; // Ganti dengan query real jika ada tabel nilai
 
-        // 6. Siswa berisiko: kehadiran <75% ATAU terlambat >3 kali
+        // Siswa Berisiko
         $siswaBerisiko = collect();
         $siswaRisiko = 0;
 
@@ -76,7 +73,6 @@ class DashboardController extends Controller
                 ->with(['user'])
                 ->get()
                 ->map(function ($siswa) use ($bulanIni) {
-                    // Hitung persentase kehadiran
                     $hadir = AbsensiSiswa::where('siswa_id', $siswa->id)
                         ->whereDate('tanggal', '>=', $bulanIni)
                         ->where('status', 'hadir')
@@ -88,49 +84,47 @@ class DashboardController extends Controller
                         ->count('tanggal') ?: 1;
 
                     $siswa->kehadiran = round(($hadir / $totalHariSiswa) * 100, 1);
-
-                    // Hitung jumlah TERLAMBAT bulan ini
                     $siswa->terlambat_count = AbsensiSiswa::where('siswa_id', $siswa->id)
                         ->whereDate('tanggal', '>=', $bulanIni)
-                        ->where('status', 'terlambat') // asumsi kolom status sudah punya 'terlambat'
+                        ->where('status', 'terlambat')
                         ->count();
 
-                    // Nilai rata-rata (placeholder — ganti dengan query real jika ada tabel nilai)
                     $siswa->nilai_rata = 75.0;
 
                     return $siswa;
                 })
-                ->filter(function ($s) {
-                    // Siswa dianggap berisiko jika:
-                    // - Kehadiran < 75% ATAU
-                    // - Terlambat lebih dari 3 kali
-                    return $s->kehadiran < 75 || $s->terlambat_count > 3;
-                })
-                ->sortByDesc('terlambat_count') // Prioritas: yang paling sering terlambat di atas
-                ->take(8); // Maksimal 8 siswa ditampilkan di dashboard
+                ->filter(fn($s) => $s->kehadiran < 75 || $s->terlambat_count > 3)
+                ->sortByDesc('terlambat_count')
+                ->take(8);
 
             $siswaRisiko = $siswaBerisiko->count();
         }
 
-        // 7. Chart kehadiran 7 hari terakhir
+        // Chart Kehadiran 7 Hari Terakhir
         $chartKehadiran = [];
         for ($i = 6; $i >= 0; $i--) {
             $tgl = Carbon::today()->subDays($i);
-
             $hadir = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
                 ->whereDate('tanggal', $tgl)
                 ->where('status', 'hadir')
                 ->count();
-
             $totalHari = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
                 ->whereDate('tanggal', $tgl)
                 ->count();
-
             $pct = $totalHari > 0 ? round(($hadir / $totalHari) * 100, 0) : 0;
             $chartKehadiran[] = $pct;
         }
 
-        // Kirim semua data ke view dashboard
+        // === JADWAL MENGAJAR HARI INI (Baru) ===
+        $hariIni = Carbon::now()->locale('id')->translatedFormat('l'); // Senin, Selasa, dst.
+
+        $jadwalHariIni = Timetable::with(['studySubject', 'studyGroup'])
+            ->where('teacher_id', $guru->id)
+            ->where('day_of_week', $hariIni)
+            ->orderBy('start_time')
+            ->get();
+
+        // Kirim ke view
         return view('guru.dashboard', compact(
             'widgetPengumuman',
             'totalSiswa',
@@ -138,7 +132,8 @@ class DashboardController extends Controller
             'rataNilai',
             'siswaRisiko',
             'chartKehadiran',
-            'siswaBerisiko'
+            'siswaBerisiko',
+            'jadwalHariIni'          // Data jadwal hari ini
         ));
     }
 }
