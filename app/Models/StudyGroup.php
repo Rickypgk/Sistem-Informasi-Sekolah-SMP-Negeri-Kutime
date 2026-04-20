@@ -34,7 +34,6 @@ class StudyGroup extends Model
     ];
 
         protected $table = 'study_groups';
- 
 
     // Relasi ke wali kelas
     public function homeroomTeacher(): BelongsTo
