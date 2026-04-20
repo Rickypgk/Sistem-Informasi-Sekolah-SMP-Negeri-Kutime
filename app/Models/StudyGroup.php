@@ -13,8 +13,25 @@ class StudyGroup extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'grade', 'section', 'capacity',
-        'homeroom_teacher_id', 'room', 'description', 'is_active',
+        'name', 
+        'grade', 
+        'section', 
+        'capacity',
+        'homeroom_teacher_id', 
+        'room', 
+        'description', 
+        'is_active',
+        'name',
+        'grade',
+        'section',
+        'homeroom_teacher_id',
+        'room',           // ← ruang kelas
+        'academic_year',  // ← tahun ajaran
+        'semester',       // ← semester
+        'capacity',
+        'is_active',
+        'description',
+        'notes',
     ];
 
     protected $casts = [
@@ -31,17 +48,7 @@ class StudyGroup extends Model
      * Laravel akan diam-diam mengabaikan field tersebut.
      */
     protected $fillable = [
-        'name',
-        'grade',
-        'section',
-        'homeroom_teacher_id',
-        'room',           // ← ruang kelas
-        'academic_year',  // ← tahun ajaran
-        'semester',       // ← semester
-        'capacity',
-        'is_active',
-        'description',
-        'notes',
+        
     ];
  
     protected $casts = [
