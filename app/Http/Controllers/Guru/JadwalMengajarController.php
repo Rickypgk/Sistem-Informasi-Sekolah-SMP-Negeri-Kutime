@@ -97,7 +97,10 @@ class JadwalMengajarController extends Controller
      */
     public function update(Request $request, Timetable $jadwalMengajar)
     {
-    
+        // Pastikan hanya pemilik yang bisa edit
+        if ($jadwalMengajar->teacher_id !== Auth::id()) {
+            abort(403);
+        }
 
         // Pastikan guru hanya bisa edit jadwalnya sendiri
         abort_unless($jadwalMengajar->teacher_id === Auth::id(), 403);
