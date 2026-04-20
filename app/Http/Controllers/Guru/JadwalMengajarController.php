@@ -83,6 +83,11 @@ class JadwalMengajarController extends Controller
             'teacher_id' => Auth::id(),
         ]));
 
+                // Opsional: kaitkan ke guru yang sedang login
+        $data['teacher_id'] = Auth::id(); // sesuaikan dengan kolom di tabel Anda
+
+        StudySubject::create($data);
+        
         return redirect()->route('guru.jadwal-mengajar')
             ->with('success', 'Jadwal berhasil ditambahkan.');
     }
