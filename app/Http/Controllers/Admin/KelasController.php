@@ -36,8 +36,6 @@ class KelasController extends Controller
 
     // =========================================================================
     // STORE — simpan kelas baru
-    // Setelah simpan ke study_groups, otomatis sinkron ke tabel `kelas`
-    // agar FK siswas.kelas_id terpenuhi
     // =========================================================================
 
     public function store(Request $request)
@@ -46,8 +44,8 @@ class KelasController extends Controller
             'name'                => 'required|string|max:50',
             'grade'               => 'required|in:7,8,9',
             'section'             => 'nullable|string|max:10',
-            'academic_year'       => ['required', 'string', 'max:9', 'regex:/^\d{4}\/\d{4}$/'],
-            'semester'            => 'required|in:1,2',
+            'academic_year'       => ['nullable', 'string', 'max:9', 'regex:/^\d{4}\/\d{4}$/'],
+            'semester'            => 'nullable|in:1,2',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'room'                => 'nullable|string|max:50',
             'capacity'            => 'nullable|integer|min:1|max:60',
@@ -60,8 +58,6 @@ class KelasController extends Controller
                 'name'                => $validated['name'],
                 'grade'               => $validated['grade'],
                 'section'             => $validated['section']             ?? null,
-                'academic_year'       => $validated['academic_year'],
-                'semester'            => $validated['semester'],
                 'homeroom_teacher_id' => $validated['homeroom_teacher_id'] ?? null,
                 'room'                => $validated['room']                ?? null,
                 'capacity'            => $validated['capacity']            ?? 30,
@@ -69,18 +65,25 @@ class KelasController extends Controller
             ]);
 
             // Sinkron ke tabel `kelas` agar FK siswas.kelas_id terpenuhi
-            $this->syncToKelasTable($group);
+            $this->syncToKelasTable(
+                $group,
+                $validated['academic_year'] ?? null,
+                $validated['semester']      ?? null,
+                $validated['room']          ?? null
+            );
 
             // Sinkron wali kelas ke profil guru
             $this->syncHomeroomToGuruProfile($group->homeroom_teacher_id, $group->id);
         });
 
         return redirect()->route('admin.kelas.index')
-            ->with('success', 'Kelas berhasil ditambahkan dan tersinkron dengan Data Akademik.');
+            ->with('success', 'Kelas berhasil ditambahkan.');
     }
 
     // =========================================================================
     // UPDATE — perbarui kelas
+    // FIX: Tidak pakai ->fresh() karena bisa null jika route param typo.
+    //      Langsung reload manual dengan StudyGroup::find().
     // =========================================================================
 
     public function update(Request $request, StudyGroup $kelas)
@@ -89,8 +92,8 @@ class KelasController extends Controller
             'name'                => 'required|string|max:50',
             'grade'               => 'required|in:7,8,9',
             'section'             => 'nullable|string|max:10',
-            'academic_year'       => ['required', 'string', 'max:9', 'regex:/^\d{4}\/\d{4}$/'],
-            'semester'            => 'required|in:1,2',
+            'academic_year'       => ['nullable', 'string', 'max:9', 'regex:/^\d{4}\/\d{4}$/'],
+            'semester'            => 'nullable|in:1,2',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'room'                => 'nullable|string|max:50',
             'capacity'            => 'nullable|integer|min:1|max:60',
@@ -106,16 +109,23 @@ class KelasController extends Controller
                 'name'                => $validated['name'],
                 'grade'               => $validated['grade'],
                 'section'             => $validated['section']  ?? null,
-                'academic_year'       => $validated['academic_year'],
-                'semester'            => $validated['semester'],
                 'homeroom_teacher_id' => $newTeacherId,
                 'room'                => $validated['room']     ?? null,
                 'capacity'            => $validated['capacity'] ?? 30,
                 'is_active'           => $request->boolean('is_active'),
             ]);
 
-            // Sinkron perubahan ke tabel `kelas`
-            $this->syncToKelasTable($kelas->fresh());
+            // FIX: Reload manual, jangan pakai fresh() karena bisa null
+            $freshGroup = StudyGroup::find($kelas->id);
+
+            if ($freshGroup) {
+                $this->syncToKelasTable(
+                    $freshGroup,
+                    $validated['academic_year'] ?? null,
+                    $validated['semester']      ?? null,
+                    $validated['room']          ?? null
+                );
+            }
 
             // Update wali kelas di profil guru
             if ($oldTeacherId && $oldTeacherId !== $newTeacherId) {
@@ -139,8 +149,7 @@ class KelasController extends Controller
                 $this->clearHomeroomFromGuruProfile($kelas->homeroom_teacher_id, $kelas->id);
             }
 
-            // Lepas referensi siswa ke kelas ini agar tidak orphan
-            // (ON DELETE SET NULL sudah di-handle DB, tapi pastikan kelas juga dihapus)
+            // Hapus entri sinkron di tabel kelas juga
             Kelas::where('id', $kelas->id)->delete();
 
             $kelas->timetables()->delete();
@@ -154,34 +163,57 @@ class KelasController extends Controller
     // =========================================================================
     // PRIVATE HELPER: SINKRONISASI STUDY_GROUP → TABEL KELAS
     //
-    // Ini adalah inti perbaikan masalah FK.
-    // Tabel `siswas` punya FK ke tabel `kelas`, bukan ke `study_groups`.
-    // Setiap kali study_group dibuat/diupdate, pastikan ada entri yang sama
-    // di tabel `kelas` dengan ID yang sama.
+    // Tabel `siswas.kelas_id` FK ke tabel `kelas`.
+    // Tabel `study_groups` tidak punya kolom academic_year & semester,
+    // sehingga nilai tersebut diambil dari parameter form atau default otomatis.
+    // Kolom `room` di study_groups disimpan sebagai `rombel` di kelas (opsional).
     // =========================================================================
 
-    private function syncToKelasTable(StudyGroup $group): void
-    {
-        $kelasName = $group->name
-            ?: ($group->grade . ($group->section ?? ''));
+    private function syncToKelasTable(
+        StudyGroup $group,
+        ?string $academicYear = null,
+        ?string $semester = null,
+        ?string $room = null
+    ): void {
+        $kelasName   = $group->name ?: ($group->grade . ($group->section ?? ''));
+        $tahunAjaran = $academicYear ?? $this->getDefaultAcademicYear();
 
-        // Gunakan updateOrCreate dengan ID yang sama agar konsisten
-        Kelas::updateOrCreate(
-            ['id' => $group->id],
-            [
+        // Cek apakah sudah ada entri dengan id ini
+        $existingKelas = Kelas::find($group->id);
+
+        if ($existingKelas) {
+            // Update, tapi jangan timpa semester/tahun_ajaran jika tidak dikirim
+            $updateData = [
+                'nama'    => $kelasName,
+                'tingkat' => (string) $group->grade,
+                'rombel'  => $group->section ?? null,
+                'guru_id' => $group->homeroom_teacher_id ?? null,
+            ];
+
+            if ($academicYear !== null) {
+                $updateData['tahun_ajaran'] = $tahunAjaran;
+            }
+
+            $existingKelas->update($updateData);
+        } else {
+            // Buat baru
+            Kelas::create([
+                'id'           => $group->id,
                 'nama'         => $kelasName,
                 'tingkat'      => (string) $group->grade,
-                'rombel'       => $group->section       ?? null,
-                'tahun_ajaran' => $group->academic_year ?? $this->getDefaultAcademicYear(),
+                'rombel'       => $group->section ?? null,
+                'tahun_ajaran' => $tahunAjaran,
                 'guru_id'      => $group->homeroom_teacher_id ?? null,
-            ]
-        );
+            ]);
+        }
 
-        Log::info("syncToKelasTable: Kelas id={$group->id} nama={$kelasName} berhasil disinkron.");
+        Log::info("syncToKelasTable: id={$group->id} nama={$kelasName} tahun={$tahunAjaran}");
     }
 
     // =========================================================================
-    // PRIVATE HELPER: HITUNG TAHUN AJARAN DEFAULT
+    // PRIVATE HELPER: TAHUN AJARAN DEFAULT (otomatis per kalender sekolah)
+    // Juli–Desember → tahun ini / tahun depan
+    // Januari–Juni  → tahun lalu / tahun ini
     // =========================================================================
 
     private function getDefaultAcademicYear(): string
@@ -210,7 +242,7 @@ class KelasController extends Controller
 
         $guruProfile->update([
             'study_group_id' => $studyGroupId,
-            'kelas_id'       => $studyGroupId, // kompatibilitas kode lama
+            'kelas_id'       => $studyGroupId,
         ]);
     }
 

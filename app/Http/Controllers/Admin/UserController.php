@@ -35,19 +35,24 @@ class UserController extends Controller
     {
         $activeTab = $request->get('tab', 'guru');
 
-        $gurus  = User::whereIn('role', ['guru', 'kepala_sekolah'])
-                      ->with(['guru.studyGroup', 'guru.kelas'])
-                      ->latest()
-                      ->get();
+        $gurus = User::whereIn('role', ['guru', 'kepala_sekolah'])
+            ->with(['guru.studyGroup', 'guru.kelas'])
+            ->latest()
+            ->get();
 
         $siswas = User::where('role', 'siswa')
-                      ->with(['siswa.kelas', 'siswa.studyGroup'])
-                      ->latest()
-                      ->get();
+            ->with(['siswa.kelas', 'siswa.studyGroup'])
+            ->latest()
+            ->get();
 
-        $kelasList = $this->getKelasList();
+        $kelasList    = $this->getKelasList();
+        $semesterList = $this->getSemesterList();
+        $tahunList    = $this->getTahunAjaranList();
 
-        return view('admin.users.index', compact('gurus', 'siswas', 'activeTab', 'kelasList'));
+        return view('admin.users.index', compact(
+            'gurus', 'siswas', 'activeTab',
+            'kelasList', 'semesterList', 'tahunList'
+        ));
     }
 
     // =========================================================================
@@ -63,14 +68,26 @@ class UserController extends Controller
 
         if ($role === 'siswa' && $user->siswa) {
             $profile = $user->siswa->toArray();
-            if ($user->siswa->studyGroup) {
-                $profile['kelas'] = $user->siswa->studyGroup->only([
-                    'id', 'name', 'grade', 'section', 'academic_year', 'semester'
-                ]);
+
+            // Ambil info kelas lengkap dari study_groups agar ada semester, room, dsb
+            $sg = StudyGroup::find($user->siswa->kelas_id);
+            if ($sg) {
+                $profile['kelas_info'] = [
+                    'id'           => $sg->id,
+                    'name'         => $sg->name,
+                    'grade'        => $sg->grade,
+                    'section'      => $sg->section,
+                    'room'         => $sg->room,
+                    'academic_year'=> $user->siswa->kelas?->tahun_ajaran ?? null,
+                ];
             } elseif ($user->siswa->kelas) {
-                $profile['kelas'] = $user->siswa->kelas->only([
-                    'id', 'nama', 'tingkat', 'rombel', 'tahun_ajaran'
-                ]);
+                $profile['kelas_info'] = [
+                    'id'           => $user->siswa->kelas->id,
+                    'name'         => $user->siswa->kelas->nama,
+                    'grade'        => $user->siswa->kelas->tingkat,
+                    'section'      => $user->siswa->kelas->rombel,
+                    'academic_year'=> $user->siswa->kelas->tahun_ajaran,
+                ];
             }
         } elseif (in_array($role, ['guru', 'kepala_sekolah']) && $user->guru) {
             $profile = $user->guru->toArray();
@@ -114,7 +131,11 @@ class UserController extends Controller
                 ]);
             } elseif ($request->role === 'siswa') {
                 // Resolusi kelas_id — harus merujuk ke tabel `kelas` (FK constraint)
-                $kelasId = $this->resolveKelasIdForSiswa($request->kelas_id);
+                $kelasId = $this->resolveKelasIdForSiswa(
+                    $request->kelas_id,
+                    $request->tahun_ajaran ?? null,
+                    $request->semester     ?? null
+                );
 
                 $user->siswa()->create([
                     'nama'     => $request->name,
@@ -141,14 +162,28 @@ class UserController extends Controller
     {
         $user->load(['guru.studyGroup', 'guru.kelas', 'siswa.kelas', 'siswa.studyGroup']);
 
-        $kelasList = $this->getKelasList();
-        $profile   = $user->role === 'siswa' ? $user->siswa : $user->guru;
+        $kelasList    = $this->getKelasList();
+        $semesterList = $this->getSemesterList();
+        $tahunList    = $this->getTahunAjaranList();
+        $profile      = $user->role === 'siswa' ? $user->siswa : $user->guru;
+
+        // Tambahkan info semester & tahun_ajaran dari tabel kelas ke profile siswa
+        if ($user->role === 'siswa' && $user->siswa && $user->siswa->kelas) {
+            $kelasData = $user->siswa->kelas->toArray();
+            if ($profile) {
+                $profile = $profile->toArray();
+                $profile['tahun_ajaran_kelas'] = $kelasData['tahun_ajaran'] ?? null;
+                $profile['ruang_kelas']        = $user->siswa->studyGroup?->room ?? null;
+            }
+        }
 
         return response()->json([
-            'user'      => $user,
-            'profile'   => $profile,
-            'role'      => $user->role,
-            'kelasList' => $kelasList,
+            'user'         => $user,
+            'profile'      => $profile,
+            'role'         => $user->role,
+            'kelasList'    => $kelasList,
+            'semesterList' => $semesterList,
+            'tahunList'    => $tahunList,
         ]);
     }
 
@@ -163,7 +198,6 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
         ];
 
-        // Untuk siswa: validasi kelas_id menggunakan resolver yang sama
         if ($user->role === 'siswa') {
             $validationRules['kelas_id'] = ['nullable'];
         }
@@ -188,7 +222,6 @@ class UserController extends Controller
             DB::rollBack();
 
             $errorMessage = 'Gagal memperbarui user: ' . $e->getMessage();
-
             if (str_contains($e->getMessage(), '1452') || str_contains($e->getMessage(), 'foreign key')) {
                 $errorMessage = 'Gagal memperbarui data siswa. Kelas yang dipilih tidak valid. Silakan hubungi administrator.';
             }
@@ -231,7 +264,8 @@ class UserController extends Controller
     }
 
     // =========================================================================
-    // UPDATE PROFIL SISWA — Perbaikan FK kelas_id
+    // UPDATE PROFIL SISWA
+    // Sekarang mendukung field: semester, tahun_ajaran, ruang dari form
     // =========================================================================
 
     private function updateSiswaProfile(User $user, Request $request): void
@@ -239,8 +273,12 @@ class UserController extends Controller
         $kpsRaw = strtolower(trim((string) ($request->penerima_kps ?? '')));
         $isKps  = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true'], true) ? 'Ya' : 'Tidak';
 
-        // Resolusi kelas_id — pastikan merujuk ke tabel `kelas` (FK constraint)
-        $kelasId = $this->resolveKelasIdForSiswa($request->kelas_id);
+        // Resolusi kelas_id dengan mempertimbangkan semester & tahun_ajaran dari form
+        $kelasId = $this->resolveKelasIdForSiswa(
+            $request->kelas_id,
+            $request->tahun_ajaran ?? null,
+            $request->semester     ?? null
+        );
 
         $data = [
             'nama'               => $request->name,
@@ -269,6 +307,43 @@ class UserController extends Controller
             $user->siswa()->update($data);
         } else {
             $user->siswa()->create($data);
+        }
+
+        // Jika semester/tahun_ajaran dikirim dari form, update di tabel kelas juga
+        if ($kelasId && ($request->filled('tahun_ajaran') || $request->filled('semester'))) {
+            $this->updateKelasMetadata(
+                $kelasId,
+                $request->tahun_ajaran ?? null,
+                $request->semester     ?? null
+            );
+        }
+    }
+
+    // =========================================================================
+    // HELPER: UPDATE METADATA KELAS (tahun_ajaran, semester) DI TABEL KELAS
+    // Dipanggil saat form siswa mengirim data semester/tahun_ajaran
+    // =========================================================================
+
+    private function updateKelasMetadata(int $kelasId, ?string $tahunAjaran, ?string $semester): void
+    {
+        $updateData = [];
+
+        if ($tahunAjaran) {
+            $updateData['tahun_ajaran'] = $tahunAjaran;
+        }
+
+        // Jika tabel kelas punya kolom semester, update juga
+        // Cek dulu apakah kolom ada agar tidak error
+        try {
+            if ($semester && \Schema::hasColumn('kelas', 'semester')) {
+                $updateData['semester'] = $semester;
+            }
+        } catch (\Exception $e) {
+            // Kolom semester tidak ada di tabel kelas, skip
+        }
+
+        if (!empty($updateData)) {
+            Kelas::where('id', $kelasId)->update($updateData);
         }
     }
 
@@ -380,16 +455,17 @@ class UserController extends Controller
             'headers'  => [
                 'nama', 'email', 'password', 'nis_nipd', 'nik',
                 'jenis_kelamin (L/P)', 'tempat_lahir', 'tanggal_lahir (dd/mm/yyyy)',
-                'agama', 'no_telp', 'shkun', 'nama_kelas', 'alamat', 'rt', 'rw',
-                'dusun', 'kecamatan', 'kode_pos', 'jenis_tinggal', 'transportasi',
-                'penerima_kps (Ya/Tidak)', 'no_kps',
+                'agama', 'no_telp', 'shkun', 'nama_kelas',
+                'tahun_ajaran (contoh: 2025/2026)', 'semester (1/2)',
+                'alamat', 'rt', 'rw', 'dusun', 'kecamatan', 'kode_pos',
+                'jenis_tinggal', 'transportasi', 'penerima_kps (Ya/Tidak)', 'no_kps',
             ],
             'contohData' => [
                 'Ani Rahayu', 'ani@siswa.sch.id', 'password123', '20240001',
                 '3201010101010001', 'P', 'Bogor', '01/01/2010', 'Islam',
-                '08123456789', '', '7A', 'Jl. Merdeka No. 1', '001', '002',
-                'Cikaret', 'Cibinong', '16913', 'Bersama Orang Tua',
-                'Jalan kaki', 'Tidak', '',
+                '08123456789', '', '7A', '2025/2026', '1',
+                'Jl. Merdeka No. 1', '001', '002', 'Cikaret', 'Cibinong',
+                '16913', 'Bersama Orang Tua', 'Jalan kaki', 'Tidak', '',
             ],
         ];
     }
@@ -475,7 +551,7 @@ class UserController extends Controller
         }
 
         if ($headerRowIndex === null) {
-            return back()->with('error', 'Format file tidak dikenali. Pastikan baris pertama berisi header "nama". Gunakan template yang tersedia.');
+            return back()->with('error', 'Format file tidak dikenali. Pastikan baris pertama berisi header "nama".');
         }
 
         $emailContohMarkers = ['@guru.sch.id', '@siswa.sch.id', '@sekolah.sch.id', 'contoh', 'example'];
@@ -493,7 +569,7 @@ class UserController extends Controller
         );
 
         if (empty($dataRows)) {
-            return back()->with('error', 'Tidak ada data yang ditemukan. Isi data mulai baris ketiga (setelah header dan contoh).');
+            return back()->with('error', 'Tidak ada data yang ditemukan. Isi data mulai baris ketiga.');
         }
 
         $importedCount = 0;
@@ -553,6 +629,8 @@ class UserController extends Controller
 
     // =========================================================================
     // HELPER: SIMPAN PROFIL GURU (dari import)
+    // Kolom: 0:nama 1:email 2:pwd 3:nip 4:jk 5:tempat 6:tgl
+    //        7:pendidikan 8:status 9:pangkat 10:sk1 11:sk2 12:kelas
     // =========================================================================
 
     private function storeGuruProfile(User $user, array $row): void
@@ -576,14 +654,21 @@ class UserController extends Controller
 
     // =========================================================================
     // HELPER: SIMPAN PROFIL SISWA (dari import)
+    // Kolom: 0:nama 1:email 2:pwd 3:nis 4:nik 5:jk 6:tempat 7:tgl
+    //        8:agama 9:telp 10:shkun 11:kelas 12:tahun_ajaran 13:semester
+    //        14:alamat 15:rt 16:rw 17:dusun 18:kecamatan 19:kodepos
+    //        20:tinggal 21:transport 22:kps 23:nokps
     // =========================================================================
 
     private function storeSiswaProfile(User $user, array $row): void
     {
-        // Cari kelas dari nama (kolom 11), resolusi ke tabel `kelas`
-        $kelasId = $this->findKelasId($row[11] ?? null);
+        $namaKelas   = $this->cleanString($row[11] ?? null);
+        $tahunAjaran = $this->cleanString($row[12] ?? null);
+        $semester    = $this->cleanString($row[13] ?? null);
 
-        $kpsRaw = strtolower(trim((string) ($row[20] ?? '')));
+        $kelasId = $this->findKelasId($namaKelas, $tahunAjaran, $semester);
+
+        $kpsRaw = strtolower(trim((string) ($row[22] ?? '')));
         $isKps  = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true'], true) ? 'Ya' : 'Tidak';
 
         $user->siswa()->create([
@@ -597,16 +682,16 @@ class UserController extends Controller
             'no_telp'            => $this->cleanString($row[9]  ?? null),
             'shkun'              => $this->cleanString($row[10] ?? null),
             'kelas_id'           => $kelasId,
-            'alamat'             => $this->cleanString($row[12] ?? null),
-            'rt'                 => $this->cleanString($row[13] ?? null),
-            'rw'                 => $this->cleanString($row[14] ?? null),
-            'dusun'              => $this->cleanString($row[15] ?? null),
-            'kecamatan'          => $this->cleanString($row[16] ?? null),
-            'kode_pos'           => $this->cleanString($row[17] ?? null),
-            'jenis_tinggal'      => $this->cleanString($row[18] ?? null),
-            'jalan_transportasi' => $this->cleanString($row[19] ?? null),
+            'alamat'             => $this->cleanString($row[14] ?? null),
+            'rt'                 => $this->cleanString($row[15] ?? null),
+            'rw'                 => $this->cleanString($row[16] ?? null),
+            'dusun'              => $this->cleanString($row[17] ?? null),
+            'kecamatan'          => $this->cleanString($row[18] ?? null),
+            'kode_pos'           => $this->cleanString($row[19] ?? null),
+            'jenis_tinggal'      => $this->cleanString($row[20] ?? null),
+            'jalan_transportasi' => $this->cleanString($row[21] ?? null),
             'penerima_kps'       => $isKps,
-            'no_kps'             => $this->cleanString($row[21] ?? null),
+            'no_kps'             => $this->cleanString($row[23] ?? null),
         ]);
     }
 
@@ -658,8 +743,9 @@ class UserController extends Controller
             $headers  = [
                 'No', 'Nama', 'Email', 'NIS/NIPD', 'NIK',
                 'Jenis Kelamin', 'Tempat Lahir', 'Tanggal Lahir',
-                'Agama', 'No Telp', 'SKHUN', 'Kelas', 'Alamat',
-                'RT', 'RW', 'Dusun', 'Kecamatan', 'Kode Pos',
+                'Agama', 'No Telp', 'SKHUN', 'Kelas',
+                'Tahun Ajaran', 'Semester',
+                'Alamat', 'RT', 'RW', 'Dusun', 'Kecamatan', 'Kode Pos',
                 'Jenis Tinggal', 'Transportasi', 'Penerima KPS', 'No KPS',
             ];
 
@@ -670,27 +756,29 @@ class UserController extends Controller
                 $s      = $user->siswa;
                 $rows[] = [
                     $i + 1,
-                    $s?->nama              ?? $user->name,
+                    $s?->nama               ?? $user->name,
                     $user->email,
-                    $s?->nidn              ?? '-',
-                    $s?->nik               ?? '-',
-                    $s?->jk                ?? '-',
-                    $s?->tempat_lahir      ?? '-',
+                    $s?->nidn               ?? '-',
+                    $s?->nik                ?? '-',
+                    $s?->jk                 ?? '-',
+                    $s?->tempat_lahir       ?? '-',
                     $s?->tgl_lahir ? $s->tgl_lahir->format('d/m/Y') : '-',
-                    $s?->agama             ?? '-',
-                    $s?->no_telp           ?? '-',
-                    $s?->shkun             ?? '-',
-                    $s?->kelas?->nama      ?? '-',
-                    $s?->alamat            ?? '-',
-                    $s?->rt                ?? '-',
-                    $s?->rw                ?? '-',
-                    $s?->dusun             ?? '-',
-                    $s?->kecamatan         ?? '-',
-                    $s?->kode_pos          ?? '-',
-                    $s?->jenis_tinggal     ?? '-',
+                    $s?->agama              ?? '-',
+                    $s?->no_telp            ?? '-',
+                    $s?->shkun              ?? '-',
+                    $s?->kelas?->nama       ?? '-',
+                    $s?->kelas?->tahun_ajaran ?? '-',
+                    '-', // semester — tambahkan kolom jika ada di tabel kelas
+                    $s?->alamat             ?? '-',
+                    $s?->rt                 ?? '-',
+                    $s?->rw                 ?? '-',
+                    $s?->dusun              ?? '-',
+                    $s?->kecamatan          ?? '-',
+                    $s?->kode_pos           ?? '-',
+                    $s?->jenis_tinggal      ?? '-',
                     $s?->jalan_transportasi ?? '-',
-                    $s?->penerima_kps      ?? '-',
-                    $s?->no_kps            ?? '-',
+                    $s?->penerima_kps       ?? '-',
+                    $s?->no_kps             ?? '-',
                 ];
             }
         }
@@ -731,7 +819,6 @@ class UserController extends Controller
         }
 
         $sheet->freezePane('A2');
-
         $writer = new Xlsx($spreadsheet);
 
         return response()->streamDownload(
@@ -781,25 +868,33 @@ class UserController extends Controller
     // Masalah inti: siswas.kelas_id → FK ke tabel `kelas` (migration lama),
     // tapi UI mengirim ID dari `study_groups`.
     //
-    // Solusi: jika ID ditemukan di study_groups tapi tidak di kelas,
-    // cari/buat entri di tabel kelas berdasarkan data study_group.
+    // Solusi bertahap:
+    // 1. ID langsung ada di tabel `kelas` → pakai
+    // 2. ID ada di `study_groups` → cari/buat di tabel kelas
     // =========================================================================
 
-    private function resolveKelasIdForSiswa(mixed $inputId): ?int
-    {
-        // Jika kosong / null / string 'null' → return null (boleh tidak punya kelas)
+    private function resolveKelasIdForSiswa(
+        mixed $inputId,
+        ?string $tahunAjaran = null,
+        ?string $semester    = null
+    ): ?int {
         if (empty($inputId) || $inputId === 'null' || $inputId === '') {
             return null;
         }
 
         $id = (int) $inputId;
 
-        // 1. Langsung cek apakah ID sudah ada di tabel `kelas` (FK target)
-        if (Kelas::where('id', $id)->exists()) {
+        // 1. Cek apakah ID sudah ada di tabel `kelas`
+        $existingKelas = Kelas::find($id);
+        if ($existingKelas) {
+            // Update tahun_ajaran jika dikirim dari form
+            if ($tahunAjaran) {
+                $existingKelas->update(['tahun_ajaran' => $tahunAjaran]);
+            }
             return $id;
         }
 
-        // 2. Cek di study_groups — mungkin form mengirim ID dari study_groups
+        // 2. Cek di study_groups
         $studyGroup = StudyGroup::find($id);
 
         if (!$studyGroup) {
@@ -807,35 +902,30 @@ class UserController extends Controller
             return null;
         }
 
-        // 3. Coba cocokkan ke tabel kelas berdasarkan nama kelas
-        $kelas = Kelas::where('nama', $studyGroup->name)
-                      ->orWhere('nama', $studyGroup->grade . ($studyGroup->section ?? ''))
-                      ->first();
+        // 3. Coba cocokkan ke tabel kelas berdasarkan nama
+        $kelasName = $studyGroup->name ?: ($studyGroup->grade . ($studyGroup->section ?? ''));
+        $kelas     = Kelas::whereRaw('LOWER(TRIM(nama)) = ?', [strtolower(trim($kelasName))])->first();
 
         if ($kelas) {
+            if ($tahunAjaran) {
+                $kelas->update(['tahun_ajaran' => $tahunAjaran]);
+            }
             return $kelas->id;
         }
 
-        // 4. Tidak ada padanan — buat entri baru di tabel kelas agar FK terpenuhi
-        $bulan       = now()->month;
-        $tahunAjaran = $studyGroup->academic_year ?? (
-            $bulan >= 7
-                ? now()->year . '/' . (now()->year + 1)
-                : (now()->year - 1) . '/' . now()->year
-        );
-
-        $kelasName = $studyGroup->name
-            ?: ($studyGroup->grade . ($studyGroup->section ?? ''));
+        // 4. Buat entri baru di tabel kelas dengan ID yang sama agar FK konsisten
+        $defaultTahun = $tahunAjaran ?? $this->getDefaultAcademicYear();
 
         $kelas = Kelas::create([
+            'id'           => $studyGroup->id,
             'nama'         => $kelasName,
             'tingkat'      => (string) $studyGroup->grade,
             'rombel'       => $studyGroup->section ?? null,
-            'tahun_ajaran' => $tahunAjaran,
+            'tahun_ajaran' => $defaultTahun,
             'guru_id'      => $studyGroup->homeroom_teacher_id ?? null,
         ]);
 
-        Log::info("resolveKelasIdForSiswa: Kelas baru dibuat id={$kelas->id} nama={$kelas->nama} dari study_group id={$studyGroup->id}");
+        Log::info("resolveKelasIdForSiswa: Kelas baru id={$kelas->id} nama={$kelas->nama} dibuat dari study_group id={$studyGroup->id}");
 
         return $kelas->id;
     }
@@ -844,26 +934,99 @@ class UserController extends Controller
     // HELPER: CARI KELAS BERDASARKAN NAMA (untuk import Excel)
     // =========================================================================
 
-    private function findKelasId(?string $namaKelas): ?int
-    {
+    private function findKelasId(
+        ?string $namaKelas,
+        ?string $tahunAjaran = null,
+        ?string $semester    = null
+    ): ?int {
         if (empty(trim((string) $namaKelas))) return null;
 
         $nama = strtolower(trim($namaKelas));
 
-        // Cari di tabel kelas dulu (FK target untuk siswas)
-        $kelas = Kelas::whereRaw('LOWER(TRIM(nama)) = ?', [$nama])->first();
+        // Cari di tabel kelas dulu
+        $query = Kelas::whereRaw('LOWER(TRIM(nama)) = ?', [$nama]);
+        if ($tahunAjaran) {
+            $query->where('tahun_ajaran', $tahunAjaran);
+        }
+        $kelas = $query->first();
 
-        if ($kelas) return $kelas->id;
-
-        // Fallback: cari di study_groups, lalu resolve
-        $sg = StudyGroup::whereRaw('LOWER(TRIM(name)) = ?', [$nama])->first();
-
-        if ($sg) {
-            return $this->resolveKelasIdForSiswa($sg->id);
+        if (!$kelas) {
+            // Coba tanpa filter tahun_ajaran
+            $kelas = Kelas::whereRaw('LOWER(TRIM(nama)) = ?', [$nama])->first();
         }
 
-        Log::warning("findKelasId: Kelas '{$namaKelas}' tidak ditemukan di kelas maupun study_groups.");
+        if ($kelas) {
+            // Update tahun_ajaran jika dikirim
+            if ($tahunAjaran) {
+                $kelas->update(['tahun_ajaran' => $tahunAjaran]);
+            }
+            return $kelas->id;
+        }
+
+        // Fallback: cari di study_groups
+        $sg = StudyGroup::whereRaw('LOWER(TRIM(name)) = ?', [$nama])->first();
+        if ($sg) {
+            return $this->resolveKelasIdForSiswa($sg->id, $tahunAjaran, $semester);
+        }
+
+        Log::warning("findKelasId: Kelas '{$namaKelas}' tidak ditemukan.");
         return null;
+    }
+
+    // =========================================================================
+    // HELPER: TAHUN AJARAN DEFAULT
+    // =========================================================================
+
+    private function getDefaultAcademicYear(): string
+    {
+        $bulan = now()->month;
+        return $bulan >= 7
+            ? now()->year . '/' . (now()->year + 1)
+            : (now()->year - 1) . '/' . now()->year;
+    }
+
+    // =========================================================================
+    // HELPER: DAFTAR SEMESTER
+    // =========================================================================
+
+    private function getSemesterList(): array
+    {
+        return [
+            '1' => 'Semester 1 (Ganjil)',
+            '2' => 'Semester 2 (Genap)',
+        ];
+    }
+
+    // =========================================================================
+    // HELPER: DAFTAR TAHUN AJARAN (5 tahun ke belakang + 1 ke depan)
+    // =========================================================================
+
+    private function getTahunAjaranList(): array
+    {
+        $bulan       = now()->month;
+        $tahunMulai  = $bulan >= 7 ? now()->year : now()->year - 1;
+        $list        = [];
+
+        // Dari 3 tahun lalu hingga 1 tahun depan
+        for ($i = -3; $i <= 1; $i++) {
+            $from      = $tahunMulai + $i;
+            $to        = $from + 1;
+            $key       = "{$from}/{$to}";
+            $list[$key] = $key;
+        }
+
+        return array_reverse($list, true); // terbaru di atas
+    }
+
+    // =========================================================================
+    // HELPER: AMBIL DAFTAR KELAS UNTUK DROPDOWN (dari StudyGroup)
+    // =========================================================================
+
+    private function getKelasList()
+    {
+        return StudyGroup::orderBy('grade')
+                         ->orderBy('name')
+                         ->get();
     }
 
     // =========================================================================
@@ -903,8 +1066,7 @@ class UserController extends Controller
     private function parseJk(mixed $value): string
     {
         $v = strtoupper(trim((string) $value));
-        if (str_starts_with($v, 'P')) return 'P';
-        return 'L';
+        return str_starts_with($v, 'P') ? 'P' : 'L';
     }
 
     // =========================================================================
@@ -915,16 +1077,5 @@ class UserController extends Controller
     {
         $str = trim((string) $value);
         return ($str === '' || $str === 'null') ? null : $str;
-    }
-
-    // =========================================================================
-    // HELPER: AMBIL DAFTAR KELAS (dari StudyGroup untuk UI)
-    // =========================================================================
-
-    private function getKelasList()
-    {
-        return StudyGroup::orderBy('grade')
-                         ->orderBy('name')
-                         ->get();
     }
 }
