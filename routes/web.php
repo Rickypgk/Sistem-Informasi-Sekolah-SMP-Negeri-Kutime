@@ -228,6 +228,12 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
     Route::post('jadwal-mengajar',         [JadwalMengajarController::class, 'store'])->name('jadwal-mengajar.store');
     Route::put('jadwal-mengajar/{jadwalMengajar}',    [JadwalMengajarController::class, 'update'])->name('jadwal-mengajar.update');
     Route::delete('jadwal-mengajar/{jadwalMengajar}', [JadwalMengajarController::class, 'destroy'])->name('jadwal-mengajar.destroy');
+
+    // Jadwal Mengajar
+    Route::resource('guru/jadwal-mengajar', App\Http\Controllers\Guru\JadwalMengajarController::class)->names('guru.jadwal-mengajar');
+
+    // Mata Pelajaran (oleh guru sendiri)
+    Route::resource('guru/study-subject', App\Http\Controllers\Guru\StudySubjectController::class)->names('guru.study-subject')->only(['store', 'update', 'destroy']);
 });
 
 // =================================================================
