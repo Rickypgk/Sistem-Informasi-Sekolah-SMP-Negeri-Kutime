@@ -4,43 +4,58 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\StudyClassAssignment;
 
-class StudySubject extends Model
+class StudyGroup extends Model
 {
     use HasFactory;
 
+    protected $table = 'study_groups';
+
+    /**
+     * PENTING: Semua kolom yang bisa diisi harus ada di sini.
+     * Inilah penyebab utama field tidak tersimpan — jika tidak ada di $fillable,
+     * Laravel akan diam-diam mengabaikan field tersebut.
+     */
     protected $fillable = [
-        'name', 'code', 'credit_hours', 'type', 'color', 'session', 'description', 'is_active',
+        'name',
+        'grade',
+        'section',
+        'homeroom_teacher_id',
+        'room',           // ← ruang kelas
+        'academic_year',  // ← tahun ajaran
+        'semester',       // ← semester
+        'capacity',
+        'is_active',
+        'description',
+        'notes',
     ];
 
     protected $casts = [
-        'is_active'    => 'boolean',
-        'credit_hours' => 'integer',
+        'grade'     => 'integer',
+        'semester'  => 'integer',
+        'capacity'  => 'integer',
+        'is_active' => 'boolean',
     ];
 
-    // Relasi ke jadwal
+    // ── Relasi ───────────────────────────────────────────────────
+
+    public function homeroomTeacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'homeroom_teacher_id');
+    }
+
     public function timetables(): HasMany
     {
-        return $this->hasMany(Timetable::class);
+        return $this->hasMany(Timetable::class, 'study_group_id');
     }
 
-    // Relasi ke assignment guru
-    public function assignments(): HasMany
-    {
-        return $this->hasMany(StudyClassAssignment::class);
-    }
+    // ── Accessor: label nama lengkap ──────────────────────────────
 
-    // Warna default jika tidak diset
-    public function getColorAttribute($value): string
+    public function getFullNameAttribute(): string
     {
-        return $value ?? '#3B82F6';
-    }
-
-    // Label tipe dalam bahasa Indonesia
-    public function getTypeLabelAttribute(): string
-    {
-        return $this->type === 'core' ? 'Wajib' : 'Pilihan';
+        return $this->name
+            ?: ('Kelas ' . $this->grade . ($this->section ? ' ' . $this->section : ''));
     }
 }

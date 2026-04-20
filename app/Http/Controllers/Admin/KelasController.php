@@ -6,27 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Models\Kelas;
 use App\Models\StudyGroup;
 use App\Models\User;
-use App\Models\Guru;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class KelasController extends Controller
 {
     // =========================================================================
-    // INDEX — tampilkan daftar kelas
+    // INDEX
     // =========================================================================
 
-    public function index()
+    public function index(): View
     {
-        $kelas = StudyGroup::with(['homeroomTeacher', 'homeroomTeacher.guru', 'timetables'])
+        // Ambil dari StudyGroup (sumber kebenaran) lalu sinkron ke kelas jika perlu
+        $kelas = StudyGroup::with(['homeroomTeacher', 'timetables'])
             ->withCount('timetables')
             ->orderBy('grade')
+            ->orderBy('section')
             ->orderBy('name')
             ->get();
 
         $gurus = User::whereIn('role', ['guru', 'kepala_sekolah'])
-            ->where('is_active', true)
             ->with('guru')
             ->orderBy('name')
             ->get();
@@ -35,242 +37,247 @@ class KelasController extends Controller
     }
 
     // =========================================================================
-    // STORE — simpan kelas baru
+    // STORE — Tambah Kelas Baru
+    // Menyimpan ke KEDUA tabel: study_groups + kelas (sinkron)
     // =========================================================================
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name'                => 'required|string|max:50',
-            'grade'               => 'required|in:7,8,9',
+            'grade'               => 'required|integer|in:7,8,9',
             'section'             => 'nullable|string|max:10',
-            'academic_year'       => ['nullable', 'string', 'max:9', 'regex:/^\d{4}\/\d{4}$/'],
-            'semester'            => 'nullable|in:1,2',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'room'                => 'nullable|string|max:50',
+            'academic_year'       => 'required|string|max:9|regex:/^\d{4}\/\d{4}$/',
+            'semester'            => 'required|in:1,2',
             'capacity'            => 'nullable|integer|min:1|max:60',
-            'is_active'           => 'nullable|boolean',
+            'is_active'           => 'nullable|in:0,1',
+        ], [
+            'name.required'          => 'Nama kelas wajib diisi.',
+            'grade.required'         => 'Tingkat kelas wajib diisi.',
+            'grade.in'               => 'Tingkat hanya boleh 7, 8, atau 9.',
+            'academic_year.required' => 'Tahun ajaran wajib diisi.',
+            'academic_year.regex'    => 'Format tahun ajaran harus YYYY/YYYY, contoh: 2025/2026.',
+            'semester.required'      => 'Semester wajib diisi.',
+            'semester.in'            => 'Semester hanya boleh 1 atau 2.',
         ]);
 
-        DB::transaction(function () use ($validated, $request) {
+        // Normalisasi is_active dari checkbox
+        $isActive = filter_var($request->input('is_active', 0), FILTER_VALIDATE_BOOLEAN);
 
-            $group = StudyGroup::create([
+        DB::beginTransaction();
+        try {
+            // 1. Simpan ke tabel study_groups (sumber utama)
+            $studyGroup = StudyGroup::create([
                 'name'                => $validated['name'],
-                'grade'               => $validated['grade'],
+                'grade'               => (int) $validated['grade'],
                 'section'             => $validated['section']             ?? null,
                 'homeroom_teacher_id' => $validated['homeroom_teacher_id'] ?? null,
                 'room'                => $validated['room']                ?? null,
+                'academic_year'       => $validated['academic_year'],
+                'semester'            => (int) $validated['semester'],
                 'capacity'            => $validated['capacity']            ?? 30,
-                'is_active'           => $request->boolean('is_active'),
+                'is_active'           => $isActive,
             ]);
 
-            // Sinkron ke tabel `kelas` agar FK siswas.kelas_id terpenuhi
-            $this->syncToKelasTable(
-                $group,
-                $validated['academic_year'] ?? null,
-                $validated['semester']      ?? null,
-                $validated['room']          ?? null
-            );
+            // 2. Sinkron ke tabel kelas agar FK siswas.kelas_id tetap valid
+            $this->syncToKelasTable($studyGroup);
 
-            // Sinkron wali kelas ke profil guru
-            $this->syncHomeroomToGuruProfile($group->homeroom_teacher_id, $group->id);
-        });
+            // 3. Jika ada wali kelas, update relasi di tabel guru
+            if (!empty($validated['homeroom_teacher_id'])) {
+                $this->assignHomeroomTeacher($studyGroup->id, (int) $validated['homeroom_teacher_id']);
+            }
 
-        return redirect()->route('admin.kelas.index')
-            ->with('success', 'Kelas berhasil ditambahkan.');
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('KelasController@store error: ' . $e->getMessage());
+
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat menyimpan kelas: ' . $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.kelas.index')
+            ->with('success', "Kelas {$validated['name']} berhasil ditambahkan.");
     }
 
     // =========================================================================
-    // UPDATE — perbarui kelas
-    // FIX: Tidak pakai ->fresh() karena bisa null jika route param typo.
-    //      Langsung reload manual dengan StudyGroup::find().
+    // UPDATE — Edit Kelas
     // =========================================================================
 
-    public function update(Request $request, StudyGroup $kelas)
+    public function update(Request $request, int $id): RedirectResponse
     {
         $validated = $request->validate([
             'name'                => 'required|string|max:50',
-            'grade'               => 'required|in:7,8,9',
+            'grade'               => 'required|integer|in:7,8,9',
             'section'             => 'nullable|string|max:10',
-            'academic_year'       => ['nullable', 'string', 'max:9', 'regex:/^\d{4}\/\d{4}$/'],
-            'semester'            => 'nullable|in:1,2',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'room'                => 'nullable|string|max:50',
+            'academic_year'       => 'required|string|max:9|regex:/^\d{4}\/\d{4}$/',
+            'semester'            => 'required|in:1,2',
             'capacity'            => 'nullable|integer|min:1|max:60',
-            'is_active'           => 'nullable|boolean',
+            'is_active'           => 'nullable|in:0,1',
+        ], [
+            'name.required'          => 'Nama kelas wajib diisi.',
+            'grade.required'         => 'Tingkat kelas wajib diisi.',
+            'grade.in'               => 'Tingkat hanya boleh 7, 8, atau 9.',
+            'academic_year.required' => 'Tahun ajaran wajib diisi.',
+            'academic_year.regex'    => 'Format tahun ajaran harus YYYY/YYYY, contoh: 2025/2026.',
+            'semester.required'      => 'Semester wajib diisi.',
+            'semester.in'            => 'Semester hanya boleh 1 atau 2.',
         ]);
 
-        DB::transaction(function () use ($validated, $request, $kelas) {
+        $isActive = filter_var($request->input('is_active', 0), FILTER_VALIDATE_BOOLEAN);
 
-            $oldTeacherId = $kelas->homeroom_teacher_id;
-            $newTeacherId = $validated['homeroom_teacher_id'] ?? null;
+        DB::beginTransaction();
+        try {
+            $studyGroup = StudyGroup::findOrFail($id);
 
-            $kelas->update([
+            $oldHomeroomId = $studyGroup->homeroom_teacher_id;
+
+            $studyGroup->update([
                 'name'                => $validated['name'],
-                'grade'               => $validated['grade'],
-                'section'             => $validated['section']  ?? null,
-                'homeroom_teacher_id' => $newTeacherId,
-                'room'                => $validated['room']     ?? null,
-                'capacity'            => $validated['capacity'] ?? 30,
-                'is_active'           => $request->boolean('is_active'),
+                'grade'               => (int) $validated['grade'],
+                'section'             => $validated['section']             ?? null,
+                'homeroom_teacher_id' => $validated['homeroom_teacher_id'] ?? null,
+                'room'                => $validated['room']                ?? null,
+                'academic_year'       => $validated['academic_year'],
+                'semester'            => (int) $validated['semester'],
+                'capacity'            => $validated['capacity']            ?? 30,
+                'is_active'           => $isActive,
             ]);
 
-            // FIX: Reload manual, jangan pakai fresh() karena bisa null
-            $freshGroup = StudyGroup::find($kelas->id);
+            // Sinkron ke tabel kelas
+            $this->syncToKelasTable($studyGroup->fresh());
 
-            if ($freshGroup) {
-                $this->syncToKelasTable(
-                    $freshGroup,
-                    $validated['academic_year'] ?? null,
-                    $validated['semester']      ?? null,
-                    $validated['room']          ?? null
-                );
+            // Tangani perubahan wali kelas
+            $newHomeroomId = $validated['homeroom_teacher_id'] ?? null;
+
+            // Lepas wali kelas lama jika berubah
+            if ($oldHomeroomId && $oldHomeroomId !== (int) $newHomeroomId) {
+                $this->removeHomeroomTeacher($oldHomeroomId, $studyGroup->id);
             }
 
-            // Update wali kelas di profil guru
-            if ($oldTeacherId && $oldTeacherId !== $newTeacherId) {
-                $this->clearHomeroomFromGuruProfile($oldTeacherId, $kelas->id);
-            }
-            $this->syncHomeroomToGuruProfile($newTeacherId, $kelas->id);
-        });
-
-        return redirect()->route('admin.kelas.index')
-            ->with('success', 'Kelas berhasil diperbarui.');
-    }
-
-    // =========================================================================
-    // DESTROY — hapus kelas
-    // =========================================================================
-
-    public function destroy(StudyGroup $kelas)
-    {
-        DB::transaction(function () use ($kelas) {
-            if ($kelas->homeroom_teacher_id) {
-                $this->clearHomeroomFromGuruProfile($kelas->homeroom_teacher_id, $kelas->id);
+            // Set wali kelas baru
+            if ($newHomeroomId) {
+                $this->assignHomeroomTeacher($studyGroup->id, (int) $newHomeroomId);
             }
 
-            // Hapus entri sinkron di tabel kelas juga
-            Kelas::where('id', $kelas->id)->delete();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('KelasController@update error: ' . $e->getMessage());
 
-            $kelas->timetables()->delete();
-            $kelas->delete();
-        });
-
-        return redirect()->route('admin.kelas.index')
-            ->with('success', 'Kelas berhasil dihapus.');
-    }
-
-    // =========================================================================
-    // PRIVATE HELPER: SINKRONISASI STUDY_GROUP → TABEL KELAS
-    //
-    // Tabel `siswas.kelas_id` FK ke tabel `kelas`.
-    // Tabel `study_groups` tidak punya kolom academic_year & semester,
-    // sehingga nilai tersebut diambil dari parameter form atau default otomatis.
-    // Kolom `room` di study_groups disimpan sebagai `rombel` di kelas (opsional).
-    // =========================================================================
-
-    private function syncToKelasTable(
-        StudyGroup $group,
-        ?string $academicYear = null,
-        ?string $semester = null,
-        ?string $room = null
-    ): void {
-        $kelasName   = $group->name ?: ($group->grade . ($group->section ?? ''));
-        $tahunAjaran = $academicYear ?? $this->getDefaultAcademicYear();
-
-        // Cek apakah sudah ada entri dengan id ini
-        $existingKelas = Kelas::find($group->id);
-
-        if ($existingKelas) {
-            // Update, tapi jangan timpa semester/tahun_ajaran jika tidak dikirim
-            $updateData = [
-                'nama'    => $kelasName,
-                'tingkat' => (string) $group->grade,
-                'rombel'  => $group->section ?? null,
-                'guru_id' => $group->homeroom_teacher_id ?? null,
-            ];
-
-            if ($academicYear !== null) {
-                $updateData['tahun_ajaran'] = $tahunAjaran;
-            }
-
-            $existingKelas->update($updateData);
-        } else {
-            // Buat baru
-            Kelas::create([
-                'id'           => $group->id,
-                'nama'         => $kelasName,
-                'tingkat'      => (string) $group->grade,
-                'rombel'       => $group->section ?? null,
-                'tahun_ajaran' => $tahunAjaran,
-                'guru_id'      => $group->homeroom_teacher_id ?? null,
-            ]);
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat memperbarui kelas: ' . $e->getMessage());
         }
 
-        Log::info("syncToKelasTable: id={$group->id} nama={$kelasName} tahun={$tahunAjaran}");
+        return redirect()
+            ->route('admin.kelas.index')
+            ->with('success', "Kelas {$validated['name']} berhasil diperbarui.");
     }
 
     // =========================================================================
-    // PRIVATE HELPER: TAHUN AJARAN DEFAULT (otomatis per kalender sekolah)
-    // Juli–Desember → tahun ini / tahun depan
-    // Januari–Juni  → tahun lalu / tahun ini
+    // DESTROY — Hapus Kelas
+    // =========================================================================
+
+    public function destroy(int $id): RedirectResponse
+    {
+        DB::beginTransaction();
+        try {
+            $studyGroup = StudyGroup::findOrFail($id);
+            $name       = $studyGroup->name;
+
+            // Lepas wali kelas jika ada
+            if ($studyGroup->homeroom_teacher_id) {
+                $this->removeHomeroomTeacher($studyGroup->homeroom_teacher_id, $id);
+            }
+
+            // Hapus dari tabel kelas (siswas.kelas_id ON DELETE SET NULL)
+            Kelas::where('id', $id)->delete();
+
+            // Hapus study_group dan timetable terkait (cascade atau manual)
+            $studyGroup->timetables()->delete();
+            $studyGroup->delete();
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('KelasController@destroy error: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal menghapus kelas: ' . $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.kelas.index')
+            ->with('success', "Kelas {$name} berhasil dihapus.");
+    }
+
+    // =========================================================================
+    // PRIVATE HELPER: Sinkron StudyGroup → tabel Kelas
+    // =========================================================================
+
+    private function syncToKelasTable(StudyGroup $group): void
+    {
+        $kelasName   = $group->name ?: ((string) $group->grade . ($group->section ?? ''));
+        $tahunAjaran = !empty($group->academic_year)
+            ? $group->academic_year
+            : $this->getDefaultAcademicYear();
+
+        Kelas::updateOrCreate(
+            ['id' => $group->id],
+            [
+                'nama'         => $kelasName,
+                'tingkat'      => (string) $group->grade,
+                'rombel'       => $group->section    ?? null,
+                'tahun_ajaran' => $tahunAjaran,
+                'semester'     => $group->semester    ?? null,
+                'guru_id'      => $group->homeroom_teacher_id ?? null,
+                'ruang'        => $group->room        ?? null,
+            ]
+        );
+
+        Log::info("syncToKelasTable: study_group id={$group->id} nama={$kelasName} disinkron.");
+    }
+
+    // =========================================================================
+    // PRIVATE HELPER: Assign wali kelas → update guru.kelas_id
+    // =========================================================================
+
+    private function assignHomeroomTeacher(int $kelasId, int $teacherId): void
+    {
+        $user = User::find($teacherId);
+        if ($user && $user->guru) {
+            $user->guru()->update(['kelas_id' => $kelasId]);
+        }
+    }
+
+    // =========================================================================
+    // PRIVATE HELPER: Lepas wali kelas lama
+    // =========================================================================
+
+    private function removeHomeroomTeacher(int $teacherId, int $kelasId): void
+    {
+        $user = User::find($teacherId);
+        if ($user && $user->guru && $user->guru->kelas_id === $kelasId) {
+            $user->guru()->update(['kelas_id' => null]);
+        }
+    }
+
+    // =========================================================================
+    // PRIVATE HELPER: Tahun ajaran default otomatis
     // =========================================================================
 
     private function getDefaultAcademicYear(): string
     {
         $bulan = now()->month;
+
         return $bulan >= 7
             ? now()->year . '/' . (now()->year + 1)
             : (now()->year - 1) . '/' . now()->year;
-    }
-
-    // =========================================================================
-    // PRIVATE HELPER: SINKRON WALI KELAS → PROFIL GURU
-    // =========================================================================
-
-    private function syncHomeroomToGuruProfile(?int $userId, ?int $studyGroupId): void
-    {
-        if (!$userId || !$studyGroupId) return;
-
-        $user = User::find($userId);
-        if (!$user) return;
-
-        $guruProfile = Guru::firstOrCreate(
-            ['user_id' => $userId],
-            ['nama'    => $user->name ?? '']
-        );
-
-        $guruProfile->update([
-            'study_group_id' => $studyGroupId,
-            'kelas_id'       => $studyGroupId,
-        ]);
-    }
-
-    // =========================================================================
-    // PRIVATE HELPER: LEPAS WALI KELAS LAMA DARI PROFIL GURU
-    // =========================================================================
-
-    private function clearHomeroomFromGuruProfile(?int $userId, int $studyGroupId): void
-    {
-        if (!$userId) return;
-
-        Guru::where('user_id', $userId)
-            ->where(function ($q) use ($studyGroupId) {
-                $q->where('kelas_id', $studyGroupId)
-                  ->orWhere('study_group_id', $studyGroupId);
-            })
-            ->update([
-                'kelas_id'       => null,
-                'study_group_id' => null,
-            ]);
-    }
-
-    // =========================================================================
-    // PRIVATE HELPER: STRING KOSONG → NULL
-    // =========================================================================
-
-    private function nullIfEmptyOrNullString(?string $str): ?string
-    {
-        return ($str === '' || $str === 'null') ? null : $str;
     }
 }
