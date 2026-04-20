@@ -12,8 +12,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
@@ -31,7 +31,7 @@ class UserController extends Controller
     // INDEX — tampilkan daftar user
     // =========================================================================
 
-public function index(Request $request): View
+    public function index(Request $request): View
     {
         $activeTab = $request->get('tab', 'guru');
 
@@ -50,30 +50,32 @@ public function index(Request $request): View
         return view('admin.users.index', compact('gurus', 'siswas', 'activeTab', 'kelasList'));
     }
 
-// =========================================================================
-    // SHOW — data satu user (JSON, untuk modal detail) — Diperbaiki
+    // =========================================================================
+    // SHOW — data satu user (JSON, untuk modal detail)
     // =========================================================================
 
     public function show(User $user)
     {
         $user->load(['guru.studyGroup', 'guru.kelas', 'siswa.kelas', 'siswa.studyGroup']);
 
-        $role = $user->role;
+        $role    = $user->role;
         $profile = null;
 
         if ($role === 'siswa' && $user->siswa) {
             $profile = $user->siswa->toArray();
-            if ($user->siswa->kelas) {
-                $profile['kelas'] = $user->siswa->kelas->only([
+            if ($user->siswa->studyGroup) {
+                $profile['kelas'] = $user->siswa->studyGroup->only([
                     'id', 'name', 'grade', 'section', 'academic_year', 'semester'
+                ]);
+            } elseif ($user->siswa->kelas) {
+                $profile['kelas'] = $user->siswa->kelas->only([
+                    'id', 'nama', 'tingkat', 'rombel', 'tahun_ajaran'
                 ]);
             }
         } elseif (in_array($role, ['guru', 'kepala_sekolah']) && $user->guru) {
             $profile = $user->guru->toArray();
-            if ($user->guru->kelas || $user->guru->studyGroup) {
-                $kelas = $user->guru->studyGroup ?? $user->guru->kelas;
-                $profile['kelas'] = $kelas ? $kelas->only(['id', 'name', 'grade', 'section']) : null;
-            }
+            $kelas   = $user->guru->studyGroup ?? $user->guru->kelas;
+            $profile['kelas'] = $kelas ? $kelas->toArray() : null;
         }
 
         return response()->json([
@@ -83,8 +85,8 @@ public function index(Request $request): View
         ]);
     }
 
-// =========================================================================
-    // TAMBAH USER MANUAL (Tetap dipertahankan + kompatibel)
+    // =========================================================================
+    // STORE — tambah user manual
     // =========================================================================
 
     public function store(Request $request): RedirectResponse
@@ -111,9 +113,12 @@ public function index(Request $request): View
                     'kelas_id' => null,
                 ]);
             } elseif ($request->role === 'siswa') {
+                // Resolusi kelas_id — harus merujuk ke tabel `kelas` (FK constraint)
+                $kelasId = $this->resolveKelasIdForSiswa($request->kelas_id);
+
                 $user->siswa()->create([
                     'nama'     => $request->name,
-                    'kelas_id' => $request->filled('kelas_id') ? $request->kelas_id : null,
+                    'kelas_id' => $kelasId,
                 ]);
             }
 
@@ -128,8 +133,8 @@ public function index(Request $request): View
             ->with('success', 'User berhasil ditambahkan.');
     }
 
-// =========================================================================
-    // EDIT — tampilkan data user untuk modal edit (JSON)
+    // =========================================================================
+    // EDIT — data user untuk modal edit (JSON)
     // =========================================================================
 
     public function edit(User $user)
@@ -148,48 +153,30 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // UPDATE — simpan perubahan data user (Diperbaiki & Lebih Aman)
+    // UPDATE — simpan perubahan data user
     // =========================================================================
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        // Validasi dasar + validasi kelas_id untuk siswa
         $validationRules = [
             'name'  => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
         ];
 
-        // Tambahan validasi khusus untuk siswa agar menghindari foreign key error
+        // Untuk siswa: validasi kelas_id menggunakan resolver yang sama
         if ($user->role === 'siswa') {
-            $validationRules['kelas_id'] = [
-                'nullable',
-                'integer',
-                function ($attribute, $value, $fail) {
-                    if (empty($value) || $value === 'null' || $value === '') {
-                        return;
-                    }
-
-                    $existsInStudyGroup = StudyGroup::where('id', $value)->exists();
-                    $existsInKelas      = Kelas::where('id', $value)->exists();
-
-                    if (!$existsInStudyGroup && !$existsInKelas) {
-                        $fail('Kelas yang dipilih tidak ditemukan. Silakan pilih kelas yang tersedia dari daftar.');
-                    }
-                }
-            ];
+            $validationRules['kelas_id'] = ['nullable'];
         }
 
         $request->validate($validationRules);
 
         DB::beginTransaction();
         try {
-            // Update data utama di tabel users
             $user->update([
                 'name'  => $request->name,
                 'email' => $request->email,
             ]);
 
-            // Update profil sesuai role
             if ($user->role === 'guru' || $user->role === 'kepala_sekolah') {
                 $this->updateGuruProfile($user, $request);
             } elseif ($user->role === 'siswa') {
@@ -199,18 +186,14 @@ public function index(Request $request): View
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            
-            // Pesan error yang lebih informatif
+
             $errorMessage = 'Gagal memperbarui user: ' . $e->getMessage();
-            
-            // Jika error foreign key, beri pesan yang lebih ramah
+
             if (str_contains($e->getMessage(), '1452') || str_contains($e->getMessage(), 'foreign key')) {
-                $errorMessage = 'Gagal memperbarui data siswa. Kelas yang dipilih tidak ditemukan. Silakan pilih kelas yang tersedia.';
+                $errorMessage = 'Gagal memperbarui data siswa. Kelas yang dipilih tidak valid. Silakan hubungi administrator.';
             }
 
-            return back()
-                ->with('error', $errorMessage)
-                ->withInput();
+            return back()->with('error', $errorMessage)->withInput();
         }
 
         $tab = in_array($user->role, ['guru', 'kepala_sekolah']) ? 'guru' : $user->role;
@@ -223,6 +206,7 @@ public function index(Request $request): View
     // =========================================================================
     // UPDATE PROFIL GURU & KEPALA SEKOLAH
     // =========================================================================
+
     private function updateGuruProfile(User $user, Request $request): void
     {
         $data = [
@@ -247,7 +231,7 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // UPDATE PROFIL SISWA — Diperbaiki (Anti Foreign Key Error)
+    // UPDATE PROFIL SISWA — Perbaikan FK kelas_id
     // =========================================================================
 
     private function updateSiswaProfile(User $user, Request $request): void
@@ -255,29 +239,8 @@ public function index(Request $request): View
         $kpsRaw = strtolower(trim((string) ($request->penerima_kps ?? '')));
         $isKps  = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true'], true) ? 'Ya' : 'Tidak';
 
-        // ====================== PERBAIKAN KEAMANAN KELAS_ID ======================
-        $kelasId = null;
-
-        if ($request->filled('kelas_id') && $request->kelas_id !== '' && $request->kelas_id !== 'null') {
-            $inputKelasId = (int) $request->kelas_id;
-
-            // Cek di StudyGroup dulu (model kelas utama saat ini)
-            $kelasExists = StudyGroup::where('id', $inputKelasId)->exists();
-
-            // Jika tidak ada, cek fallback ke tabel kelas lama
-            if (!$kelasExists) {
-                $kelasExists = Kelas::where('id', $inputKelasId)->exists();
-            }
-
-            if ($kelasExists) {
-                $kelasId = $inputKelasId;
-            } else {
-                // Log warning agar mudah di-debug
-                \Log::warning("Kelas ID {$inputKelasId} tidak ditemukan di StudyGroup maupun Kelas. Di-set null untuk siswa user_id = {$user->id}");
-                $kelasId = null;
-            }
-        }
-        // =====================================================================
+        // Resolusi kelas_id — pastikan merujuk ke tabel `kelas` (FK constraint)
+        $kelasId = $this->resolveKelasIdForSiswa($request->kelas_id);
 
         $data = [
             'nama'               => $request->name,
@@ -289,7 +252,7 @@ public function index(Request $request): View
             'agama'              => $request->agama,
             'no_telp'            => $request->no_telp,
             'shkun'              => $request->shkun,
-            'kelas_id'           => $kelasId,                    // pakai nilai yang sudah aman
+            'kelas_id'           => $kelasId,
             'alamat'             => $request->alamat,
             'rt'                 => $request->rt,
             'rw'                 => $request->rw,
@@ -310,7 +273,7 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // RESET PASSWORD (Tetap dipertahankan)
+    // RESET PASSWORD
     // =========================================================================
 
     public function resetPassword(Request $request, User $user): RedirectResponse
@@ -324,12 +287,12 @@ public function index(Request $request): View
         ]);
 
         return redirect()
-            ->route('admin.users.index', ['tab' => in_array($user->role, ['guru','kepala_sekolah']) ? 'guru' : $user->role])
+            ->route('admin.users.index', ['tab' => in_array($user->role, ['guru', 'kepala_sekolah']) ? 'guru' : $user->role])
             ->with('success', 'Password berhasil direset.');
     }
 
     // =========================================================================
-    // HAPUS USER (Diperbaiki)
+    // HAPUS USER
     // =========================================================================
 
     public function destroy(User $user): RedirectResponse
@@ -363,11 +326,9 @@ public function index(Request $request): View
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
 
-        if ($role === 'guru') {
-            $config = $this->getGuruTemplateConfig();
-        } else {
-            $config = $this->getSiswaTemplateConfig();
-        }
+        $config = $role === 'guru'
+            ? $this->getGuruTemplateConfig()
+            : $this->getSiswaTemplateConfig();
 
         $this->setupTemplateSheet($sheet, $config);
 
@@ -393,34 +354,16 @@ public function index(Request $request): View
             'title'    => 'Import Guru',
             'filename' => 'template_import_guru.xlsx',
             'headers'  => [
-                'nama',
-                'email',
-                'password',
-                'nip',
-                'jenis_kelamin (L/P)',
-                'tempat_lahir',
-                'tanggal_lahir (dd/mm/yyyy)',
-                'pendidikan_terakhir',
-                'status_pegawai',
-                'pangkat_gol_ruang',
-                'no_sk_pertama',
-                'no_sk_terakhir',
-                'nama_kelas',
+                'nama', 'email', 'password', 'nip', 'jenis_kelamin (L/P)',
+                'tempat_lahir', 'tanggal_lahir (dd/mm/yyyy)', 'pendidikan_terakhir',
+                'status_pegawai', 'pangkat_gol_ruang', 'no_sk_pertama',
+                'no_sk_terakhir', 'nama_kelas',
             ],
             'contohData' => [
-                'Budi Santoso, S.Pd',
-                'budi@guru.sch.id',
-                'password123',
-                '198501012010011001',
-                'L',
-                'Jakarta',
-                '01/01/1985',
-                'S1 Pendidikan Matematika',
-                'PNS',
-                'Penata Muda / III-a',
-                '001/SK/2010',
-                '002/SK/2023',
-                'Kelas 7A',
+                'Budi Santoso, S.Pd', 'budi@guru.sch.id', 'password123',
+                '198501012010011001', 'L', 'Jakarta', '01/01/1985',
+                'S1 Pendidikan Matematika', 'PNS', 'Penata Muda / III-a',
+                '001/SK/2010', '002/SK/2023', '7A',
             ],
         ];
     }
@@ -435,52 +378,18 @@ public function index(Request $request): View
             'title'    => 'Import Siswa',
             'filename' => 'template_import_siswa.xlsx',
             'headers'  => [
-                'nama',
-                'email',
-                'password',
-                'nis_nipd',
-                'nik',
-                'jenis_kelamin (L/P)',
-                'tempat_lahir',
-                'tanggal_lahir (dd/mm/yyyy)',
-                'agama',
-                'no_telp',
-                'shkun',
-                'nama_kelas',
-                'alamat',
-                'rt',
-                'rw',
-                'dusun',
-                'kecamatan',
-                'kode_pos',
-                'jenis_tinggal',
-                'transportasi',
-                'penerima_kps (Ya/Tidak)',
-                'no_kps',
+                'nama', 'email', 'password', 'nis_nipd', 'nik',
+                'jenis_kelamin (L/P)', 'tempat_lahir', 'tanggal_lahir (dd/mm/yyyy)',
+                'agama', 'no_telp', 'shkun', 'nama_kelas', 'alamat', 'rt', 'rw',
+                'dusun', 'kecamatan', 'kode_pos', 'jenis_tinggal', 'transportasi',
+                'penerima_kps (Ya/Tidak)', 'no_kps',
             ],
             'contohData' => [
-                'Ani Rahayu',
-                'ani@siswa.sch.id',
-                'password123',
-                '20240001',
-                '3201010101010001',
-                'P',
-                'Bogor',
-                '01/01/2010',
-                'Islam',
-                '08123456789',
-                '',
-                'Kelas 7A',
-                'Jl. Merdeka No. 1',
-                '001',
-                '002',
-                'Cikaret',
-                'Cibinong',
-                '16913',
-                'Bersama Orang Tua',
-                'Jalan kaki',
-                'Tidak',
-                '',
+                'Ani Rahayu', 'ani@siswa.sch.id', 'password123', '20240001',
+                '3201010101010001', 'P', 'Bogor', '01/01/2010', 'Islam',
+                '08123456789', '', '7A', 'Jl. Merdeka No. 1', '001', '002',
+                'Cikaret', 'Cibinong', '16913', 'Bersama Orang Tua',
+                'Jalan kaki', 'Tidak', '',
             ],
         ];
     }
@@ -492,12 +401,11 @@ public function index(Request $request): View
     private function setupTemplateSheet($sheet, array $config): void
     {
         $sheet->setTitle($config['title']);
-        $headers     = $config['headers'];
-        $contohData  = $config['contohData'];
-        $colCount    = count($headers);
-        $lastCol     = Coordinate::stringFromColumnIndex($colCount);
+        $headers    = $config['headers'];
+        $contohData = $config['contohData'];
+        $colCount   = count($headers);
+        $lastCol    = Coordinate::stringFromColumnIndex($colCount);
 
-        // Baris 1 — Header
         $sheet->fromArray($headers, null, 'A1');
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
@@ -506,7 +414,6 @@ public function index(Request $request): View
             'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '3730A3']]],
         ]);
 
-        // Baris 2 — Contoh data
         $sheet->fromArray($contohData, null, 'A2');
         $sheet->getStyle("A2:{$lastCol}2")->applyFromArray([
             'font'      => ['italic' => true, 'color' => ['rgb' => '6B7280']],
@@ -515,7 +422,6 @@ public function index(Request $request): View
             'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D1D5DB']]],
         ]);
 
-        // Baris 3 — Keterangan
         $sheet->setCellValue('A3', '← Data contoh di baris 2. Isi data mulai baris 3 ini. Hapus baris contoh sebelum import.');
         $sheet->mergeCells("A3:{$lastCol}3");
         $sheet->getStyle("A3:{$lastCol}3")->applyFromArray([
@@ -525,17 +431,13 @@ public function index(Request $request): View
             'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FCA5A5']]],
         ]);
 
-        // Auto-size semua kolom
         foreach (range(1, $colCount) as $colIndex) {
             $sheet->getColumnDimensionByColumn($colIndex)->setAutoSize(true);
         }
 
-        // Row heights
         $sheet->getRowDimension(1)->setRowHeight(28);
         $sheet->getRowDimension(2)->setRowHeight(22);
         $sheet->getRowDimension(3)->setRowHeight(20);
-
-        // Freeze pane setelah header
         $sheet->freezePane('A3');
     }
 
@@ -555,7 +457,6 @@ public function index(Request $request): View
         $passwordHash = Hash::make($request->password_import);
         $file         = $request->file('import_file');
 
-        // Baca file Excel
         try {
             $spreadsheet = IOFactory::load($file->getRealPath());
             $sheet       = $spreadsheet->getActiveSheet();
@@ -564,7 +465,6 @@ public function index(Request $request): View
             return back()->with('error', 'Gagal membaca file Excel: ' . $e->getMessage());
         }
 
-        // Temukan baris header
         $headerRowIndex = null;
         foreach ($rows as $index => $row) {
             $cellA = strtolower(trim((string) ($row[0] ?? '')));
@@ -578,7 +478,6 @@ public function index(Request $request): View
             return back()->with('error', 'Format file tidak dikenali. Pastikan baris pertama berisi header "nama". Gunakan template yang tersedia.');
         }
 
-        // Filter baris data
         $emailContohMarkers = ['@guru.sch.id', '@siswa.sch.id', '@sekolah.sch.id', 'contoh', 'example'];
         $dataRows = array_filter(
             array_slice($rows, $headerRowIndex + 1),
@@ -654,8 +553,6 @@ public function index(Request $request): View
 
     // =========================================================================
     // HELPER: SIMPAN PROFIL GURU (dari import)
-    // Kolom (0-based): 0:nama 1:email 2:pwd 3:nip 4:jk 5:tempat 6:tgl
-    //                  7:pendidikan 8:status 9:pangkat 10:sk1 11:sk2 12:kelas
     // =========================================================================
 
     private function storeGuruProfile(User $user, array $row): void
@@ -679,21 +576,15 @@ public function index(Request $request): View
 
     // =========================================================================
     // HELPER: SIMPAN PROFIL SISWA (dari import)
-    // Kolom (0-based): 0:nama 1:email 2:pwd 3:nis 4:nik 5:jk 6:tempat 7:tgl
-    //                  8:agama 9:telp 10:shkun 11:kelas 12:alamat 13:rt 14:rw
-    //                  15:dusun 16:kecamatan 17:kodepos 18:tinggal 19:transport
-    //                  20:kps 21:nokps
     // =========================================================================
 
     private function storeSiswaProfile(User $user, array $row): void
     {
+        // Cari kelas dari nama (kolom 11), resolusi ke tabel `kelas`
         $kelasId = $this->findKelasId($row[11] ?? null);
-        $kpsRaw  = strtolower(trim((string) ($row[20] ?? '')));
-        $isKps   = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true'], true) ? 'Ya' : 'Tidak';
 
-        if ($kelasId && !StudyGroup::where('id', $kelasId)->exists() && !Kelas::where('id', $kelasId)->exists()) {
-        $kelasId = null;
-        }
+        $kpsRaw = strtolower(trim((string) ($row[20] ?? '')));
+        $isKps  = in_array($kpsRaw, ['ya', 'yes', '1', 'y', 'true'], true) ? 'Ya' : 'Tidak';
 
         $user->siswa()->create([
             'nama'               => $user->name,
@@ -748,18 +639,18 @@ public function index(Request $request): View
                 $g      = $user->guru;
                 $rows[] = [
                     $i + 1,
-                    $g?->nama   ?? $user->name,
+                    $g?->nama              ?? $user->name,
                     $user->email,
-                    $g?->nip                 ?? '-',
-                    $g?->jk                  ?? '-',
-                    $g?->tempat_lahir        ?? '-',
+                    $g?->nip               ?? '-',
+                    $g?->jk                ?? '-',
+                    $g?->tempat_lahir      ?? '-',
                     $g?->tanggal_lahir ? $g->tanggal_lahir->format('d/m/Y') : '-',
                     $g?->pendidikan_terakhir ?? '-',
-                    $g?->status_pegawai      ?? '-',
-                    $g?->pangkat_gol_ruang   ?? '-',
-                    $g?->no_sk_pertama       ?? '-',
-                    $g?->no_sk_terakhir      ?? '-',
-                    $g?->kelas?->nama        ?? '-',
+                    $g?->status_pegawai    ?? '-',
+                    $g?->pangkat_gol_ruang ?? '-',
+                    $g?->no_sk_pertama     ?? '-',
+                    $g?->no_sk_terakhir    ?? '-',
+                    $g?->kelas?->nama      ?? '-',
                 ];
             }
         } else {
@@ -779,7 +670,7 @@ public function index(Request $request): View
                 $s      = $user->siswa;
                 $rows[] = [
                     $i + 1,
-                    $s?->nama ?? $user->name,
+                    $s?->nama              ?? $user->name,
                     $user->email,
                     $s?->nidn              ?? '-',
                     $s?->nik               ?? '-',
@@ -804,7 +695,6 @@ public function index(Request $request): View
             }
         }
 
-        // Tulis data
         $sheet->fromArray($headers, null, 'A1');
         if (!empty($rows)) {
             $sheet->fromArray($rows, null, 'A2');
@@ -814,7 +704,6 @@ public function index(Request $request): View
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
         $lastDataRow = count($rows) + 1;
 
-        // Styling header
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F46E5']],
@@ -822,7 +711,6 @@ public function index(Request $request): View
         ]);
         $sheet->getRowDimension(1)->setRowHeight(26);
 
-        // Alternating row colors
         if ($lastDataRow > 1) {
             for ($row = 2; $row <= $lastDataRow; $row++) {
                 $bgColor = ($row % 2 === 0) ? 'F8F9FA' : 'FFFFFF';
@@ -830,10 +718,7 @@ public function index(Request $request): View
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bgColor]],
                 ]);
             }
-        }
 
-        // Border seluruh tabel
-        if ($lastDataRow > 1) {
             $sheet->getStyle("A1:{$lastCol}{$lastDataRow}")->applyFromArray([
                 'borders' => [
                     'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D1D5DB']],
@@ -841,12 +726,10 @@ public function index(Request $request): View
             ]);
         }
 
-        // Auto size
         foreach (range(1, $totalCols) as $col) {
             $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
         }
 
-        // Freeze header
         $sheet->freezePane('A2');
 
         $writer = new Xlsx($spreadsheet);
@@ -884,7 +767,7 @@ public function index(Request $request): View
         $pdf = Pdf::loadView($view, compact('users', 'role'))
             ->setPaper('a4', 'landscape')
             ->setOptions([
-                'defaultFont'  => 'DejaVu Sans',
+                'defaultFont'          => 'DejaVu Sans',
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled'      => false,
             ]);
@@ -893,16 +776,94 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // HELPER: CARI KELAS BERDASARKAN NAMA
+    // HELPER UTAMA: RESOLVE KELAS_ID UNTUK SISWA
+    //
+    // Masalah inti: siswas.kelas_id → FK ke tabel `kelas` (migration lama),
+    // tapi UI mengirim ID dari `study_groups`.
+    //
+    // Solusi: jika ID ditemukan di study_groups tapi tidak di kelas,
+    // cari/buat entri di tabel kelas berdasarkan data study_group.
+    // =========================================================================
+
+    private function resolveKelasIdForSiswa(mixed $inputId): ?int
+    {
+        // Jika kosong / null / string 'null' → return null (boleh tidak punya kelas)
+        if (empty($inputId) || $inputId === 'null' || $inputId === '') {
+            return null;
+        }
+
+        $id = (int) $inputId;
+
+        // 1. Langsung cek apakah ID sudah ada di tabel `kelas` (FK target)
+        if (Kelas::where('id', $id)->exists()) {
+            return $id;
+        }
+
+        // 2. Cek di study_groups — mungkin form mengirim ID dari study_groups
+        $studyGroup = StudyGroup::find($id);
+
+        if (!$studyGroup) {
+            Log::warning("resolveKelasIdForSiswa: ID {$id} tidak ditemukan di kelas maupun study_groups.");
+            return null;
+        }
+
+        // 3. Coba cocokkan ke tabel kelas berdasarkan nama kelas
+        $kelas = Kelas::where('nama', $studyGroup->name)
+                      ->orWhere('nama', $studyGroup->grade . ($studyGroup->section ?? ''))
+                      ->first();
+
+        if ($kelas) {
+            return $kelas->id;
+        }
+
+        // 4. Tidak ada padanan — buat entri baru di tabel kelas agar FK terpenuhi
+        $bulan       = now()->month;
+        $tahunAjaran = $studyGroup->academic_year ?? (
+            $bulan >= 7
+                ? now()->year . '/' . (now()->year + 1)
+                : (now()->year - 1) . '/' . now()->year
+        );
+
+        $kelasName = $studyGroup->name
+            ?: ($studyGroup->grade . ($studyGroup->section ?? ''));
+
+        $kelas = Kelas::create([
+            'nama'         => $kelasName,
+            'tingkat'      => (string) $studyGroup->grade,
+            'rombel'       => $studyGroup->section ?? null,
+            'tahun_ajaran' => $tahunAjaran,
+            'guru_id'      => $studyGroup->homeroom_teacher_id ?? null,
+        ]);
+
+        Log::info("resolveKelasIdForSiswa: Kelas baru dibuat id={$kelas->id} nama={$kelas->nama} dari study_group id={$studyGroup->id}");
+
+        return $kelas->id;
+    }
+
+    // =========================================================================
+    // HELPER: CARI KELAS BERDASARKAN NAMA (untuk import Excel)
     // =========================================================================
 
     private function findKelasId(?string $namaKelas): ?int
     {
         if (empty(trim((string) $namaKelas))) return null;
 
-        $kelas = Kelas::whereRaw('LOWER(TRIM(nama)) = ?', [strtolower(trim($namaKelas))])->first();
+        $nama = strtolower(trim($namaKelas));
 
-        return $kelas?->id;
+        // Cari di tabel kelas dulu (FK target untuk siswas)
+        $kelas = Kelas::whereRaw('LOWER(TRIM(nama)) = ?', [$nama])->first();
+
+        if ($kelas) return $kelas->id;
+
+        // Fallback: cari di study_groups, lalu resolve
+        $sg = StudyGroup::whereRaw('LOWER(TRIM(name)) = ?', [$nama])->first();
+
+        if ($sg) {
+            return $this->resolveKelasIdForSiswa($sg->id);
+        }
+
+        Log::warning("findKelasId: Kelas '{$namaKelas}' tidak ditemukan di kelas maupun study_groups.");
+        return null;
     }
 
     // =========================================================================
@@ -920,12 +881,10 @@ public function index(Request $request): View
 
             $str = trim((string) $value);
 
-            // dd/mm/yyyy atau dd-mm-yyyy
             if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $str, $m)) {
                 return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
             }
 
-            // yyyy-mm-dd
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $str)) {
                 return $str;
             }
@@ -959,13 +918,13 @@ public function index(Request $request): View
     }
 
     // =========================================================================
-    // HELPER BARU: Ambil Kelas dari StudyGroup (Digunakan di index & edit)
+    // HELPER: AMBIL DAFTAR KELAS (dari StudyGroup untuk UI)
     // =========================================================================
 
     private function getKelasList()
     {
         return StudyGroup::orderBy('grade')
-            ->orderBy('name')
-            ->get();
+                         ->orderBy('name')
+                         ->get();
     }
 }
