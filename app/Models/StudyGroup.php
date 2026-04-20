@@ -30,17 +30,11 @@ class StudyGroup extends Model
         'is_active' => 'boolean',
         'capacity'  => 'integer',
         'grade'     => 'integer',
+         'semester'  => 'integer',
     ];
 
         protected $table = 'study_groups';
  
- 
-    protected $casts = [
-        'grade'     => 'integer',
-        'semester'  => 'integer',
-        'capacity'  => 'integer',
-        'is_active' => 'boolean',
-    ];
 
     // Relasi ke wali kelas
     public function homeroomTeacher(): BelongsTo
