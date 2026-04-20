@@ -87,7 +87,7 @@ class JadwalMengajarController extends Controller
         $data['teacher_id'] = Auth::id(); // sesuaikan dengan kolom di tabel Anda
 
         StudySubject::create($data);
-        
+
         return redirect()->route('guru.jadwal-mengajar')
             ->with('success', 'Jadwal berhasil ditambahkan.');
     }
@@ -111,6 +111,10 @@ class JadwalMengajarController extends Controller
             'academic_year'    => ['required', 'regex:/^\d{4}\/\d{4}$/'],
             'semester'         => 'required|in:1,2',
             'notes'            => 'nullable|string|max:500',
+            'name'        => 'required|string|max:100',
+            'code'        => 'required|string|max:20',
+            'color'       => 'nullable|string|max:7',
+            'description' => 'nullable|string|max:200',
         ]);
 
         $jadwalMengajar->update($validated);
