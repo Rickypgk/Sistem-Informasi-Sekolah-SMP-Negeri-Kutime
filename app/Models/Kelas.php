@@ -22,6 +22,11 @@ class Kelas extends Model
         'kapasitas',
     ];
 
+    protected $casts = [
+        'semester'  => 'integer',
+        'kapasitas' => 'integer',
+    ];
+
     /** Wali kelas → relasi ke tabel gurus */
     public function guru(): BelongsTo
     {
