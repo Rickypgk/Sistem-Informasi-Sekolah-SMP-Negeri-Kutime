@@ -58,11 +58,6 @@ class User extends Authenticatable
         return $this->hasOne(Siswa::class);
     }
 
-    public function isWaliKelas()
-    {
-        return $this->guru && $this->guru->waliKelas()->exists();
-    }
-
     // ── Relasi wali kelas (FIX ERROR DI BLADE) ─────────────────
 
     public function homeroomGroups(): HasMany
