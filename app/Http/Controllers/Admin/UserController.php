@@ -35,44 +35,64 @@ class UserController extends Controller
     {
         $activeTab = $request->get('tab', 'guru');
 
+        // =========================
+        // DATA GURU
+        // =========================
         $gurus = User::whereIn('role', ['guru', 'kepala_sekolah'])
             ->with(['guru.studyGroup', 'guru.kelas'])
             ->latest()
             ->get();
 
+        // =========================
+        // DATA SISWA
+        // =========================
         $siswas = User::where('role', 'siswa')
             ->with(['siswa.kelas', 'siswa.studyGroup'])
             ->latest()
             ->get();
 
-        $kelasList = StudyGroup::select('id', 'name', 'grade', 'semester', 'academic_year')
+        // =========================
+        // DATA KELAS AKTIF
+        // =========================
+        $kelasList = StudyGroup::select(
+                'id',
+                'name',
+                'grade',
+                'semester',
+                'academic_year'
+            )
             ->where('is_active', true)
-            ->orderBy('grade')->orderBy('name')
-            ->get();
+            ->orderBy('grade')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($k) {
+                return [
+                    'id'            => $k->id,
+                    'name'          => $k->name,
+                    'grade'         => (string) $k->grade,
+                    'semester'      => (string) $k->semester,
+                    'academic_year' => $k->academic_year ?? '',
+                ];
+            })
+            ->values();
 
-        $kelasList    = $this->getKelasList();
+        // =========================
+        // DATA FILTER TAMBAHAN
+        // =========================
         $semesterList = $this->getSemesterList();
         $tahunList    = $this->getTahunAjaranList();
 
-
-        $request->validate([
-            // ... validasi lainnya ...
-            'kelas_id' => 'required_if:role,siswa|nullable|exists:study_groups,id',
-            'grade'    => 'required_if:role,siswa|nullable',
-            'semester' => 'required_if:role,siswa|nullable',
+        // =========================
+        // RETURN VIEW
+        // =========================
+        return view('admin.users.index', [
+            'gurus'        => $gurus,
+            'siswas'       => $siswas,
+            'activeTab'    => $activeTab,
+            'kelasList'    => $kelasList,
+            'semesterList' => $semesterList,
+            'tahunList'    => $tahunList,
         ]);
-
-        // Saat simpan tiap siswa:
-        if ($request->role === 'siswa' && $request->kelas_id) {
-            $siswaModel->kelas_id = $request->kelas_id;
-            $siswaModel->save();
-        }
-
-
-        return view('admin.users.index', compact(
-            'gurus', 'siswas', 'activeTab',
-            'kelasList', 'semesterList', 'tahunList'
-        ));
     }
 
     // =========================================================================
