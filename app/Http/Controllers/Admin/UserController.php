@@ -54,6 +54,21 @@ class UserController extends Controller
         $semesterList = $this->getSemesterList();
         $tahunList    = $this->getTahunAjaranList();
 
+
+        $request->validate([
+            // ... validasi lainnya ...
+            'kelas_id' => 'required_if:role,siswa|nullable|exists:study_groups,id',
+            'grade'    => 'required_if:role,siswa|nullable',
+            'semester' => 'required_if:role,siswa|nullable',
+        ]);
+
+        // Saat simpan tiap siswa:
+        if ($request->role === 'siswa' && $request->kelas_id) {
+            $siswaModel->kelas_id = $request->kelas_id;
+            $siswaModel->save();
+        }
+
+
         return view('admin.users.index', compact(
             'gurus', 'siswas', 'activeTab',
             'kelasList', 'semesterList', 'tahunList'
