@@ -46,8 +46,8 @@ class Guru extends Model
         return $this->belongsTo(StudyGroup::class);
     }
 
-    public function waliKelas()
+    public function homeroomGroups()
     {
-        return $this->hasOne(WaliKelas::class, 'guru_id');
+        return $this->hasMany(StudyGroup::class, 'homeroom_teacher_id');
     }
 }
