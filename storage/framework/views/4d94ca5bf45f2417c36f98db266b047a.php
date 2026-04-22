@@ -478,6 +478,14 @@
         document.body.style.overflow = '';
     };
 
+    /* ── Handler error gambar — dipanggil dari onerror tanpa nested escape ── */
+    window.pgImgError = function (el) {
+        var wrap = el.closest('.pg-img-wrap');
+        if (wrap) {
+            wrap.innerHTML = '<div class="p-8 text-center"><div class="text-5xl mb-3">🖼️</div><p class="text-sm text-slate-400">Gambar tidak dapat dimuat.</p></div>';
+        }
+    };
+
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') pgTutup();
     });
@@ -500,11 +508,11 @@
         h += '<span>🕐 ' + esc(d.diffHumans) + '</span>';
         h += '</div>';
 
+        /* ── GAMBAR: onerror memanggil fungsi global, tanpa nested escape ── */
         if (d.tipe === 'gambar') {
             if (d.fileUrl && d.fileUrl !== '') {
-                h += '<div class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-600 mb-5 bg-slate-50 dark:bg-slate-900 flex items-center justify-center min-h-[120px]">';
-                h += '<img src="' + d.fileUrl + '" alt="' + esc(d.judul) + '" class="w-full max-h-[420px] object-contain block"';
-                h += ' onerror="this.closest(\'div\').innerHTML=\'<div class=\\\"p-8 text-center\\\"><div class=\\\"text-5xl mb-3\\\">🖼️</div><p class=\\\"text-sm text-slate-400\\\">Gambar tidak dapat dimuat.</p></div>\'">';
+                h += '<div class="pg-img-wrap rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-600 mb-5 bg-slate-50 dark:bg-slate-900 flex items-center justify-center min-h-[120px]">';
+                h += '<img src="' + d.fileUrl + '" alt="' + esc(d.judul) + '" class="w-full max-h-[420px] object-contain block" onerror="pgImgError(this)">';
                 h += '</div>';
             } else {
                 h += '<div class="p-8 mb-5 bg-slate-50 dark:bg-slate-900/40 rounded-2xl text-center"><div class="text-4xl mb-2">🖼️</div><p class="text-sm text-slate-400">Tidak ada file gambar.</p></div>';
