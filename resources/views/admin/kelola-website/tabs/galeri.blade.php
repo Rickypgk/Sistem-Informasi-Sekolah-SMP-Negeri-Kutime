@@ -1,9 +1,5 @@
 {{-- resources/views/admin/kelola-website/tabs/galeri.blade.php --}}
-<div x-show="tab === 'galeri'" x-cloak class="space-y-4"
-     x-data="galeriOverlay()"
-     @open-galeri-create.window="openCreate()"
-     @open-galeri-edit.window="openEdit($event.detail)"
->
+<div x-show="tab === 'galeri'" x-cloak class="space-y-4">
 
     @if(session('success'))
         <div class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 text-xs rounded-lg px-3 py-2">
@@ -22,15 +18,13 @@
                 <h2 class="text-sm font-semibold text-slate-900">Kelola Galeri Media</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Upload foto, video, atau tambahkan link YouTube/Facebook.</p>
             </div>
-            {{-- Tombol Tambah Media → buka overlay --}}
-            <button type="button"
-                    @click="openCreate()"
-                    class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition">
+            <a href="{{ route('admin.galeri.create') }}"
+               class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition">
                 <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Tambah Media
-            </button>
+            </a>
         </div>
 
         {{-- Statistik --}}
@@ -91,8 +85,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
-                Belum ada media.
-                <button type="button" @click="openCreate()" class="text-indigo-600 hover:underline">Tambah sekarang →</button>
+                Belum ada media. <a href="{{ route('admin.galeri.create') }}" class="text-indigo-600 hover:underline">Tambah sekarang →</a>
             </div>
         @else
             <div class="grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -135,15 +128,14 @@
                         <div class="flex items-center justify-between">
                             <span class="text-xs text-white/70 capitalize">{{ $item->kategori }}</span>
                             <div class="flex gap-1.5">
-                                {{-- Edit → buka overlay modal --}}
-                                <button type="button"
-                                        @click="openEdit({{ $item->id }})"
-                                        class="p-1 bg-white/20 hover:bg-white/30 rounded text-white transition" title="Edit">
+                                {{-- Edit --}}
+                                <a href="{{ route('admin.galeri.edit', $item) }}"
+                                   class="p-1 bg-white/20 hover:bg-white/30 rounded text-white transition" title="Edit">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
-                                </button>
+                                </a>
 
                                 {{-- Toggle status --}}
                                 <form action="{{ route('admin.galeri.toggle-status', $item) }}" method="POST" class="inline">
@@ -200,175 +192,4 @@
             </svg>
         </a>
     </div>
-
-
-    {{-- ===================== OVERLAY MODAL ===================== --}}
-    <div
-        x-show="modalOpen"
-        x-cloak
-        class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto"
-        style="padding: 3vh 1rem;"
-    >
-        {{-- Backdrop --}}
-        <div
-            class="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            @click="closeModal()"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-        ></div>
-
-        {{-- Panel --}}
-        <div
-            class="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col my-auto"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 translate-y-3 scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-            x-transition:leave-end="opacity-0 translate-y-3 scale-95"
-            @keydown.escape.window="closeModal()"
-        >
-            {{-- Modal Header --}}
-            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200">
-                <h2 class="text-sm font-semibold text-slate-900" x-text="modalTitle"></h2>
-                <button type="button" @click="closeModal()"
-                        class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-
-            {{-- Modal Body --}}
-            <div class="px-5 py-4">
-
-                {{-- Loading state --}}
-                <div x-show="modalLoading" class="flex items-center justify-center py-16 text-slate-400 text-xs gap-2">
-                    <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                    </svg>
-                    Memuat form...
-                </div>
-
-                {{-- Form container --}}
-                <div x-show="!modalLoading" id="galeri-modal-form-container"></div>
-
-            </div>
-        </div>
-    </div>
-    {{-- =================== END OVERLAY MODAL =================== --}}
-
 </div>
-
-<script>
-function galeriOverlay() {
-    return {
-        modalOpen: false,
-        modalLoading: false,
-        modalTitle: '',
-
-        openCreate() {
-            this.modalTitle = 'Tambah Media Baru';
-            this._loadForm('{{ route('admin.galeri.create') }}');
-        },
-
-        openEdit(id) {
-            this.modalTitle = 'Edit Media Galeri';
-            this._loadForm(`/admin/galeri/${id}/edit`);
-        },
-
-        _loadForm(url) {
-            this.modalLoading = true;
-            this.modalOpen = true;
-            document.body.style.overflow = 'hidden';
-
-            // Clear container
-            document.getElementById('galeri-modal-form-container').innerHTML = '';
-
-            fetch(url + (url.includes('?') ? '&' : '?') + '_overlay=1', {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(r => r.text())
-            .then(html => {
-                const container = document.getElementById('galeri-modal-form-container');
-                container.innerHTML = html;
-                this.modalLoading = false;
-
-                // Init Alpine pada elemen baru
-                this.$nextTick(() => {
-                    if (window.Alpine) {
-                        container.querySelectorAll('[x-data]').forEach(el => {
-                            window.Alpine.initTree(el);
-                        });
-                    }
-                    this._bindFormSubmit();
-                });
-            })
-            .catch(() => {
-                document.getElementById('galeri-modal-form-container').innerHTML =
-                    '<p class="text-red-500 text-xs py-4 text-center">Gagal memuat form. Silakan coba lagi.</p>';
-                this.modalLoading = false;
-            });
-        },
-
-        _bindFormSubmit() {
-            const container = document.getElementById('galeri-modal-form-container');
-            const form = container.querySelector('form.galeri-overlay-form');
-            if (!form) return;
-
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-
-                const btn = form.querySelector('[type="submit"]');
-                if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
-
-                const formData = new FormData(form);
-                const action = form.getAttribute('action');
-
-                fetch(action, {
-                    method: 'POST', // Laravel pakai _method spoofing untuk PATCH
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(r => {
-                    if (r.ok || r.redirected) {
-                        // Berhasil → tutup modal & reload halaman untuk refresh data + flash message
-                        document.body.style.overflow = '';
-                        window.location.href = '{{ route('admin.kelola-website', ['tab' => 'galeri']) }}';
-                    } else {
-                        return r.text().then(html => {
-                            // Ada error validasi → tampilkan ulang form dengan pesan error
-                            container.innerHTML = html;
-                            if (window.Alpine) {
-                                container.querySelectorAll('[x-data]').forEach(el => {
-                                    window.Alpine.initTree(el);
-                                });
-                            }
-                            this._bindFormSubmit();
-                        });
-                    }
-                })
-                .catch(() => {
-                    if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
-                    alert('Terjadi kesalahan jaringan. Silakan coba lagi.');
-                });
-            });
-        },
-
-        closeModal() {
-            this.modalOpen = false;
-            document.body.style.overflow = '';
-            // Beri waktu animasi selesai sebelum kosongkan konten
-            setTimeout(() => {
-                document.getElementById('galeri-modal-form-container').innerHTML = '';
-            }, 200);
-        }
-    };
-}
-</script>
