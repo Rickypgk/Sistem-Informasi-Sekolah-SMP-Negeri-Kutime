@@ -1,79 +1,123 @@
 {{-- resources/views/guru/dashboard/jadwal-mengajar.blade.php --}}
-<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-    
-    {{-- Header --}}
-    <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-                <span class="text-indigo-600 dark:text-indigo-400 text-lg">📅</span>
-            </div>
+@php
+    $jadwalHariIni = $jadwalHariIni ?? collect();
+    $hariIni = now()->isoFormat('dddd');
+@endphp
+
+<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+
+    <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <span style="font-size:1rem;">🗓️</span>
             <div>
-                <h3 class="font-semibold text-slate-800 dark:text-slate-100">Jadwal Mengajar Hari Ini</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                    {{ now()->locale('id')->translatedFormat('l, d F Y') }}
+                <p class="font-semibold text-slate-800 dark:text-slate-100" style="font-size:.8rem;">
+                    Jadwal Mengajar Hari Ini
                 </p>
+                <p class="text-slate-400" style="font-size:.6rem;">{{ $hariIni }}, {{ now()->isoFormat('D MMMM Y') }}</p>
             </div>
         </div>
-        
-        <a href="{{ route('guru.jadwal-mengajar.index') }}" 
-           class="text-xs font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
-            Lihat Semua <span class="text-lg leading-none">→</span>
+        <a href="{{ route('guru.jadwal-mengajar.index') }}"
+           style="font-size:.6rem;font-weight:700;color:#4f46e5;text-decoration:none;
+                  background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:3px 8px;">
+            Semua Jadwal
         </a>
     </div>
 
-    {{-- List Jadwal --}}
-    <div class="divide-y divide-slate-100 dark:divide-slate-700">
-        @forelse($jadwalHariIni as $jadwal)
-        <div class="px-5 py-4 flex gap-4 items-start hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-            
-            {{-- Waktu --}}
-            <div class="text-right w-16 shrink-0">
-                <div class="text-xs font-mono text-slate-500 dark:text-slate-400">
-                    {{ substr($jadwal->start_time ?? '', 0, 5) }}
-                </div>
-                <div class="text-xs text-slate-400 mt-0.5">—</div>
-                <div class="text-xs font-mono text-slate-500 dark:text-slate-400">
-                    {{ substr($jadwal->end_time ?? '', 0, 5) }}
-                </div>
-            </div>
+    @if($jadwalHariIni->isEmpty())
+        <div style="padding:32px;text-align:center;color:#94a3b8;">
+            <p style="font-size:2rem;margin-bottom:6px;">😊</p>
+            <p style="font-size:.7rem;font-weight:600;color:#64748b;">Tidak ada jadwal mengajar hari ini</p>
+            <p style="font-size:.6rem;color:#94a3b8;margin-top:2px;">Selamat beristirahat!</p>
+        </div>
+    @else
+        <div>
+            @foreach($jadwalHariIni as $idx => $jadwal)
+            @php
+                $colors = ['#4f46e5','#059669','#2563eb','#d97706','#dc2626','#7c3aed','#0891b2'];
+                $stripColor = $colors[$idx % count($colors)];
+                $now = now();
+                $jamMulai = $jadwal->jam_mulai ?? null;
+                $jamSelesai = $jadwal->jam_selesai ?? null;
+                $isCurrent = false;
+                if($jamMulai && $jamSelesai) {
+                    $mulai   = \Carbon\Carbon::parse($now->format('Y-m-d') . ' ' . $jamMulai);
+                    $selesai = \Carbon\Carbon::parse($now->format('Y-m-d') . ' ' . $jamSelesai);
+                    $isCurrent = $now->between($mulai, $selesai);
+                }
+            @endphp
+            <div style="display:flex;align-items:center;gap:10px;
+                         padding:10px 14px;border-bottom:1px solid #f1f5f9;
+                         {{ $isCurrent ? 'background:#f0fdf4;' : '' }}"
+                 onmouseover="this.style.background='#f8fafc'"
+                 onmouseout="this.style.background='{{ $isCurrent ? '#f0fdf4' : 'transparent' }}'">
 
-            {{-- Informasi Jadwal --}}
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full shrink-0" 
-                         style="background-color: {{ $jadwal->studySubject->color ?? '#6366f1' }}"></div>
-                    <p class="font-medium text-slate-800 dark:text-slate-100 truncate">
-                        {{ $jadwal->studySubject->name ?? 'Mata Pelajaran Tidak Diketahui' }}
+                {{-- Color strip --}}
+                <div style="width:3px;height:36px;border-radius:2px;
+                             background:{{ $stripColor }};flex-shrink:0;"></div>
+
+                {{-- Waktu --}}
+                <div style="min-width:68px;flex-shrink:0;text-align:center;
+                             background:{{ $isCurrent ? '#dcfce7' : '#f8fafc' }};
+                             border:1px solid {{ $isCurrent ? '#a7f3d0' : '#e2e8f0' }};
+                             border-radius:7px;padding:4px 6px;">
+                    @if($jamMulai && $jamSelesai)
+                        <p style="font-size:.62rem;font-weight:800;color:{{ $isCurrent ? '#059669' : '#1e293b' }};
+                                   line-height:1.2;">{{ substr($jamMulai,0,5) }}</p>
+                        <p style="font-size:.55rem;color:#94a3b8;line-height:1.2;">{{ substr($jamSelesai,0,5) }}</p>
+                    @else
+                        <p style="font-size:.62rem;color:#94a3b8;">—</p>
+                    @endif
+                </div>
+
+                {{-- Info mapel --}}
+                <div class="flex-1 min-w-0">
+                    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                        <p style="font-size:.72rem;font-weight:700;color:#1e293b;
+                                   line-height:1.2;white-space:nowrap;overflow:hidden;
+                                   text-overflow:ellipsis;max-width:160px;">
+                            {{ $jadwal->mataPelajaran->nama ?? $jadwal->mata_pelajaran ?? '—' }}
+                        </p>
+                        @if($isCurrent)
+                            <span style="font-size:.5rem;font-weight:800;background:#dcfce7;
+                                          color:#059669;border:1px solid #a7f3d0;border-radius:4px;
+                                          padding:1px 5px;flex-shrink:0;">SEDANG BERLANGSUNG</span>
+                        @endif
+                    </div>
+                    <p style="font-size:.6rem;color:#64748b;margin-top:1px;">
+                        {{ $jadwal->kelas->nama ?? $jadwal->nama_kelas ?? '—' }}
+                        @if($jadwal->ruangan ?? null)
+                            &nbsp;·&nbsp; {{ $jadwal->ruangan }}
+                        @endif
                     </p>
                 </div>
-                
-                <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                    {{ $jadwal->studyGroup->name ?? 'Kelas Tidak Diketahui' }}
-                    @if($jadwal->room)
-                        <span class="text-slate-400"> • Ruang {{ $jadwal->room }}</span>
-                    @endif
-                </p>
 
-                <div class="mt-2">
-                    <span class="inline-block px-2.5 py-0.5 text-[10px] font-medium rounded-full 
-                                 {{ $jadwal->session_type === 'praktikum' 
-                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' }}">
-                        {{ ucfirst($jadwal->session_type ?? 'teori') }}
-                    </span>
-                </div>
+                {{-- Tombol absensi --}}
+                @if($isCurrent || true)
+                <a href="{{ route('guru.absensi-siswa.index', ['jadwal_id' => $jadwal->id ?? '', 'kelas_id' => $jadwal->kelas_id ?? '']) }}"
+                   style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;
+                          padding:5px 10px;border-radius:7px;font-size:.6rem;font-weight:700;
+                          text-decoration:none;
+                          {{ $isCurrent
+                              ? 'background:#4f46e5;color:#fff;'
+                              : 'background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;' }}">
+                    ✅ Absen
+                </a>
+                @endif
+
             </div>
+            @endforeach
         </div>
-        @empty
-        <div class="px-5 py-12 text-center">
-            <p class="text-slate-400 dark:text-slate-500 text-sm">
-                Tidak ada jadwal mengajar hari ini.
+
+        <div style="padding:8px 14px;border-top:1px solid #f1f5f9;background:#f8fafc;
+                     display:flex;align-items:center;justify-content:space-between;">
+            <p style="font-size:.6rem;color:#64748b;">
+                {{ $jadwalHariIni->count() }} sesi mengajar hari ini
             </p>
-            <a href="{{ route('guru.jadwal-mengajar.index') }}" 
-               class="mt-4 inline-block text-indigo-600 hover:underline text-xs font-medium">
-                Kelola Jadwal Mengajar →
+            <a href="{{ route('guru.jadwal-mengajar.index') }}"
+               style="font-size:.6rem;font-weight:700;color:#4f46e5;text-decoration:none;">
+                Jadwal lengkap →
             </a>
         </div>
-        @endforelse
-    </div>
+    @endif
+
 </div>
