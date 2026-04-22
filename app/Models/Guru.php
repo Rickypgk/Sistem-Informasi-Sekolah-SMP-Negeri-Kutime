@@ -45,4 +45,5 @@ class Guru extends Model
     {
         return $this->belongsTo(StudyGroup::class);
     }
+    
 }
