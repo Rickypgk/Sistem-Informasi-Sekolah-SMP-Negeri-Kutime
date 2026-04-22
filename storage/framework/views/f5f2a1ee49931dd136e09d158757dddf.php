@@ -1,0 +1,2 @@
+
+<?php echo $__env->make('admin.galeri._form', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\PA 3\smpn-kutime\resources\views/admin/galeri/create.blade.php ENDPATH**/ ?>
