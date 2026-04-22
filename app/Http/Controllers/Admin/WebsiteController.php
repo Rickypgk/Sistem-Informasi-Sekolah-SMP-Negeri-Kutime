@@ -24,20 +24,6 @@ class WebsiteController extends Controller
         $kontak    = PageContent::getKontak();
         $stats     = PageContent::getStats();
 
-        $tipeOptions = [
-            'image' => '🖼️ Gambar',
-            'video' => '🎥 Video',
-            'youtube' => '▶️ YouTube',
-            'file' => '📄 File',
-        ];
-
-        $kategoriOptions = [
-            'kegiatan' => 'Kegiatan',
-            'fasilitas' => 'Fasilitas',
-            'prestasi' => 'Prestasi',
-            'umum' => 'Umum',
-        ];
-
         // ── Berita ────────────────────────────────────────────────
         $beritaQuery = Berita::with('user')->latest();
 
@@ -83,7 +69,7 @@ class WebsiteController extends Controller
         return view('admin.kelola-website.index', compact(
             'tab', 'contents', 'heroMedia', 'kontak', 'stats',
             'beritas', 'beritaStats',
-            'galeris', 'galeriStats', 'galeriKategoriOptions', 'tipeOptions',
+            'galeris', 'galeriStats', 'galeriKategoriOptions',
         ));
     }
 

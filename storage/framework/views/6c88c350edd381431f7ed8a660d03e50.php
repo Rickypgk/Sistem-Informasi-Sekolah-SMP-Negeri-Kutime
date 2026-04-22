@@ -1,30 +1,5 @@
 
-<div x-show="tab === 'galeri'" x-cloak class="space-y-4"
-     x-data="{
-         modalOpen: false,
-         modalMode: 'create',
-         editId: null,
-         editData: {},
-         openCreate() {
-             this.modalMode = 'create';
-             this.editId = null;
-             this.editData = {};
-             this.modalOpen = true;
-             document.body.style.overflow = 'hidden';
-         },
-         openEdit(data) {
-             this.modalMode = 'edit';
-             this.editId = data.id;
-             this.editData = data;
-             this.modalOpen = true;
-             document.body.style.overflow = 'hidden';
-         },
-         closeModal() {
-             this.modalOpen = false;
-             document.body.style.overflow = '';
-         }
-     }"
->
+<div x-show="tab === 'galeri'" x-cloak class="space-y-4">
 
     <?php if(session('success')): ?>
         <div class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 text-xs rounded-lg px-3 py-2">
@@ -44,13 +19,13 @@
                 <h2 class="text-sm font-semibold text-slate-900">Kelola Galeri Media</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Upload foto, video, atau tambahkan link YouTube/Facebook.</p>
             </div>
-            <button type="button" @click="openCreate()"
+            <a href="<?php echo e(route('admin.galeri.create')); ?>"
                class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition">
                 <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Tambah Media
-            </button>
+            </a>
         </div>
 
         
@@ -111,7 +86,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
-                Belum ada media. <button type="button" @click="openCreate()" class="text-indigo-600 hover:underline">Tambah sekarang →</button>
+                Belum ada media. <a href="<?php echo e(route('admin.galeri.create')); ?>" class="text-indigo-600 hover:underline">Tambah sekarang →</a>
             </div>
         <?php else: ?>
             <div class="grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -156,26 +131,13 @@
                             <span class="text-xs text-white/70 capitalize"><?php echo e($item->kategori); ?></span>
                             <div class="flex gap-1.5">
                                 
-                                <button type="button"
-                                        @click="openEdit({
-                                            id: <?php echo e($item->id); ?>,
-                                            tipe: '<?php echo e($item->tipe); ?>',
-                                            judul: <?php echo e(Js::from($item->judul)); ?>,
-                                            deskripsi: <?php echo e(Js::from($item->deskripsi ?? '')); ?>,
-                                            kategori: '<?php echo e($item->kategori); ?>',
-                                            urutan: <?php echo e($item->urutan ?? 0); ?>,
-                                            status: '<?php echo e($item->status); ?>',
-                                            link_url: <?php echo e(Js::from($item->link_url ?? '')); ?>,
-                                            file_url: <?php echo e(Js::from($item->file_url ?? '')); ?>,
-                                            thumbnail_url: <?php echo e(Js::from($item->thumbnail_url ?? '')); ?>,
-                                            has_thumbnail: <?php echo e($item->thumbnail ? 'true' : 'false'); ?>,
-                                        })"
-                                        class="p-1 bg-white/20 hover:bg-white/30 rounded text-white transition" title="Edit">
+                                <a href="<?php echo e(route('admin.galeri.edit', $item)); ?>"
+                                   class="p-1 bg-white/20 hover:bg-white/30 rounded text-white transition" title="Edit">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
-                                </button>
+                                </a>
 
                                 
                                 <form action="<?php echo e(route('admin.galeri.toggle-status', $item)); ?>" method="POST" class="inline">
@@ -232,368 +194,4 @@
             </svg>
         </a>
     </div>
-
-
-    
-    <template x-teleport="body">
-    <div
-        x-show="modalOpen"
-        x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
-        @keydown.escape.window="closeModal()"
-    >
-        
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             @click="closeModal()">
-        </div>
-
-        
-        <div class="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col max-h-[92vh]"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95 translate-y-2"
-             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-             x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-        >
-            
-            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 shrink-0">
-                <h3 class="text-sm font-semibold text-slate-900"
-                    x-text="modalMode === 'create' ? 'Tambah Media Baru' : 'Edit Media Galeri'"></h3>
-                <button type="button" @click="closeModal()"
-                        class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition" title="Tutup">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-
-            
-            <div class="overflow-y-auto flex-1 px-5 py-4"
-                 x-data="galeriForm(modalMode === 'create' ? 'photo' : editData.tipe || 'photo', $root)"
-                 x-init="$watch('$root.modalOpen', v => { if (v) resetForm($root.modalMode, $root.editData) })"
-            >
-
-                
-                <div x-show="Object.keys(errors).length > 0"
-                     class="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 mb-4">
-                    <p class="font-semibold mb-1">Terdapat kesalahan:</p>
-                    <ul class="list-disc list-inside space-y-0.5">
-                        <template x-for="(msgs, field) in errors" :key="field">
-                            <template x-for="msg in msgs" :key="msg">
-                                <li x-text="msg"></li>
-                            </template>
-                        </template>
-                    </ul>
-                </div>
-
-                <form
-                    @submit.prevent="submitForm($root)"
-                    enctype="multipart/form-data"
-                    class="space-y-4"
-                >
-                    <?php echo csrf_field(); ?>
-
-                    
-                    <template x-if="$root.modalMode === 'edit'">
-                        <input type="hidden" name="_method" value="PATCH">
-                    </template>
-
-                    
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1.5">
-                            Tipe Media <span class="text-red-500">*</span>
-                        </label>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            <?php $__currentLoopData = $tipeOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $val => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <label class="flex flex-col items-center gap-1 p-2.5 border-2 rounded-lg cursor-pointer transition-colors"
-                                   :class="tipe === '<?php echo e($val); ?>' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'">
-                                <input type="radio" name="tipe" value="<?php echo e($val); ?>" class="sr-only"
-                                       x-model="tipe" @change="resetFile()">
-                                <span class="text-lg"><?php echo e(explode(' ', $label)[0]); ?></span>
-                                <span class="text-xs font-medium text-slate-700"><?php echo e(implode(' ', array_slice(explode(' ', $label), 1))); ?></span>
-                            </label>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </div>
-                        <p x-show="errors.tipe" x-text="errors.tipe?.[0]" class="text-red-500 text-xs mt-1"></p>
-                    </div>
-
-                    
-                    <div x-show="tipe === 'photo' || tipe === 'video'">
-                        <label class="block text-xs font-medium text-slate-700 mb-1">
-                            <span x-text="tipe === 'photo' ? 'Upload Foto' : 'Upload Video'"></span>
-                            <span x-show="$root.modalMode === 'create'" class="text-red-500">*</span>
-                            <span class="text-slate-400 font-normal" x-show="tipe === 'photo'">(jpg/png/webp/gif)</span>
-                            <span class="text-slate-400 font-normal" x-show="tipe === 'video'">(mp4/mov/avi/mkv/webm)</span>
-                        </label>
-
-                        
-                        <div x-show="$root.modalMode === 'edit' && $root.editData.file_url && !previewSrc" class="mb-2">
-                            <template x-if="$root.editData.tipe === 'photo'">
-                                <img :src="$root.editData.file_url" class="w-full max-h-40 object-cover rounded-lg border border-slate-200">
-                            </template>
-                            <template x-if="$root.editData.tipe === 'video'">
-                                <video :src="$root.editData.file_url" controls class="w-full max-h-40 rounded-lg border border-slate-200"></video>
-                            </template>
-                            <p class="text-xs text-slate-400 mt-1">File saat ini. Upload baru untuk mengganti.</p>
-                        </div>
-
-                        <input type="file" name="file_path" id="galeri-file-input"
-                               class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                               @change="previewFile($event)"
-                               :accept="tipe === 'photo' ? 'image/*' : 'video/mp4,video/mov,video/avi,video/mkv,video/webm'">
-
-                        <div x-show="previewSrc" class="mt-2">
-                            <template x-if="tipe === 'photo'">
-                                <img :src="previewSrc" class="w-full max-h-40 object-cover rounded-lg border border-slate-200">
-                            </template>
-                            <template x-if="tipe === 'video'">
-                                <video :src="previewSrc" controls class="w-full max-h-40 rounded-lg border border-slate-200"></video>
-                            </template>
-                        </div>
-                        <p x-show="errors.file_path" x-text="errors.file_path?.[0]" class="text-red-500 text-xs mt-1"></p>
-                    </div>
-
-                    
-                    <div x-show="tipe === 'link_youtube' || tipe === 'link_facebook'">
-                        <label class="block text-xs font-medium text-slate-700 mb-1">
-                            <span x-text="tipe === 'link_youtube' ? 'URL YouTube' : 'URL Video Facebook'"></span>
-                            <span class="text-red-500">*</span>
-                        </label>
-                        <input type="url" name="link_url"
-                               class="w-full rounded-md border-slate-300 text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
-                               :class="errors.link_url ? 'border-red-400' : ''"
-                               placeholder="https://www.youtube.com/watch?v=..."
-                               x-model="linkUrl"
-                               @input="previewYoutube($event.target.value)">
-                        <p x-show="errors.link_url" x-text="errors.link_url?.[0]" class="text-red-500 text-xs mt-1"></p>
-
-                        <div x-show="youtubeThumbnail" class="mt-2">
-                            <img :src="youtubeThumbnail" class="w-full max-h-40 object-cover rounded-lg border border-slate-200">
-                            <p class="text-xs text-slate-400 mt-1">Pratinjau thumbnail YouTube</p>
-                        </div>
-                    </div>
-
-                    
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">
-                            Judul / Keterangan <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="judul"
-                               class="w-full rounded-md border-slate-300 text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
-                               :class="errors.judul ? 'border-red-400' : ''"
-                               placeholder="Contoh: Upacara HUT RI ke-80"
-                               x-model="judul" required>
-                        <p x-show="errors.judul" x-text="errors.judul?.[0]" class="text-red-500 text-xs mt-1"></p>
-                    </div>
-
-                    
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">
-                            Deskripsi <span class="text-slate-400 font-normal">(opsional)</span>
-                        </label>
-                        <textarea name="deskripsi" rows="2"
-                                  class="w-full rounded-md border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                  placeholder="Deskripsi singkat kegiatan..."
-                                  x-model="deskripsi"></textarea>
-                    </div>
-
-                    
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">
-                            Thumbnail Kustom
-                            <span class="text-slate-400 font-normal">(opsional – jpg/png maks. 5MB)</span>
-                        </label>
-                        <div x-show="$root.modalMode === 'edit' && $root.editData.has_thumbnail" class="mb-1">
-                            <img :src="$root.editData.thumbnail_url" class="w-24 h-16 object-cover rounded border border-slate-200">
-                            <p class="text-xs text-slate-400 mt-1">Thumbnail saat ini.</p>
-                        </div>
-                        <input type="file" name="thumbnail" accept="image/*"
-                               class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100">
-                        <p x-show="errors.thumbnail" x-text="errors.thumbnail?.[0]" class="text-red-500 text-xs mt-1"></p>
-                    </div>
-
-                    
-                    <div class="grid sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">Kategori <span class="text-red-500">*</span></label>
-                            <select name="kategori"
-                                    class="w-full rounded-md border-slate-300 text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
-                                    x-model="kategori" required>
-                                <?php $__currentLoopData = $kategoriOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $val => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($val); ?>"><?php echo e($label); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                            <p x-show="errors.kategori" x-text="errors.kategori?.[0]" class="text-red-500 text-xs mt-1"></p>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">
-                                Urutan <span class="text-slate-400 font-normal">(angka kecil tampil lebih awal)</span>
-                            </label>
-                            <input type="number" name="urutan" min="0"
-                                   class="w-full rounded-md border-slate-300 text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
-                                   x-model="urutan">
-                        </div>
-                    </div>
-
-                    
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">Status <span class="text-red-500">*</span></label>
-                        <select name="status"
-                                class="w-full rounded-md border-slate-300 text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
-                                x-model="status" required>
-                            <option value="aktif">✅ Aktif – tampil di website</option>
-                            <option value="draf">📝 Draf – tidak tampil</option>
-                        </select>
-                        <p x-show="errors.status" x-text="errors.status?.[0]" class="text-red-500 text-xs mt-1"></p>
-                    </div>
-
-                    
-                    <div class="flex items-center justify-between pt-3 border-t border-slate-200">
-                        <button type="button" @click="$root.closeModal()"
-                                class="px-4 py-2 text-xs text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
-                            ← Batal
-                        </button>
-                        <button type="submit" :disabled="submitting"
-                                class="px-5 py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5">
-                            <svg x-show="submitting" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                            </svg>
-                            <span x-text="submitting ? 'Menyimpan...' : (modalMode === 'create' ? 'Tambah Media' : 'Simpan Perubahan')"></span>
-                        </button>
-                    </div>
-                </form>
-
-            </div>
-        </div>
-    </div>
-    </template>
-    
-
-</div>
-
-<script>
-function galeriForm(initialTipe, $root) {
-    return {
-        tipe: initialTipe,
-        judul: '',
-        deskripsi: '',
-        linkUrl: '',
-        kategori: 'kegiatan',
-        urutan: 0,
-        status: 'aktif',
-        previewSrc: null,
-        youtubeThumbnail: null,
-        submitting: false,
-        errors: {},
-
-        resetForm(mode, data) {
-            this.errors = {};
-            this.previewSrc = null;
-            this.youtubeThumbnail = null;
-            this.submitting = false;
-
-            const fileInput = document.getElementById('galeri-file-input');
-            if (fileInput) fileInput.value = '';
-
-            if (mode === 'create') {
-                this.tipe      = 'photo';
-                this.judul     = '';
-                this.deskripsi = '';
-                this.linkUrl   = '';
-                this.kategori  = 'kegiatan';
-                this.urutan    = 0;
-                this.status    = 'aktif';
-            } else {
-                this.tipe      = data.tipe     || 'photo';
-                this.judul     = data.judul    || '';
-                this.deskripsi = data.deskripsi|| '';
-                this.linkUrl   = data.link_url || '';
-                this.kategori  = data.kategori || 'kegiatan';
-                this.urutan    = data.urutan   ?? 0;
-                this.status    = data.status   || 'aktif';
-
-                // Auto-preview YouTube saat edit
-                if (this.tipe === 'link_youtube' && this.linkUrl) {
-                    this.previewYoutube(this.linkUrl);
-                }
-            }
-        },
-
-        resetFile() {
-            this.previewSrc = null;
-            this.youtubeThumbnail = null;
-            const input = document.getElementById('galeri-file-input');
-            if (input) input.value = '';
-        },
-
-        previewFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            this.previewSrc = URL.createObjectURL(file);
-        },
-
-        previewYoutube(url) {
-            const patterns = [
-                /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-                /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
-                /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
-            ];
-            for (const p of patterns) {
-                const m = url.match(p);
-                if (m) {
-                    this.youtubeThumbnail = `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg`;
-                    return;
-                }
-            }
-            this.youtubeThumbnail = null;
-        },
-
-        async submitForm(root) {
-            this.submitting = true;
-            this.errors = {};
-
-            const form = this.$el.querySelector('form') ?? this.$el.closest('form');
-            const formData = new FormData(form);
-
-            const isEdit  = root.modalMode === 'edit';
-            const url     = isEdit
-                ? `/admin/galeri/${root.editId}`
-                : '<?php echo e(route('admin.galeri.store')); ?>';
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                });
-
-                if (response.ok || response.redirected) {
-                    // Berhasil — reload halaman agar grid & flash message refresh
-                    window.location.href = '<?php echo e(route('admin.kelola-website', ['tab' => 'galeri'])); ?>';
-                    return;
-                }
-
-                if (response.status === 422) {
-                    // Validasi gagal — tampilkan error tanpa tutup modal
-                    const json = await response.json();
-                    this.errors = json.errors ?? {};
-                } else {
-                    alert('Terjadi kesalahan server. Silakan coba lagi.');
-                }
-            } catch (e) {
-                alert('Terjadi kesalahan jaringan. Silakan coba lagi.');
-            } finally {
-                this.submitting = false;
-            }
-        }
-    };
-}
-</script><?php /**PATH C:\PA 3\smpn-kutime\resources\views/admin/kelola-website/tabs/galeri.blade.php ENDPATH**/ ?>
+</div><?php /**PATH C:\PA 3\smpn-kutime\resources\views/admin/kelola-website/tabs/galeri.blade.php ENDPATH**/ ?>
