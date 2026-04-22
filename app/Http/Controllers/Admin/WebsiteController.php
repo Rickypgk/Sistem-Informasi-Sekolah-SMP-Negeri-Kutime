@@ -76,7 +76,7 @@ class WebsiteController extends Controller
         return view('admin.kelola-website.index', compact(
             'tab', 'contents', 'heroMedia', 'kontak', 'stats',
             'beritas', 'beritaStats',
-            'galeris', 'galeriStats', 'galeriKategoriOptions',
+            'galeris', 'galeriStats', 'galeriKategoriOptions', 'tipeOptions',
         ));
     }
 
