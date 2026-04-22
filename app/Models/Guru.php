@@ -46,8 +46,8 @@ class Guru extends Model
         return $this->belongsTo(StudyGroup::class);
     }
 
-    public function isWaliKelas()
+    public function waliKelas()
     {
-        return $this->guru && $this->guru->waliKelas()->exists();
+        return $this->hasOne(WaliKelas::class, 'guru_id');
     }
 }
