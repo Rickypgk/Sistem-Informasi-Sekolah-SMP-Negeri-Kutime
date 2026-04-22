@@ -35,64 +35,24 @@ class UserController extends Controller
     {
         $activeTab = $request->get('tab', 'guru');
 
-        // =========================
-        // DATA GURU
-        // =========================
         $gurus = User::whereIn('role', ['guru', 'kepala_sekolah'])
             ->with(['guru.studyGroup', 'guru.kelas'])
             ->latest()
             ->get();
 
-        // =========================
-        // DATA SISWA
-        // =========================
         $siswas = User::where('role', 'siswa')
             ->with(['siswa.kelas', 'siswa.studyGroup'])
             ->latest()
             ->get();
 
-        // =========================
-        // DATA KELAS AKTIF
-        // =========================
-        $kelasList = StudyGroup::select(
-                'id',
-                'name',
-                'grade',
-                'semester',
-                'academic_year'
-            )
-            ->where('is_active', true)
-            ->orderBy('grade')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($k) {
-                return [
-                    'id'            => $k->id,
-                    'name'          => $k->name,
-                    'grade'         => (string) $k->grade,
-                    'semester'      => (string) $k->semester,
-                    'academic_year' => $k->academic_year ?? '',
-                ];
-            })
-            ->values();
-
-        // =========================
-        // DATA FILTER TAMBAHAN
-        // =========================
+        $kelasList    = $this->getKelasList();
         $semesterList = $this->getSemesterList();
         $tahunList    = $this->getTahunAjaranList();
 
-        // =========================
-        // RETURN VIEW
-        // =========================
-        return view('admin.users.index', [
-            'gurus'        => $gurus,
-            'siswas'       => $siswas,
-            'activeTab'    => $activeTab,
-            'kelasList'    => $kelasList,
-            'semesterList' => $semesterList,
-            'tahunList'    => $tahunList,
-        ]);
+        return view('admin.users.index', compact(
+            'gurus', 'siswas', 'activeTab',
+            'kelasList', 'semesterList', 'tahunList'
+        ));
     }
 
     // =========================================================================
