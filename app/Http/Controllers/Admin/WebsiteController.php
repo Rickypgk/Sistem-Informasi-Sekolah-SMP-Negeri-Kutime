@@ -24,6 +24,13 @@ class WebsiteController extends Controller
         $kontak    = PageContent::getKontak();
         $stats     = PageContent::getStats();
 
+        $tipeOptions = [
+            'image' => '🖼️ Gambar',
+            'video' => '🎥 Video',
+            'youtube' => '▶️ YouTube',
+            'file' => '📄 File',
+        ];
+
         // ── Berita ────────────────────────────────────────────────
         $beritaQuery = Berita::with('user')->latest();
 
