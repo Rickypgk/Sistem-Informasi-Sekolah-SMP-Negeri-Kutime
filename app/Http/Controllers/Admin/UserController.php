@@ -45,6 +45,11 @@ class UserController extends Controller
             ->latest()
             ->get();
 
+        $kelasList = StudyGroup::select('id', 'name', 'grade', 'semester', 'academic_year')
+            ->where('is_active', true)
+            ->orderBy('grade')->orderBy('name')
+            ->get();
+
         $kelasList    = $this->getKelasList();
         $semesterList = $this->getSemesterList();
         $tahunList    = $this->getTahunAjaranList();
