@@ -31,6 +31,13 @@ class WebsiteController extends Controller
             'file' => '📄 File',
         ];
 
+        $kategoriOptions = [
+            'kegiatan' => 'Kegiatan',
+            'fasilitas' => 'Fasilitas',
+            'prestasi' => 'Prestasi',
+            'umum' => 'Umum',
+        ];
+
         // ── Berita ────────────────────────────────────────────────
         $beritaQuery = Berita::with('user')->latest();
 
