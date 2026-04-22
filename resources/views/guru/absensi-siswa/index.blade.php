@@ -4,102 +4,522 @@
 
 @push('styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; }
-body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; color: #1e293b; }
+/* ══════════════════════════════════════════
+   ABSENSI SISWA — COMPACT SCALE
+   Semua ukuran disesuaikan dengan layout
+   app.blade.php (base 13px, konten ~11px)
+══════════════════════════════════════════ */
 
-.as-topbar { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px; }
-.as-title { font-size:16px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:9px;margin:0;letter-spacing:-.3px; }
-.as-title i { color:#6366f1;font-size:17px; }
-.as-date-pill { background:#e0e7ff;color:#4338ca;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px; }
+/* ── Topbar row ── */
+.as-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.692rem;
+    flex-wrap: wrap;
+    gap: 0.462rem;
+}
+.as-title {
+    font-size: 0.923rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.462rem;
+    margin: 0;
+    letter-spacing: -.2px;
+}
+.as-title i { color: #6366f1; font-size: 0.923rem; }
 
-.as-filter-card { background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.04);display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap; }
-.as-filter-group { display:flex;flex-direction:column;gap:4px; }
-.as-filter-group label { font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em; }
+.as-date-pill {
+    background: #e0e7ff;
+    color: #4338ca;
+    border-radius: 99px;
+    padding: 0.2rem 0.615rem;
+    font-size: 0.615rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.as-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.385rem;
+    flex-wrap: wrap;
+}
+
+/* ── Filter card ── */
+.as-filter-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.692rem;
+    padding: 0.692rem 0.923rem;
+    margin-bottom: 0.692rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    display: flex;
+    align-items: flex-end;
+    gap: 0.615rem;
+    flex-wrap: wrap;
+}
+.as-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.as-filter-group label {
+    font-size: 0.577rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin: 0;
+}
 .as-filter-group select,
-.as-filter-group input[type="date"] { border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;color:#1e293b;background:#f8fafc;outline:none;transition:border .15s;min-width:160px; }
+.as-filter-group input[type="date"] {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.462rem;
+    padding: 0.308rem 0.538rem;
+    font-size: 0.692rem;
+    font-family: inherit;
+    color: #1e293b;
+    background: #f8fafc;
+    outline: none;
+    transition: border .15s;
+    min-width: 140px;
+    height: 1.923rem;
+}
 .as-filter-group select:focus,
-.as-filter-group input:focus { border-color:#6366f1;background:#fff; }
-.as-btn-load { background:#6366f1;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s;white-space:nowrap; }
-.as-btn-load:hover { background:#4f46e5; }
-.as-btn-rekap { background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none;transition:background .15s; }
-.as-btn-rekap:hover { background:#e2e8f0; }
+.as-filter-group input:focus {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(99,102,241,.12);
+}
 
-.as-stats { display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap; }
-.as-stat { background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;flex:1;min-width:80px;display:flex;align-items:center;gap:10px; }
-.as-stat-icon { width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0; }
-.as-stat-val { font-size:18px;font-weight:800;line-height:1;font-family:'JetBrains Mono',monospace; }
-.as-stat-lbl { font-size:10px;color:#94a3b8;font-weight:600;margin-top:1px; }
+/* ── Stat strip ── */
+.as-stats {
+    display: flex;
+    gap: 0.462rem;
+    margin-bottom: 0.692rem;
+    flex-wrap: wrap;
+}
+.as-stat {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.538rem;
+    padding: 0.538rem 0.692rem;
+    flex: 1;
+    min-width: 72px;
+    display: flex;
+    align-items: center;
+    gap: 0.538rem;
+}
+.as-stat-icon {
+    width: 1.923rem;
+    height: 1.923rem;
+    border-radius: 0.462rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.769rem;
+    flex-shrink: 0;
+}
+.as-stat-val {
+    font-size: 1.077rem;
+    font-weight: 800;
+    line-height: 1;
+}
+.as-stat-lbl {
+    font-size: 0.538rem;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-top: 0.1rem;
+    white-space: nowrap;
+}
 
-.as-card { background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05); }
-.as-card-head { padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:#fafbff; }
-.as-card-title { font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:7px; }
-.as-card-title .kelas-chip { background:#e0e7ff;color:#4338ca;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700; }
+/* ── Main card ── */
+.as-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.692rem;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.as-card-head {
+    padding: 0.538rem 0.769rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.462rem;
+    background: #fafbff;
+}
+.as-card-title {
+    font-size: 0.769rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.385rem;
+}
+.as-card-title i { color: #6366f1; }
+.kelas-chip {
+    background: #e0e7ff;
+    color: #4338ca;
+    border-radius: 0.385rem;
+    padding: 0.1rem 0.462rem;
+    font-size: 0.615rem;
+    font-weight: 700;
+}
+.as-saved-badge {
+    background: #dcfce7;
+    color: #15803d;
+    border-radius: 0.385rem;
+    padding: 0.1rem 0.462rem;
+    font-size: 0.577rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
 
-.as-bulk-actions { display:flex;align-items:center;gap:6px;flex-wrap:wrap; }
-.as-bulk-btn { border:1.5px solid;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;transition:all .15s;background:transparent; }
-.as-bulk-hadir { border-color:#16a34a;color:#16a34a; } .as-bulk-hadir:hover { background:#16a34a;color:#fff; }
-.as-bulk-alpha { border-color:#dc2626;color:#dc2626; } .as-bulk-alpha:hover { background:#dc2626;color:#fff; }
+/* ── Bulk actions ── */
+.as-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.308rem;
+    flex-wrap: wrap;
+}
+.as-bulk-actions span {
+    font-size: 0.577rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+.as-bulk-btn {
+    border: 1px solid;
+    border-radius: 0.385rem;
+    padding: 0.23rem 0.538rem;
+    font-size: 0.615rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.231rem;
+    transition: all .15s;
+    background: transparent;
+    line-height: 1;
+}
+.as-bulk-hadir { border-color: #16a34a; color: #16a34a; }
+.as-bulk-hadir:hover { background: #16a34a; color: #fff; }
+.as-bulk-alpha { border-color: #dc2626; color: #dc2626; }
+.as-bulk-alpha:hover { background: #dc2626; color: #fff; }
 
-.as-siswa-list { padding:6px 0; }
-.as-siswa-row { display:flex;align-items:center;gap:12px;padding:10px 16px;transition:background .1s;border-bottom:1px solid #f8fafc; }
-.as-siswa-row:last-child { border-bottom:none; }
-.as-siswa-row:hover { background:#fafbff; }
+/* ── Progress bar ── */
+.as-progress-wrap {
+    padding: 0.385rem 0.769rem;
+    background: #fafbff;
+    border-bottom: 1px solid #f1f5f9;
+}
+.as-progress-bar {
+    height: 3px;
+    border-radius: 99px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+.as-progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg,#6366f1,#818cf8);
+    transition: width .3s ease;
+}
+.as-progress-label {
+    font-size: 0.538rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+    font-weight: 600;
+}
 
-.as-no { width:26px;height:26px;border-radius:6px;background:#f1f5f9;color:#94a3b8;font-size:10px;font-weight:700;text-align:center;line-height:26px;flex-shrink:0; }
-.as-av { width:36px;height:36px;border-radius:9px;background:#e0e7ff;color:#6366f1;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0; }
-.as-av img { width:36px;height:36px;border-radius:9px;object-fit:cover; }
-.as-info { flex:1;min-width:0; }
-.as-nama { font-size:13.5px;font-weight:700;color:#1e293b;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+/* ── Siswa list ── */
+.as-siswa-list { padding: 0; }
+.as-siswa-row {
+    display: flex;
+    align-items: center;
+    gap: 0.538rem;
+    padding: 0.462rem 0.769rem;
+    transition: background .1s;
+    border-bottom: 1px solid #f8fafc;
+}
+.as-siswa-row:last-child { border-bottom: none; }
+.as-siswa-row:hover { background: #fafbff; }
 
-.as-status-group { display:flex;gap:5px;flex-shrink:0; }
-.as-st-btn { width:54px;height:32px;border-radius:7px;border:1.5px solid;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;background:transparent;display:flex;align-items:center;justify-content:center; }
-.as-st-btn[data-s="hadir"] { border-color:#bbf7d0;color:#15803d; }
-.as-st-btn[data-s="hadir"]:hover,.as-st-btn[data-s="hadir"].active { background:#16a34a;border-color:#16a34a;color:#fff; }
-.as-st-btn[data-s="sakit"] { border-color:#fde68a;color:#b45309; }
-.as-st-btn[data-s="sakit"]:hover,.as-st-btn[data-s="sakit"].active { background:#d97706;border-color:#d97706;color:#fff; }
-.as-st-btn[data-s="izin"]  { border-color:#bae6fd;color:#0369a1; }
-.as-st-btn[data-s="izin"]:hover,.as-st-btn[data-s="izin"].active { background:#0284c7;border-color:#0284c7;color:#fff; }
-.as-st-btn[data-s="alpha"] { border-color:#fecaca;color:#b91c1c; }
-.as-st-btn[data-s="alpha"]:hover,.as-st-btn[data-s="alpha"].active { background:#dc2626;border-color:#dc2626;color:#fff; }
+/* nomor urut */
+.as-no {
+    width: 1.385rem;
+    height: 1.385rem;
+    border-radius: 0.308rem;
+    background: #f1f5f9;
+    color: #94a3b8;
+    font-size: 0.538rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.385rem;
+    flex-shrink: 0;
+}
 
-.as-ket { width:140px;border:1.5px solid #e2e8f0;border-radius:7px;padding:6px 10px;font-size:11.5px;font-family:inherit;color:#475569;background:#f8fafc;outline:none;transition:border .15s;flex-shrink:0; }
-.as-ket:focus { border-color:#6366f1;background:#fff; }
+/* avatar */
+.as-av {
+    width: 1.923rem;
+    height: 1.923rem;
+    border-radius: 0.462rem;
+    background: #e0e7ff;
+    color: #6366f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.692rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.as-av img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
-.as-save-bar { position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1.5px solid #e0e7ff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;box-shadow:0 -4px 20px rgba(99,102,241,.08);z-index:10; }
-.as-save-info { font-size:12px;color:#64748b; }
-.as-save-info strong { color:#1e293b; }
-.as-btn-save { background:#6366f1;color:#fff;border:none;border-radius:9px;padding:10px 24px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .15s;box-shadow:0 4px 14px rgba(99,102,241,.3); }
-.as-btn-save:hover { background:#4f46e5; }
-.as-btn-save:disabled { background:#a5b4fc;cursor:not-allowed;box-shadow:none; }
+/* nama */
+.as-info { flex: 1; min-width: 0; }
+.as-nama {
+    font-size: 0.769rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.as-nis {
+    font-size: 0.577rem;
+    color: #94a3b8;
+    font-weight: 500;
+    line-height: 1.2;
+}
 
-.as-saved-badge { background:#dcfce7;color:#15803d;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px; }
+/* status buttons */
+.as-status-group {
+    display: flex;
+    gap: 0.231rem;
+    flex-shrink: 0;
+}
+.as-st-btn {
+    width: 2.923rem;
+    height: 1.692rem;
+    border-radius: 0.385rem;
+    border: 1px solid;
+    font-size: 0.577rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: .01em;
+    line-height: 1;
+}
+.as-st-btn[data-s="hadir"] { border-color: #bbf7d0; color: #15803d; }
+.as-st-btn[data-s="hadir"]:hover,
+.as-st-btn[data-s="hadir"].active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.as-st-btn[data-s="sakit"] { border-color: #fde68a; color: #b45309; }
+.as-st-btn[data-s="sakit"]:hover,
+.as-st-btn[data-s="sakit"].active { background: #d97706; border-color: #d97706; color: #fff; }
+.as-st-btn[data-s="izin"]  { border-color: #bae6fd; color: #0369a1; }
+.as-st-btn[data-s="izin"]:hover,
+.as-st-btn[data-s="izin"].active { background: #0284c7; border-color: #0284c7; color: #fff; }
+.as-st-btn[data-s="alpha"] { border-color: #fecaca; color: #b91c1c; }
+.as-st-btn[data-s="alpha"]:hover,
+.as-st-btn[data-s="alpha"].active { background: #dc2626; border-color: #dc2626; color: #fff; }
 
-.as-empty { padding:60px 20px;text-align:center;color:#94a3b8; }
-.as-empty i { font-size:40px;display:block;margin-bottom:12px;color:#cbd5e1; }
-.as-empty h3 { font-size:14px;font-weight:700;color:#64748b;margin:0 0 6px; }
-.as-empty p  { font-size:12px;margin:0;line-height:1.6; }
+/* keterangan input */
+.as-ket {
+    width: 7.692rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.385rem;
+    padding: 0.27rem 0.462rem;
+    font-size: 0.615rem;
+    font-family: inherit;
+    color: #475569;
+    background: #f8fafc;
+    outline: none;
+    transition: border .15s;
+    flex-shrink: 0;
+    height: 1.692rem;
+}
+.as-ket:focus {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(99,102,241,.12);
+}
 
-.as-toast { position:fixed;bottom:80px;right:20px;z-index:9999;background:#0f172a;color:#fff;border-radius:10px;padding:12px 18px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:9px;box-shadow:0 8px 30px rgba(0,0,0,.18);transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;max-width:320px; }
-.as-toast.show { transform:translateY(0);opacity:1; }
-.as-toast i { font-size:15px;flex-shrink:0; }
-.as-toast.success i { color:#4ade80; }
-.as-toast.error   i { color:#f87171; }
+/* ── Save bar ── */
+.as-save-bar {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #e0e7ff;
+    padding: 0.538rem 0.769rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.538rem;
+    flex-wrap: wrap;
+    box-shadow: 0 -3px 12px rgba(99,102,241,.07);
+    z-index: 10;
+}
+.as-save-info {
+    font-size: 0.615rem;
+    color: #64748b;
+}
+.as-save-info strong { color: #1e293b; }
 
-.as-progress-wrap { padding:8px 16px;background:#fafbff;border-bottom:1px solid #f1f5f9; }
-.as-progress-bar { height:5px;border-radius:10px;background:#e2e8f0;overflow:hidden; }
-.as-progress-fill { height:100%;border-radius:10px;background:linear-gradient(90deg,#6366f1,#818cf8);transition:width .3s ease; }
-.as-progress-label { font-size:10px;color:#94a3b8;margin-top:4px;font-weight:600; }
+/* ── Buttons ── */
+.as-btn {
+    border-radius: 0.462rem;
+    padding: 0.308rem 0.692rem;
+    font-size: 0.692rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.308rem;
+    transition: all .15s;
+    border: 1px solid transparent;
+    text-decoration: none;
+    line-height: 1;
+    white-space: nowrap;
+    height: 1.923rem;
+}
+.as-btn-primary {
+    background: #6366f1;
+    color: #fff;
+    border-color: #6366f1;
+    box-shadow: 0 2px 8px rgba(99,102,241,.25);
+}
+.as-btn-primary:hover { background: #4f46e5; border-color: #4f46e5; }
+.as-btn-primary:disabled {
+    background: #a5b4fc;
+    cursor: not-allowed;
+    box-shadow: none;
+    border-color: #a5b4fc;
+}
+.as-btn-outline {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+.as-btn-outline:hover { background: #f1f5f9; }
+.as-btn-save-success {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+}
 
-.as-alert-error { background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#b91c1c;display:flex;align-items:flex-start;gap:8px; }
-.as-alert-error i { flex-shrink:0;margin-top:1px; }
+/* ── Alert ── */
+.as-alert-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.538rem;
+    padding: 0.538rem 0.692rem;
+    margin-bottom: 0.615rem;
+    font-size: 0.692rem;
+    color: #b91c1c;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.462rem;
+}
+.as-alert-error i { flex-shrink: 0; margin-top: 1px; }
 
-@media (max-width:640px) {
-    .as-ket { display:none; }
-    .as-st-btn { width:48px;font-size:9.5px; }
-    .as-filter-card { gap:8px; }
+.as-alert-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 0.538rem;
+    padding: 0.462rem 0.692rem;
+    margin-bottom: 0.615rem;
+    font-size: 0.692rem;
+    color: #15803d;
+    display: flex;
+    align-items: center;
+    gap: 0.385rem;
+}
+
+/* ── Empty state ── */
+.as-empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+}
+.as-empty i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.615rem;
+    color: #cbd5e1;
+}
+.as-empty h3 {
+    font-size: 0.769rem;
+    font-weight: 700;
+    color: #64748b;
+    margin: 0 0 0.308rem;
+}
+.as-empty p {
+    font-size: 0.692rem;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ── Toast ── */
+.as-toast {
+    position: fixed;
+    bottom: 4.615rem;
+    right: 1rem;
+    z-index: 9999;
+    background: #0f172a;
+    color: #fff;
+    border-radius: 0.615rem;
+    padding: 0.615rem 0.923rem;
+    font-size: 0.692rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.462rem;
+    box-shadow: 0 6px 24px rgba(0,0,0,.18);
+    transform: translateY(3rem);
+    opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+    max-width: 18rem;
+}
+.as-toast.show { transform: translateY(0); opacity: 1; }
+.as-toast i { font-size: 0.846rem; flex-shrink: 0; }
+.as-toast.success i { color: #4ade80; }
+.as-toast.error   i { color: #f87171; }
+
+/* ── Responsive ── */
+@media (max-width: 540px) {
+    .as-ket { display: none; }
+    .as-st-btn { width: 2.462rem; font-size: 0.538rem; }
+    .as-stats { gap: 0.308rem; }
+    .as-stat { min-width: 60px; padding: 0.385rem 0.462rem; }
+    .as-stat-val { font-size: 0.923rem; }
+}
+@media (max-width: 380px) {
+    .as-stat-lbl { display: none; }
+    .as-stat-icon { display: none; }
 }
 </style>
 @endpush
@@ -118,26 +538,26 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
     $selectedKelas = $kelasList->firstWhere('id', $kelasId);
 @endphp
 
-<div class="container-fluid px-0">
-
+{{-- ── Topbar ── --}}
 <div class="as-topbar">
     <h5 class="as-title">
         <i class="bi bi-clipboard2-pulse-fill"></i>
         Absensi Siswa
     </h5>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <div class="as-topbar-right">
         <div class="as-date-pill">
             <i class="bi bi-calendar3"></i>
-            {{ $hariIni ?: \Carbon\Carbon::parse($tanggal)->locale('id')->isoFormat('dddd, D MMMM Y') }}
+            {{ $hariIni ?: \Carbon\Carbon::parse($tanggal)->locale('id')->isoFormat('dddd, D MMM Y') }}
         </div>
-        <a href="{{ route('guru.absensi-siswa.rekap') }}" class="as-btn-rekap">
-            <i class="bi bi-bar-chart-line-fill"></i> Rekap Bulanan
+        <a href="{{ route('guru.absensi-siswa.rekap') }}" class="as-btn as-btn-outline">
+            <i class="bi bi-bar-chart-line-fill"></i> Rekap
         </a>
     </div>
 </div>
 
+{{-- ── Flash messages ── --}}
 @if(session('success'))
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:9px 14px;margin-bottom:12px;font-size:12px;color:#15803d;display:flex;align-items:center;gap:7px;">
+    <div class="as-alert-success">
         <i class="bi bi-check-circle-fill"></i>{{ session('success') }}
     </div>
 @endif
@@ -147,15 +567,17 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
     <div id="errorMessage"></div>
 </div>
 
+{{-- ── Filter ── --}}
 <form method="GET" action="{{ route('guru.absensi-siswa.index') }}" class="as-filter-card" id="filterForm">
     <div class="as-filter-group">
-        <label><i class="bi bi-calendar3 me-1"></i>Tanggal Absensi</label>
-        <input type="date" name="tanggal" value="{{ $tanggal }}"
-               max="{{ date('Y-m-d') }}" onchange="this.form.submit()">
+        <label><i class="bi bi-calendar3"></i> Tanggal</label>
+        <input type="date" name="tanggal"
+               value="{{ $tanggal }}"
+               max="{{ date('Y-m-d') }}"
+               onchange="this.form.submit()">
     </div>
-
     <div class="as-filter-group">
-        <label><i class="bi bi-mortarboard me-1"></i>Pilih Kelas</label>
+        <label><i class="bi bi-mortarboard"></i> Kelas</label>
         <select name="kelas_id" onchange="this.form.submit()">
             <option value="">— Pilih Kelas —</option>
             @foreach($kelasList as $kelas)
@@ -165,12 +587,12 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
             @endforeach
         </select>
     </div>
-
-    <button type="submit" class="as-btn-load">
-        <i class="bi bi-arrow-clockwise"></i> Muat Siswa
+    <button type="submit" class="as-btn as-btn-primary">
+        <i class="bi bi-arrow-clockwise"></i> Muat
     </button>
 </form>
 
+{{-- ── Stat strip ── --}}
 @if($kelasId && $siswaList->count())
     <div class="as-stats">
         <div class="as-stat">
@@ -179,7 +601,7 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
             </div>
             <div>
                 <div class="as-stat-val" style="color:#7c3aed;">{{ $siswaList->count() }}</div>
-                <div class="as-stat-lbl">Total Siswa</div>
+                <div class="as-stat-lbl">Total</div>
             </div>
         </div>
         <div class="as-stat">
@@ -188,7 +610,7 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
             </div>
             <div>
                 <div class="as-stat-val" style="color:#16a34a;">{{ $ringkasan['hadir'] ?? 0 }}</div>
-                <div class="as-stat-lbl">Hadir Bulan Ini</div>
+                <div class="as-stat-lbl">Hadir</div>
             </div>
         </div>
         <div class="as-stat">
@@ -197,7 +619,7 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
             </div>
             <div>
                 <div class="as-stat-val" style="color:#ca8a04;">{{ $ringkasan['sakit'] ?? 0 }}</div>
-                <div class="as-stat-lbl">Sakit Bulan Ini</div>
+                <div class="as-stat-lbl">Sakit</div>
             </div>
         </div>
         <div class="as-stat">
@@ -206,7 +628,7 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
             </div>
             <div>
                 <div class="as-stat-val" style="color:#0284c7;">{{ $ringkasan['izin'] ?? 0 }}</div>
-                <div class="as-stat-lbl">Izin Bulan Ini</div>
+                <div class="as-stat-lbl">Izin</div>
             </div>
         </div>
         <div class="as-stat">
@@ -215,31 +637,33 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
             </div>
             <div>
                 <div class="as-stat-val" style="color:#dc2626;">{{ $ringkasan['alpha'] ?? 0 }}</div>
-                <div class="as-stat-lbl">Alpha Bulan Ini</div>
+                <div class="as-stat-lbl">Alpha</div>
             </div>
         </div>
     </div>
 @endif
 
+{{-- ── Main card ── --}}
 <div class="as-card">
 
+    {{-- Card header --}}
     <div class="as-card-head">
         <div class="as-card-title">
-            <i class="bi bi-list-check" style="color:#6366f1;"></i>
+            <i class="bi bi-list-check"></i>
             Daftar Siswa
             @if($selectedKelas)
                 <span class="kelas-chip">{{ $selectedKelas->nama }}</span>
             @endif
             @if($sudahDisimpan)
                 <span class="as-saved-badge">
-                    <i class="bi bi-check-circle-fill"></i> Sudah Dicatat
+                    <i class="bi bi-check-circle-fill"></i> Tersimpan
                 </span>
             @endif
         </div>
 
         @if($siswaList->count() > 0)
             <div class="as-bulk-actions">
-                <span style="font-size:11px;color:#94a3b8;font-weight:600;">Tandai Semua:</span>
+                <span>Tandai:</span>
                 <button type="button" class="as-bulk-btn as-bulk-hadir" onclick="tandaiSemua('hadir')">
                     <i class="bi bi-check2-all"></i> Hadir
                 </button>
@@ -250,23 +674,25 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
         @endif
     </div>
 
+    {{-- Progress --}}
     @if($siswaList->count() > 0)
-        @php $pct = $siswaList->count() > 0 ? round($absensiHari->count() / $siswaList->count() * 100) : 0; @endphp
+        @php $pct = round($absensiHari->count() / $siswaList->count() * 100); @endphp
         <div class="as-progress-wrap">
             <div class="as-progress-bar">
                 <div class="as-progress-fill" id="progressFill" style="width:{{ $pct }}%;"></div>
             </div>
             <div class="as-progress-label" id="progressLabel">
-                {{ $absensiHari->count() }} / {{ $siswaList->count() }} siswa sudah diisi ({{ $pct }}%)
+                {{ $absensiHari->count() }} / {{ $siswaList->count() }} siswa diisi ({{ $pct }}%)
             </div>
         </div>
     @endif
 
+    {{-- Content --}}
     @if(!$kelasId)
         <div class="as-empty">
             <i class="bi bi-mortarboard"></i>
             <h3>Pilih Kelas Terlebih Dahulu</h3>
-            <p>Pilih kelas dan tanggal di atas untuk mulai mengisi absensi siswa.</p>
+            <p>Pilih kelas dan tanggal di atas untuk mulai mengisi absensi.</p>
         </div>
 
     @elseif($siswaList->count() === 0)
@@ -284,14 +710,18 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
                     $statusSaved = $existing ? $existing->status : null;
                     $ketSaved    = $existing ? ($existing->keterangan ?? '') : '';
                     $namaTampil  = $siswa->nama ?: ($siswa->user?->name ?? '—');
+                    $nis         = $siswa->nis ?? null;
                     $fotoUrl     = ($siswa->user && $siswa->user->photo)
                                    ? Storage::url($siswa->user->photo) : null;
                     $inisial     = strtoupper(mb_substr($namaTampil, 0, 1));
                 @endphp
 
                 <div class="as-siswa-row" id="row-{{ $siswa->id }}">
+
+                    {{-- Nomor --}}
                     <span class="as-no">{{ $i + 1 }}</span>
 
+                    {{-- Avatar --}}
                     <div class="as-av">
                         @if($fotoUrl)
                             <img src="{{ $fotoUrl }}" alt="">
@@ -300,75 +730,84 @@ body { background: #f1f5fb; font-family: 'Plus Jakarta Sans', sans-serif; font-s
                         @endif
                     </div>
 
+                    {{-- Nama --}}
                     <div class="as-info">
                         <div class="as-nama">{{ $namaTampil }}</div>
+                        @if($nis)
+                            <div class="as-nis">{{ $nis }}</div>
+                        @endif
                     </div>
 
+                    {{-- Status buttons --}}
                     <div class="as-status-group" data-siswa-id="{{ $siswa->id }}">
                         @foreach(['hadir'=>'Hadir','sakit'=>'Sakit','izin'=>'Izin','alpha'=>'Alpha'] as $s => $label)
                             <button type="button"
-                                class="as-st-btn {{ $statusSaved === $s ? 'active' : '' }}"
-                                data-s="{{ $s }}"
-                                data-siswa="{{ $siswa->id }}"
-                                onclick="pilihStatus(this, {{ $siswa->id }}, '{{ $s }}')">
+                                    class="as-st-btn {{ $statusSaved === $s ? 'active' : '' }}"
+                                    data-s="{{ $s }}"
+                                    data-siswa="{{ $siswa->id }}"
+                                    onclick="pilihStatus(this, {{ $siswa->id }}, '{{ $s }}')">
                                 {{ $label }}
                             </button>
                         @endforeach
                     </div>
 
+                    {{-- Keterangan --}}
                     <input type="text"
                            class="as-ket"
                            id="ket-{{ $siswa->id }}"
-                           placeholder="Keterangan..."
+                           placeholder="Keterangan…"
                            value="{{ $ketSaved }}"
                            maxlength="100">
+
                 </div>
             @endforeach
         </div>
 
+        {{-- Save bar --}}
         <div class="as-save-bar">
             <div class="as-save-info">
-                <span>
-                    <strong id="filledCount">{{ $absensiHari->count() }}</strong>
-                    dari <strong>{{ $siswaList->count() }}</strong> siswa sudah diisi
-                </span>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-                @if($sudahDisimpan)
-                    <span style="font-size:11px;color:#16a34a;font-weight:600;">
+                <strong id="filledCount">{{ $absensiHari->count() }}</strong>
+                / <strong>{{ $siswaList->count() }}</strong> siswa diisi
+                @if($sudahDisimpan && $absensiHari->first()?->updated_at)
+                    &nbsp;·&nbsp;
+                    <span style="color:#16a34a;">
                         <i class="bi bi-clock-history"></i>
-                        Terakhir: {{ $absensiHari->first()?->updated_at?->format('H:i') ?? '' }}
+                        {{ $absensiHari->first()->updated_at->format('H:i') }}
                     </span>
                 @endif
-                <button type="button" class="as-btn-save" id="saveBtn" onclick="simpanAbsensi()">
-                    <i class="bi bi-cloud-upload-fill"></i>
-                    {{ $sudahDisimpan ? 'Perbarui Absensi' : 'Simpan Absensi' }}
-                </button>
             </div>
+            <button type="button" class="as-btn as-btn-primary" id="saveBtn" onclick="simpanAbsensi()">
+                <i class="bi bi-cloud-upload-fill"></i>
+                {{ $sudahDisimpan ? 'Perbarui' : 'Simpan' }}
+            </button>
         </div>
     @endif
 
 </div>
+
+{{-- Toast --}}
+<div class="as-toast" id="asToast">
+    <i id="asTi"></i>
+    <span id="asTm"></span>
 </div>
 
-<div class="as-toast" id="asToast"><i id="asTi"></i><span id="asTm"></span></div>
 @endsection
 
 @push('scripts')
 <script>
-// (script tetap sama seperti sebelumnya, tidak ada perubahan di sini)
 const AS_STATUS = {};
 const KELAS_ID  = {{ $kelasId ? (int)$kelasId : 'null' }};
 const TANGGAL   = "{{ $tanggal }}";
 const TOTAL     = {{ $siswaList->count() }};
-
 const STORE_URL = "{{ route('guru.absensi-siswa.store') }}";
 const CSRF      = () => document.querySelector('meta[name="csrf-token"]').content;
 
+// Pre-fill status dari data tersimpan
 @foreach($absensiHari as $sid => $abs)
     AS_STATUS[{{ (int)$sid }}] = "{{ $abs->status }}";
 @endforeach
 
+/* ── Pilih status satu siswa ── */
 function pilihStatus(btn, siswaId, status) {
     const group = btn.closest('.as-status-group');
     group.querySelectorAll('.as-st-btn').forEach(b => b.classList.remove('active'));
@@ -376,14 +815,16 @@ function pilihStatus(btn, siswaId, status) {
     AS_STATUS[siswaId] = status;
     updateProgress();
 
+    // Flash row color
     const row = document.getElementById(`row-${siswaId}`);
     if (row) {
-        const colors = {hadir:'#f0fdf4',sakit:'#fefce8',izin:'#f0f9ff',alpha:'#fef2f2'};
-        row.style.background = colors[status] || '#fafbff';
-        setTimeout(() => { row.style.background = ''; }, 600);
+        const colors = { hadir:'#f0fdf4', sakit:'#fefce8', izin:'#f0f9ff', alpha:'#fef2f2' };
+        row.style.background = colors[status] || '';
+        setTimeout(() => { row.style.background = ''; }, 500);
     }
 }
 
+/* ── Tandai semua siswa ── */
 function tandaiSemua(status) {
     document.querySelectorAll('.as-status-group').forEach(group => {
         const sid = parseInt(group.dataset.siswaId);
@@ -393,9 +834,10 @@ function tandaiSemua(status) {
         AS_STATUS[sid] = status;
     });
     updateProgress();
-    asToast(`Semua siswa ditandai: ${status}`, 'success');
+    asToast(`Semua siswa: ${status}`, 'success');
 }
 
+/* ── Update progress bar ── */
 function updateProgress() {
     const filled = Object.keys(AS_STATUS).length;
     const pct    = TOTAL > 0 ? Math.round(filled / TOTAL * 100) : 0;
@@ -403,27 +845,24 @@ function updateProgress() {
     const lbl    = document.getElementById('progressLabel');
     const cnt    = document.getElementById('filledCount');
     if (fill) fill.style.width = pct + '%';
-    if (lbl)  lbl.textContent  = `${filled} / ${TOTAL} siswa sudah diisi (${pct}%)`;
+    if (lbl)  lbl.textContent  = `${filled} / ${TOTAL} siswa diisi (${pct}%)`;
     if (cnt)  cnt.textContent  = filled;
 }
 
+/* ── Simpan absensi ── */
 async function simpanAbsensi() {
     const errBox = document.getElementById('errorContainer');
     if (errBox) errBox.style.display = 'none';
 
     const filled = Object.keys(AS_STATUS).length;
-    if (filled === 0) {
-        asToast('Belum ada status yang dipilih', 'error');
-        return;
-    }
+    if (filled === 0) { asToast('Belum ada status dipilih', 'error'); return; }
     if (filled < TOTAL) {
-        const ok = confirm(`Baru ${filled} dari ${TOTAL} siswa yang diisi. Lanjutkan simpan?`);
-        if (!ok) return;
+        if (!confirm(`Baru ${filled} dari ${TOTAL} siswa yang diisi. Lanjutkan?`)) return;
     }
 
     const btn = document.getElementById('saveBtn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> <span style="opacity:.7">Menyimpan…</span>';
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menyimpan…';
 
     const absensiArr = [];
     document.querySelectorAll('.as-status-group').forEach(group => {
@@ -434,54 +873,37 @@ async function simpanAbsensi() {
         absensiArr.push({ siswa_id: sid, status, keterangan: ket });
     });
 
-    const payload = {
-        kelas_id : KELAS_ID,
-        tanggal  : TANGGAL,
-        absensi  : absensiArr,
-    };
+    const payload = { kelas_id: KELAS_ID, tanggal: TANGGAL, absensi: absensiArr };
 
     try {
-        const res = await fetch(STORE_URL, {
+        const res  = await fetch(STORE_URL, {
             method  : 'POST',
-            headers : {
-                'Content-Type' : 'application/json',
-                'X-CSRF-TOKEN' : CSRF(),
-                'Accept'       : 'application/json',
-            },
-            body: JSON.stringify(payload),
+            headers : { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF(), 'Accept': 'application/json' },
+            body    : JSON.stringify(payload),
         });
-
         let data;
-        try {
-            data = await res.json();
-        } catch {
-            const text = await res.text();
-            showError('Server error: ' + text.substring(0, 200));
-            resetBtn();
-            return;
-        }
+        try { data = await res.json(); }
+        catch { showError('Server error'); resetBtn(); return; }
 
         if (res.ok && data.success) {
-            asToast(`✓ ${data.total} absensi berhasil disimpan`, 'success');
+            asToast(`✓ ${data.total} absensi disimpan`, 'success');
             btn.innerHTML = '<i class="bi bi-cloud-check-fill"></i> Tersimpan';
-            btn.style.background = '#16a34a';
+            btn.classList.add('as-btn-save-success');
             setTimeout(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-cloud-upload-fill"></i> Perbarui Absensi';
-                btn.style.background = '';
+                btn.classList.remove('as-btn-save-success');
+                btn.innerHTML = '<i class="bi bi-cloud-upload-fill"></i> Perbarui';
             }, 3000);
         } else {
-            let msg = data.message || 'Gagal menyimpan';
-            if (data.errors) {
-                msg = Object.values(data.errors).flat().join('<br>');
-            }
+            const msg = data.errors
+                ? Object.values(data.errors).flat().join('<br>')
+                : (data.message || 'Gagal menyimpan');
             showError(msg);
-            asToast('Gagal menyimpan, lihat keterangan error', 'error');
+            asToast('Gagal menyimpan', 'error');
             resetBtn();
         }
-
     } catch (e) {
-        showError('Gagal terhubung ke server: ' + e.message);
+        showError('Gagal terhubung: ' + e.message);
         asToast('Gagal terhubung ke server', 'error');
         resetBtn();
     }
@@ -490,18 +912,14 @@ async function simpanAbsensi() {
 function showError(msg) {
     const box = document.getElementById('errorContainer');
     const txt = document.getElementById('errorMessage');
-    if (box && txt) {
-        txt.innerHTML = msg;
-        box.style.display = 'flex';
-        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    if (box && txt) { txt.innerHTML = msg; box.style.display = 'flex'; box.scrollIntoView({ behavior:'smooth', block:'center' }); }
 }
 
 function resetBtn() {
     const btn = document.getElementById('saveBtn');
     btn.disabled = false;
-    btn.style.background = '';
-    btn.innerHTML = '<i class="bi bi-cloud-upload-fill"></i> Simpan Absensi';
+    btn.classList.remove('as-btn-save-success');
+    btn.innerHTML = '<i class="bi bi-cloud-upload-fill"></i> Simpan';
 }
 
 let _tt;
