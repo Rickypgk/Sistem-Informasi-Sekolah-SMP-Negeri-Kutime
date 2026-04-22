@@ -1,13 +1,13 @@
-{{-- resources/views/guru/dashboard/scripts-chart.blade.php --}}
+
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
 <script>
 (function(){
     // Data dari controller (7 hari terakhir)
-    @php
+    <?php
         $labels = $chartLabels ?? ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
         $hadir = $chartHadir ?? [0,0,0,0,0,0,0];
         $tidak = $chartTidak ?? [0,0,0,0,0,0,0];
-    @endphp
+    ?>
 
     var el = document.getElementById('kehadiranChart');
     if (!el) return;
@@ -73,4 +73,4 @@
 
     new ApexCharts(el, options).render();
 })();
-</script>
+</script><?php /**PATH C:\PA 3\smpn-kutime\resources\views/guru/dashboard/scripts-chart.blade.php ENDPATH**/ ?>
