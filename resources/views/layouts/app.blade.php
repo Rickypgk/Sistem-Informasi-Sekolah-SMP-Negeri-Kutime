@@ -542,6 +542,31 @@
         .dark .nav-link-item.active { background: rgba(99,102,241,.18); color: #a5b4fc; }
         .nav-link-item svg { width: 0.923rem; height: 0.923rem; flex-shrink: 0; }
 
+        /* ── Nav item wali kelas — badge khusus ── */
+        .nav-link-item .nav-badge-wali {
+            margin-left: auto;
+            font-size: 0.538rem;
+            font-weight: 700;
+            padding: 0.1rem 0.35rem;
+            border-radius: 99px;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            flex-shrink: 0;
+        }
+        .dark .nav-link-item .nav-badge-wali {
+            background: rgba(245,158,11,.15);
+            color: #fbbf24;
+            border-color: rgba(245,158,11,.3);
+        }
+        .nav-link-item.active .nav-badge-wali {
+            background: #e0e7ff;
+            color: #4338ca;
+            border-color: #c7d2fe;
+        }
+
         /* ── Logo area sidebar ── */
         .sidebar-logo-area {
             display: flex;
@@ -1243,6 +1268,59 @@
             #mainContent .timetable-actions .btn { width: 100%; justify-content: center; }
         }
 
+        /* ══════════════════════════════════════════
+           WALI KELAS — NAV SEPARATOR & SECTION LABEL
+           Pemisah visual untuk grup menu wali kelas
+        ══════════════════════════════════════════ */
+
+        /* Separator tipis antar grup nav */
+        .nav-section-divider {
+            border: none;
+            border-top: 1px solid #f1f5f9;
+            margin: 0.385rem 0.692rem;
+        }
+        .dark .nav-section-divider { border-color: #334155; }
+
+        /* Label sub-grup di nav (sama style dgn "Guru Panel") */
+        .nav-section-label {
+            padding: 0 0.692rem;
+            margin-bottom: 0.25rem;
+            margin-top: 0.462rem;
+            font-size: 0.538rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+        }
+
+        /* Wali kelas nav item — slight amber left accent saat hover/active */
+        .nav-link-item.nav-wali-kelas {
+            position: relative;
+        }
+        .nav-link-item.nav-wali-kelas::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20%;
+            bottom: 20%;
+            width: 2.5px;
+            border-radius: 99px;
+            background: transparent;
+            transition: background .15s;
+        }
+        .nav-link-item.nav-wali-kelas:hover::before,
+        .nav-link-item.nav-wali-kelas.active::before {
+            background: #f59e0b;
+        }
+        .nav-link-item.nav-wali-kelas.active {
+            background: #fffbeb;
+            color: #92400e;
+        }
+        .dark .nav-link-item.nav-wali-kelas.active {
+            background: rgba(245,158,11,.12);
+            color: #fbbf24;
+        }
+
         /* ── Bootstrap Icons CDN load ── */
         /* Pastikan Bootstrap Icons tersedia via CDN di bawah */
 
@@ -1350,26 +1428,54 @@
                 @endforeach
 
             @elseif(auth()->user()->isGuru())
-                <p class="px-2.5 mb-1.5 mt-0.5"
-                   style="font-size:.6rem;font-weight:600;text-transform:uppercase;
-                          letter-spacing:.06em;color:#94a3b8">Guru Panel</p>
+
+                {{-- ════════════════════════════════════
+                     GURU PANEL NAVIGATION
+                     Wali Kelas menu hanya muncul jika
+                     guru ini terdaftar sebagai wali kelas
+                     (relasi waliKelas / isWaliKelas())
+                ════════════════════════════════════ --}}
 
                 @php
+                    /*
+                     * Cek apakah guru ini adalah wali kelas.
+                     *
+                     * Sesuaikan dengan relasi / method yang
+                     * ada di model User atau Guru Anda.
+                     *
+                     * Opsi A — pakai method isWaliKelas() di model:
+                     *   $isWaliKelas = auth()->user()->isWaliKelas();
+                     *
+                     * Opsi B — cek relasi waliKelas langsung:
+                     *   $isWaliKelas = auth()->user()->guru?->waliKelas()->exists();
+                     *
+                     * Opsi C — cek kolom boolean di tabel guru/users:
+                     *   $isWaliKelas = (bool) auth()->user()->guru?->is_wali_kelas;
+                     *
+                     * Gunakan salah satu yang sesuai dengan
+                     * struktur database proyek Anda.
+                     */
+                    $isWaliKelas = auth()->user()->isWaliKelas()
+                                   ?? auth()->user()->guru?->waliKelas()->exists()
+                                   ?? false;
+
                     $guruNav = [
-                        ['route'=>'guru.dashboard',           'label'=>'Dashboard',        'match'=>'guru.dashboard',
+                        ['route'=>'guru.dashboard',               'label'=>'Dashboard',        'match'=>'guru.dashboard',
                          'icon'=>'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1v-5m10-10l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-5'],
-                        ['route'=>'guru.profil',              'label'=>'Data Diri',         'match'=>'guru.profil*',
+                        ['route'=>'guru.profil',                  'label'=>'Data Diri',         'match'=>'guru.profil*',
                          'icon'=>'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
-                        ['route'=>'guru.wali-kelas',          'label'=>'Wali Kelas',        'match'=>'guru.wali-kelas*',
-                         'icon'=>'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'],
-                        ['route'=>'guru.jadwal-mengajar.index',     'label'=>'Jadwal Mengajar',   'match'=>'guru.jadwal-mengajar*',
+                        ['route'=>'guru.jadwal-mengajar.index',   'label'=>'Jadwal Mengajar',   'match'=>'guru.jadwal-mengajar*',
                          'icon'=>'M8 7V3m8 4V3M5 11h14M5 19h14M5 5h2m10 0h2'],
-                        ['route'=>'guru.absensi-siswa.index', 'label'=>'Absensi Siswa',     'match'=>'guru.absensi-siswa*',
+                        ['route'=>'guru.absensi-siswa.index',     'label'=>'Absensi Siswa',     'match'=>'guru.absensi-siswa*',
                          'icon'=>'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'],
-                        ['route'=>'guru.pengumuman',          'label'=>'Pengumuman',        'match'=>'guru.pengumuman*',
+                        ['route'=>'guru.pengumuman',               'label'=>'Pengumuman',        'match'=>'guru.pengumuman*',
                          'icon'=>'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'],
                     ];
                 @endphp
+
+                <p class="px-2.5 mb-1.5 mt-0.5"
+                   style="font-size:.6rem;font-weight:600;text-transform:uppercase;
+                          letter-spacing:.06em;color:#94a3b8">Guru Panel</p>
 
                 @foreach($guruNav as $item)
                     <a href="{{ route($item['route']) }}"
@@ -1381,6 +1487,33 @@
                         {{ $item['label'] }}
                     </a>
                 @endforeach
+
+                {{-- ── Wali Kelas section (hanya tampil jika guru = wali kelas) ── --}}
+                @if($isWaliKelas)
+                    <hr class="nav-section-divider">
+                    <p class="nav-section-label">Wali Kelas</p>
+
+                    <a href="{{ route('guru.wali-kelas') }}"
+                       class="nav-link-item nav-wali-kelas {{ request()->routeIs('guru.wali-kelas*') ? 'active' : '' }}">
+                        {{-- Ikon: orang-orang / grup kelas --}}
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Data Kelas
+                        <span class="nav-badge-wali">Wali</span>
+                    </a>
+
+                    {{--
+                        Tambahkan sub-menu Wali Kelas lainnya di sini sesuai kebutuhan.
+                        Contoh:
+                        <a href="{{ route('guru.wali-kelas.absensi') }}"
+                           class="nav-link-item nav-wali-kelas {{ request()->routeIs('guru.wali-kelas.absensi*') ? 'active' : '' }}">
+                            <svg>...</svg>
+                            Rekap Absensi
+                        </a>
+                    --}}
+                @endif
 
             @else
                 <p class="px-2.5 mb-1.5 mt-0.5"
@@ -1455,6 +1588,20 @@
                 @yield('title', 'Dashboard')
             </h1>
 
+            {{-- Wali Kelas indicator di topbar (hanya untuk guru wali kelas) --}}
+            @if(auth()->user()->isGuru() && isset($isWaliKelas) && $isWaliKelas)
+                <div class="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-lg
+                            bg-amber-50 border border-amber-200 dark:bg-amber-900/20
+                            dark:border-amber-700/40 shrink-0">
+                    <svg class="w-2.5 h-2.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                    </svg>
+                    <span style="font-size:.577rem;font-weight:600;color:#92400e"
+                          class="dark:!text-amber-400">Wali Kelas</span>
+                </div>
+            @endif
+
             {{-- USER DROPDOWN --}}
             <div class="relative shrink-0" x-data="{ open: false }">
 
@@ -1487,7 +1634,8 @@
                         <p class="leading-tight text-slate-400 dark:text-slate-500"
                            style="font-size:.577rem">
                             @if(auth()->user()->isAdmin()) Admin
-                            @elseif(auth()->user()->isGuru()) Guru
+                            @elseif(auth()->user()->isGuru())
+                                Guru{{ (isset($isWaliKelas) && $isWaliKelas) ? ' · Wali Kelas' : '' }}
                             @else Siswa
                             @endif
                         </p>
@@ -1526,6 +1674,18 @@
                            style="font-size:.577rem">
                             {{ auth()->user()->email }}
                         </p>
+                        {{-- Badge wali kelas di dropdown --}}
+                        @if(auth()->user()->isGuru() && isset($isWaliKelas) && $isWaliKelas)
+                            <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5
+                                         rounded-md bg-amber-50 border border-amber-200
+                                         dark:bg-amber-900/20 dark:border-amber-700/40"
+                                  style="font-size:.538rem;font-weight:600;color:#92400e">
+                                <svg class="w-2 h-2 inline" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                Wali Kelas
+                            </span>
+                        @endif
                     </div>
 
                     {{-- Profil Saya --}}
@@ -1548,6 +1708,25 @@
                         </span>
                         Profil Saya
                     </a>
+
+                    {{-- Shortcut Wali Kelas di dropdown (hanya jika guru wali kelas) --}}
+                    @if(auth()->user()->isGuru() && isset($isWaliKelas) && $isWaliKelas)
+                        <a href="{{ route('guru.wali-kelas') }}"
+                           @click="open = false"
+                           class="flex items-center gap-2 px-3.5 py-1.5
+                                  text-amber-700 dark:text-amber-400
+                                  hover:bg-amber-50 dark:hover:bg-amber-900/20 transition"
+                           style="font-size:.692rem;font-weight:500">
+                            <span class="w-5 h-5 rounded-md bg-amber-50 dark:bg-amber-900/30
+                                         flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-700/40">
+                                <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </span>
+                            Wali Kelas
+                        </a>
+                    @endif
 
                     <div class="border-t border-slate-100 dark:border-slate-700 my-0.5"></div>
 
