@@ -244,45 +244,50 @@
 
 /* ── Siswa list ── */
 .as-siswa-list { padding: 0; }
+
+/* ── Siswa row — updated layout ── */
 .as-siswa-row {
     display: flex;
     align-items: center;
-    gap: 0.538rem;
-    padding: 0.462rem 0.769rem;
+    gap: 0.615rem;
+    padding: 0.615rem 0.769rem;
     transition: background .1s;
-    border-bottom: 1px solid #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    min-height: 3.6rem;
 }
 .as-siswa-row:last-child { border-bottom: none; }
 .as-siswa-row:hover { background: #fafbff; }
 
 /* nomor urut */
 .as-no {
-    width: 1.385rem;
-    height: 1.385rem;
+    width: 1.462rem;
+    height: 1.462rem;
     border-radius: 0.308rem;
     background: #f1f5f9;
     color: #94a3b8;
     font-size: 0.538rem;
     font-weight: 700;
     text-align: center;
-    line-height: 1.385rem;
+    line-height: 1.462rem;
     flex-shrink: 0;
 }
 
-/* avatar */
+/* avatar — lebih besar agar profil terlihat jelas */
 .as-av {
-    width: 1.923rem;
-    height: 1.923rem;
-    border-radius: 0.462rem;
-    background: #e0e7ff;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.615rem;
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
     color: #6366f1;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.692rem;
+    font-size: 0.923rem;
     font-weight: 800;
     flex-shrink: 0;
     overflow: hidden;
+    border: 1.5px solid #e0e7ff;
+    box-shadow: 0 1px 4px rgba(99,102,241,.10);
 }
 .as-av img {
     width: 100%;
@@ -290,16 +295,22 @@
     object-fit: cover;
 }
 
-/* nama */
-.as-info { flex: 1; min-width: 0; }
+/* nama — flex:1 agar nama panjang tidak terpotong */
+.as-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
 .as-nama {
-    font-size: 0.769rem;
-    font-weight: 600;
-    color: #1e293b;
+    font-size: 0.815rem;
+    font-weight: 700;
+    color: #0f172a;
     line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* Izinkan wrap agar nama panjang tampil penuh */
+    white-space: normal;
+    word-break: break-word;
 }
 .as-nis {
     font-size: 0.577rem;
@@ -308,14 +319,23 @@
     line-height: 1.2;
 }
 
+/* ── Right side: status + keterangan dibungkus bersama ── */
+.as-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.308rem;
+    flex-shrink: 0;
+}
+
 /* status buttons */
 .as-status-group {
     display: flex;
     gap: 0.231rem;
-    flex-shrink: 0;
+    flex-wrap: nowrap;
 }
 .as-st-btn {
-    width: 2.923rem;
+    width: 3rem;
     height: 1.692rem;
     border-radius: 0.385rem;
     border: 1px solid;
@@ -344,9 +364,9 @@
 .as-st-btn[data-s="alpha"]:hover,
 .as-st-btn[data-s="alpha"].active { background: #dc2626; border-color: #dc2626; color: #fff; }
 
-/* keterangan input */
+/* keterangan input — di bawah tombol, lebar penuh sisi kanan */
 .as-ket {
-    width: 7.692rem;
+    width: 12.8rem;
     border: 1px solid #e2e8f0;
     border-radius: 0.385rem;
     padding: 0.27rem 0.462rem;
@@ -356,9 +376,9 @@
     background: #f8fafc;
     outline: none;
     transition: border .15s;
-    flex-shrink: 0;
-    height: 1.692rem;
+    height: 1.538rem;
 }
+.as-ket::placeholder { color: #cbd5e1; }
 .as-ket:focus {
     border-color: #6366f1;
     background: #fff;
@@ -510,9 +530,14 @@
 .as-toast.error   i { color: #f87171; }
 
 /* ── Responsive ── */
-@media (max-width: 540px) {
-    .as-ket { display: none; }
-    .as-st-btn { width: 2.462rem; font-size: 0.538rem; }
+@media (max-width: 640px) {
+    .as-siswa-row { flex-wrap: wrap; gap: 0.462rem; }
+    .as-right { width: 100%; align-items: stretch; flex-direction: row; flex-wrap: wrap; gap: 0.308rem; }
+    .as-status-group { flex: 1; }
+    .as-ket { flex: 1; width: auto; }
+}
+@media (max-width: 480px) {
+    .as-st-btn { width: 2.6rem; font-size: 0.538rem; }
     .as-stats { gap: 0.308rem; }
     .as-stat { min-width: 60px; padding: 0.385rem 0.462rem; }
     .as-stat-val { font-size: 0.923rem; }
@@ -724,40 +749,43 @@
                     {{-- Avatar --}}
                     <div class="as-av">
                         @if($fotoUrl)
-                            <img src="{{ $fotoUrl }}" alt="">
+                            <img src="{{ $fotoUrl }}" alt="{{ $namaTampil }}">
                         @else
                             {{ $inisial }}
                         @endif
                     </div>
 
-                    {{-- Nama --}}
+                    {{-- Nama & NIS — flex:1 agar mengambil sisa ruang --}}
                     <div class="as-info">
                         <div class="as-nama">{{ $namaTampil }}</div>
                         @if($nis)
-                            <div class="as-nis">{{ $nis }}</div>
+                            <div class="as-nis"><i class="bi bi-person-badge" style="font-size:0.538rem;"></i> {{ $nis }}</div>
                         @endif
                     </div>
 
-                    {{-- Status buttons --}}
-                    <div class="as-status-group" data-siswa-id="{{ $siswa->id }}">
-                        @foreach(['hadir'=>'Hadir','sakit'=>'Sakit','izin'=>'Izin','alpha'=>'Alpha'] as $s => $label)
-                            <button type="button"
-                                    class="as-st-btn {{ $statusSaved === $s ? 'active' : '' }}"
-                                    data-s="{{ $s }}"
-                                    data-siswa="{{ $siswa->id }}"
-                                    onclick="pilihStatus(this, {{ $siswa->id }}, '{{ $s }}')">
-                                {{ $label }}
-                            </button>
-                        @endforeach
-                    </div>
+                    {{-- Kanan: tombol status + keterangan ditumpuk vertikal --}}
+                    <div class="as-right">
+                        {{-- Status buttons --}}
+                        <div class="as-status-group" data-siswa-id="{{ $siswa->id }}">
+                            @foreach(['hadir'=>'Hadir','sakit'=>'Sakit','izin'=>'Izin','alpha'=>'Alpha'] as $s => $label)
+                                <button type="button"
+                                        class="as-st-btn {{ $statusSaved === $s ? 'active' : '' }}"
+                                        data-s="{{ $s }}"
+                                        data-siswa="{{ $siswa->id }}"
+                                        onclick="pilihStatus(this, {{ $siswa->id }}, '{{ $s }}')">
+                                    {{ $label }}
+                                </button>
+                            @endforeach
+                        </div>
 
-                    {{-- Keterangan --}}
-                    <input type="text"
-                           class="as-ket"
-                           id="ket-{{ $siswa->id }}"
-                           placeholder="Keterangan…"
-                           value="{{ $ketSaved }}"
-                           maxlength="100">
+                        {{-- Keterangan --}}
+                        <input type="text"
+                               class="as-ket"
+                               id="ket-{{ $siswa->id }}"
+                               placeholder="Keterangan (opsional)…"
+                               value="{{ $ketSaved }}"
+                               maxlength="100">
+                    </div>
 
                 </div>
             @endforeach
