@@ -64,4 +64,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(StudyGroup::class, 'homeroom_teacher_id');
     }
+
+    public function isWaliKelas()
+    {
+        return $this->homeroomGroups()->exists();
+    }
 }
