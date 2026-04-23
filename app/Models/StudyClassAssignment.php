@@ -24,21 +24,25 @@ class StudyClassAssignment extends Model
         'is_active' => 'boolean',
     ];
 
-    // Relasi ke guru
+    /* ================================
+       RELATIONS
+    ================================= */
+
+    // Guru
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    // Relasi ke mata pelajaran
+    // Mata pelajaran
     public function studySubject(): BelongsTo
     {
         return $this->belongsTo(StudySubject::class);
     }
 
-    // Relasi ke kelas
+    // Kelas (PENTING - pengganti kelas_id)
     public function studyGroup(): BelongsTo
     {
-        return $this->belongsTo(StudyGroup::class);
+        return $this->belongsTo(StudyGroup::class, 'study_group_id');
     }
 }

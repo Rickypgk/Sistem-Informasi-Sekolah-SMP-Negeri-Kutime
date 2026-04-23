@@ -6,22 +6,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\StudyClassAssignment;
 
 class StudyGroup extends Model
 {
     use HasFactory;
 
+    protected $table = 'study_groups';
+
     protected $fillable = [
-        'name', 
-        'grade', 
-        'section', 
+        'name',
+        'grade',
+        'section',
         'capacity',
-        'homeroom_teacher_id', 
-        'description', 
-        'room',           // ← ruang kelas
-        'academic_year',  // ← tahun ajaran
-        'semester',       // ← semester
+        'homeroom_teacher_id',
+        'description',
+        'room',
+        'academic_year',
+        'semester',
         'is_active',
         'notes',
     ];
@@ -30,34 +31,47 @@ class StudyGroup extends Model
         'is_active' => 'boolean',
         'capacity'  => 'integer',
         'grade'     => 'integer',
-         'semester'  => 'integer',
+        'semester'  => 'integer',
     ];
 
-        protected $table = 'study_groups';
+    /* ================================
+       RELATIONS
+    ================================= */
 
-    // Relasi ke wali kelas
+    // Wali kelas
     public function homeroomTeacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'homeroom_teacher_id');
     }
 
-    // Relasi ke jadwal
+    // Jadwal
     public function timetables(): HasMany
     {
         return $this->hasMany(Timetable::class);
     }
 
-    // Relasi ke assignment guru
+    // Assignment guru
     public function assignments(): HasMany
     {
-        return $this->hasMany(StudyClassAssignment::class);
+        return $this->hasMany(StudyClassAssignment::class, 'study_group_id');
     }
 
-    // Jadwal dikelompokkan per hari
+    // 🔥 TAMBAHAN PENTING → relasi ke siswa
+    public function students(): HasMany
+    {
+        return $this->hasMany(Siswa::class, 'kelas_id');
+    }
+
+    /* ================================
+       HELPER
+    ================================= */
+
     public function timetablesByDay(): array
     {
         $days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
         $grouped = [];
+
         foreach ($days as $day) {
             $grouped[$day] = $this->timetables()
                 ->where('day_of_week', $day)
@@ -66,6 +80,7 @@ class StudyGroup extends Model
                 ->with(['studySubject', 'teacher'])
                 ->get();
         }
+
         return $grouped;
     }
 }
