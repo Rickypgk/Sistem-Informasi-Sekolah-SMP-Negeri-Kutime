@@ -8,10 +8,7 @@ use App\Models\Siswa;
 use App\Models\AbsensiSiswa;
 use App\Models\Timetable;
 use App\Models\Kelas;
-use App\Models\StudyClassAssignment;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 
@@ -22,9 +19,9 @@ class DashboardController extends Controller
         $user = Auth::user();
         $guru = $user->guru;
 
-        /* =====================================================
+        /* ─────────────────────────────────────────────────────────
            1. WIDGET PENGUMUMAN
-        ===================================================== */
+        ───────────────────────────────────────────────────────── */
         $widgetPengumuman = collect();
         try {
             $widgetPengumuman = Pengumuman::where('is_active', 1)
@@ -34,7 +31,6 @@ class DashboardController extends Controller
                 ->limit(4)
                 ->get();
         } catch (\Exception $e) {
-            // kolom mungkin berbeda, coba tanpa filter tambahan
             try {
                 $widgetPengumuman = Pengumuman::latest()->limit(4)->get();
             } catch (\Exception $e2) {
@@ -42,52 +38,50 @@ class DashboardController extends Controller
             }
         }
 
-        /* =====================================================
-           DEFAULT JIKA TIDAK ADA GURU
-        ===================================================== */
+        /* ─────────────────────────────────────────────────────────
+           DEFAULT jika guru belum terdaftar
+        ───────────────────────────────────────────────────────── */
         if (!$guru) {
-            return view('guru.dashboard', compact('widgetPengumuman'))
-                ->with([
-                    'totalSiswa'          => 0,
-                    'kehadiranPct'        => 0,
-                    'rataNilai'           => 0,
-                    'siswaRisiko'         => 0,
-                    'absensiHariIni'      => ['hadir' => 0, 'sakit' => 0, 'izin' => 0, 'alpha' => 0],
-                    'chartLabels'         => [],
-                    'chartHadir'          => [],
-                    'chartTidak'          => [],
-                    'siswaBerisiko'       => collect(),
-                    'jadwalHariIni'       => collect(),
-                    'isWaliKelas'         => false,
-                    'kelasWaliData'       => null,
-                    'namaKelasWali'       => null,
-                    'totalSiswaWali'      => 0,
-                    'siswaRekapDashboard' => collect(),
-                    'rekapDataDashboard'  => [],
-                    'rekapBulan'          => Carbon::now()->month,
-                    'rekapTahun'          => Carbon::now()->year,
-                ]);
+            return view('guru.dashboard', [
+                'widgetPengumuman'    => $widgetPengumuman,
+                'totalSiswa'          => 0,
+                'kehadiranPct'        => 0,
+                'siswaRisiko'         => 0,
+                'absensiHariIni'      => ['hadir' => 0, 'sakit' => 0, 'izin' => 0, 'alpha' => 0],
+                'chartLabels'         => [],
+                'chartHadir'          => [],
+                'chartTidak'          => [],
+                'siswaBerisiko'       => collect(),
+                'jadwalHariIni'       => collect(),
+                'isWaliKelas'         => false,
+                'kelasWaliData'       => null,
+                'namaKelasWali'       => null,
+                'totalSiswaWali'      => 0,
+                'siswaRekapDashboard' => collect(),
+                'rekapDataDashboard'  => [],
+                'rekapBulan'          => Carbon::now()->month,
+                'rekapTahun'          => Carbon::now()->year,
+            ]);
         }
 
-        /* =====================================================
-           2. WALI KELAS
-        ===================================================== */
+        /* ─────────────────────────────────────────────────────────
+           2. WALI KELAS CHECK
+        ───────────────────────────────────────────────────────── */
         $isWaliKelas    = false;
         $kelasWaliData  = null;
         $namaKelasWali  = null;
         $totalSiswaWali = 0;
 
         try {
-            // Cek apakah guru adalah wali kelas
             $isWaliKelas = Kelas::where('wali_guru_id', $guru->id)->exists()
-                || Kelas::where('wali_kelas_id', $guru->id)->exists()
-                || (method_exists($user, 'isWaliKelas') && $user->isWaliKelas());
+                        || Kelas::where('wali_kelas_id', $guru->id)->exists()
+                        || (method_exists($user, 'isWaliKelas') && $user->isWaliKelas());
 
             if ($isWaliKelas) {
                 $kelasWaliData = Kelas::where('wali_guru_id', $guru->id)->first()
-                    ?? Kelas::where('wali_kelas_id', $guru->id)->first()
-                    ?? $guru->waliKelas?->kelas
-                    ?? null;
+                              ?? Kelas::where('wali_kelas_id', $guru->id)->first()
+                              ?? $guru->waliKelas?->kelas
+                              ?? null;
 
                 $namaKelasWali  = $kelasWaliData?->nama ?? $kelasWaliData?->name ?? null;
                 $totalSiswaWali = $kelasWaliData
@@ -98,77 +92,61 @@ class DashboardController extends Controller
             $isWaliKelas = false;
         }
 
-        /* =====================================================
-           3. KELAS / SISWA YANG DIAJAR
-           Support berbagai struktur tabel assignment
-        ===================================================== */
-        $kelasIds = collect();
+        /* ─────────────────────────────────────────────────────────
+           3. KUMPULKAN study_group_id dari Timetable
+              → jadikan kelas_id untuk query Siswa & AbsensiSiswa
+              Timetable menyimpan study_group_id yang = kelas_id di tabel siswa
+        ───────────────────────────────────────────────────────── */
+        $studyGroupIds = collect();
 
         try {
-            // Coba StudyClassAssignment dengan teacher_id = user->id
-            $kelasIds = StudyClassAssignment::where('teacher_id', $user->id)
+            // Ambil semua study_group_id dari jadwal guru ini
+            $studyGroupIds = Timetable::where('teacher_id', $user->id)
+                ->whereNotNull('study_group_id')
                 ->pluck('study_group_id')
-                ->merge(
-                    StudyClassAssignment::where('teacher_id', $user->id)
-                        ->pluck('kelas_id')
-                        ->filter()
-                )
                 ->unique()
-                ->filter();
+                ->filter()
+                ->values();
         } catch (\Exception $e) {}
 
-        // Fallback: coba dengan guru->id
-        if ($kelasIds->isEmpty() && $guru) {
-            try {
-                $kelasIds = StudyClassAssignment::where('teacher_id', $guru->id)
-                    ->pluck('study_group_id')
-                    ->merge(
-                        StudyClassAssignment::where('teacher_id', $guru->id)
-                            ->pluck('kelas_id')
-                            ->filter()
-                    )
-                    ->unique()
-                    ->filter();
-            } catch (\Exception $e) {}
-        }
-
-        // Fallback: coba dari Timetable
-        if ($kelasIds->isEmpty()) {
-            try {
-                $kelasIds = Timetable::where('teacher_id', $user->id)
-                    ->pluck('study_group_id')
-                    ->merge(
-                        Timetable::where('teacher_id', $user->id)->pluck('kelas_id')->filter()
-                    )
-                    ->unique()
-                    ->filter();
-            } catch (\Exception $e) {}
-        }
-
-        // Sertakan kelas wali jika ada
+        // Sertakan kelas wali kelas jika ada
         if ($kelasWaliData) {
-            $kelasIds = $kelasIds->push($kelasWaliData->id)->unique()->filter();
+            $studyGroupIds = $studyGroupIds->push($kelasWaliData->id)->unique()->filter()->values();
         }
 
-        // Ambil siswa
+        /*
+         * Ambil siswa berdasarkan study_group_id
+         * CATATAN: study_group_id di Timetable = kelas_id di tabel siswa
+         * Sesuaikan kolom FK jika berbeda di proyek Anda.
+         */
         $siswaIds = collect();
-        if ($kelasIds->isNotEmpty()) {
+        if ($studyGroupIds->isNotEmpty()) {
             try {
-                $siswaIds = Siswa::whereIn('kelas_id', $kelasIds)->pluck('id');
+                $siswaIds = Siswa::whereIn('kelas_id', $studyGroupIds)
+                    ->pluck('id');
             } catch (\Exception $e) {
-                $siswaIds = collect();
+                // Coba kolom alternatif
+                try {
+                    $siswaIds = Siswa::whereIn('study_group_id', $studyGroupIds)
+                        ->pluck('id');
+                } catch (\Exception $e2) {
+                    $siswaIds = collect();
+                }
             }
         }
 
+        /* ─────────────────────────────────────────────────────────
+           4. TOTAL SISWA
+        ───────────────────────────────────────────────────────── */
         $totalSiswa = $siswaIds->count();
 
-        /* =====================================================
-           4. KPI KEHADIRAN BULAN INI
-        ===================================================== */
-        $bulanIni = Carbon::now()->month;
-        $tahunIni = Carbon::now()->year;
-
-        $kehadiranPct = 0;
+        /* ─────────────────────────────────────────────────────────
+           5. KPI KEHADIRAN BULAN INI
+              Query: AbsensiSiswa berdasarkan siswa_id
+        ───────────────────────────────────────────────────────── */
+        $bulanIni      = Carbon::now()->month;
+        $tahunIni      = Carbon::now()->year;
+        $kehadiranPct  = 0;
 
         if ($siswaIds->isNotEmpty()) {
             try {
@@ -189,26 +167,35 @@ class DashboardController extends Controller
             } catch (\Exception $e) {}
         }
 
-        /* =====================================================
-           5. ABSENSI HARI INI
-        ===================================================== */
-        $today         = Carbon::today();
+        /* ─────────────────────────────────────────────────────────
+           6. ABSENSI HARI INI
+              Query: AbsensiSiswa by siswa_id, whereDate tanggal = today
+        ───────────────────────────────────────────────────────── */
+        $today          = Carbon::today();
         $absensiHariIni = ['hadir' => 0, 'sakit' => 0, 'izin' => 0, 'alpha' => 0];
 
         if ($siswaIds->isNotEmpty()) {
             try {
                 $absensiHariIni = [
-                    'hadir' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $today)->where('status', 'hadir')->count(),
-                    'sakit' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $today)->where('status', 'sakit')->count(),
-                    'izin'  => AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $today)->where('status', 'izin')->count(),
-                    'alpha' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $today)->where('status', 'alpha')->count(),
+                    'hadir' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)
+                        ->whereDate('tanggal', $today)
+                        ->where('status', 'hadir')->count(),
+                    'sakit' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)
+                        ->whereDate('tanggal', $today)
+                        ->where('status', 'sakit')->count(),
+                    'izin'  => AbsensiSiswa::whereIn('siswa_id', $siswaIds)
+                        ->whereDate('tanggal', $today)
+                        ->where('status', 'izin')->count(),
+                    'alpha' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)
+                        ->whereDate('tanggal', $today)
+                        ->where('status', 'alpha')->count(),
                 ];
             } catch (\Exception $e) {}
         }
 
-        /* =====================================================
-           6. SISWA BERISIKO (kehadiran < 75%)
-        ===================================================== */
+        /* ─────────────────────────────────────────────────────────
+           7. SISWA BERISIKO (kehadiran < 75% bulan ini)
+        ───────────────────────────────────────────────────────── */
         $siswaBerisiko = collect();
         $siswaRisiko   = 0;
 
@@ -218,21 +205,25 @@ class DashboardController extends Controller
                     ->with('kelas')
                     ->get()
                     ->map(function ($s) use ($bulanIni, $tahunIni) {
-                        $r = AbsensiSiswa::where('siswa_id', $s->id)
-                            ->whereMonth('tanggal', $bulanIni)
-                            ->whereYear('tanggal', $tahunIni)
-                            ->selectRaw("
-                                SUM(CASE WHEN status='hadir' THEN 1 ELSE 0 END) as hadir,
-                                SUM(CASE WHEN status='alpha' THEN 1 ELSE 0 END) as alpha,
-                                COUNT(*) as total
-                            ")
-                            ->first();
+                        try {
+                            $r = AbsensiSiswa::where('siswa_id', $s->id)
+                                ->whereMonth('tanggal', $bulanIni)
+                                ->whereYear('tanggal', $tahunIni)
+                                ->selectRaw("
+                                    SUM(CASE WHEN status='hadir' THEN 1 ELSE 0 END) as hadir,
+                                    SUM(CASE WHEN status='alpha' THEN 1 ELSE 0 END) as alpha,
+                                    COUNT(*) as total
+                                ")
+                                ->first();
+                        } catch (\Exception $e) {
+                            $r = null;
+                        }
 
-                        $tot      = $r->total ?? 0;
+                        $tot       = $r?->total ?? 0;
                         $kehadiran = $tot > 0 ? round(($r->hadir / $tot) * 100, 1) : 0;
 
                         $s->kehadiran  = $kehadiran;
-                        $s->alpha      = $r->alpha ?? 0;
+                        $s->alpha      = $r?->alpha ?? 0;
                         $s->namaKelas  = $s->kelas?->nama ?? $s->kelas?->name ?? '—';
 
                         return $s;
@@ -246,29 +237,24 @@ class DashboardController extends Controller
             } catch (\Exception $e) {}
         }
 
-        /* =====================================================
-           7. CHART 7 HARI TERAKHIR
-        ===================================================== */
+        /* ─────────────────────────────────────────────────────────
+           8. CHART TREN 7 HARI TERAKHIR
+        ───────────────────────────────────────────────────────── */
         $chartLabels = [];
         $chartHadir  = [];
         $chartTidak  = [];
 
         for ($i = 6; $i >= 0; $i--) {
-            $tgl = Carbon::today()->subDays($i);
-
+            $tgl           = Carbon::today()->subDays($i);
             $chartLabels[] = $tgl->locale('id')->isoFormat('ddd D/M');
 
             if ($siswaIds->isNotEmpty()) {
                 try {
                     $hadir = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
                         ->whereDate('tanggal', $tgl)
-                        ->where('status', 'hadir')
-                        ->count();
-
+                        ->where('status', 'hadir')->count();
                     $total = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                        ->whereDate('tanggal', $tgl)
-                        ->count();
-
+                        ->whereDate('tanggal', $tgl)->count();
                     $chartHadir[] = $hadir;
                     $chartTidak[] = $total - $hadir;
                 } catch (\Exception $e) {
@@ -281,11 +267,13 @@ class DashboardController extends Controller
             }
         }
 
-        /* =====================================================
-           8. JADWAL HARI INI
-           Support: start_time/end_time, jam_mulai/jam_selesai
-           Relasi: studySubject/studyGroup atau mataPelajaran/kelas
-        ===================================================== */
+        /* ─────────────────────────────────────────────────────────
+           9. JADWAL MENGAJAR HARI INI
+              Sumber: Timetable → teacher_id = user->id
+              Kolom hari: day_of_week (string Indonesia: Senin, Selasa…)
+              Kolom jam : start_time / end_time
+              Relasi    : studySubject (nama mapel), studyGroup (nama kelas)
+        ───────────────────────────────────────────────────────── */
         $hariMap = [
             'Sunday'    => 'Minggu',
             'Monday'    => 'Senin',
@@ -295,88 +283,51 @@ class DashboardController extends Controller
             'Friday'    => 'Jumat',
             'Saturday'  => 'Sabtu',
         ];
-        $hariIni = $hariMap[Carbon::now()->format('l')];
+        $hariHariIni = $hariMap[Carbon::now()->format('l')]; // e.g. 'Senin'
 
         $jadwalHariIni = collect();
 
         try {
-            // Coba dengan relasi yang ada di model Timetable
-            $relations = [];
-            $timetableInstance = new Timetable();
-
-            // Cek relasi yang tersedia
-            foreach (['studySubject', 'studyGroup', 'mataPelajaran', 'kelas', 'subject', 'class'] as $rel) {
-                if (method_exists($timetableInstance, $rel)) {
-                    $relations[] = $rel;
-                }
-            }
-
-            $query = Timetable::query();
-
-            if (!empty($relations)) {
-                $query->with($relations);
-            }
-
-            // Filter teacher
-            $jadwalHariIni = $query
+            $jadwalHariIni = Timetable::with(['studySubject', 'studyGroup'])
                 ->where('teacher_id', $user->id)
-                ->where(function ($q) use ($hariIni) {
-                    $q->where('day_of_week', $hariIni)
-                      ->orWhere('hari', $hariIni)
-                      ->orWhere('day', $hariIni);
-                })
-                ->orderByRaw("COALESCE(start_time, jam_mulai) ASC")
-                ->get();
-
-            // Normalisasi field agar blade bisa baca konsisten
-            $jadwalHariIni = $jadwalHariIni->map(function ($j) {
-                // Normalisasi jam
-                $j->jam_mulai   = $j->start_time   ?? $j->jam_mulai   ?? null;
-                $j->jam_selesai = $j->end_time      ?? $j->jam_selesai ?? null;
-
-                // Normalisasi relasi mata pelajaran
-                if (!isset($j->mataPelajaran) || !$j->mataPelajaran) {
-                    $mapel = $j->studySubject ?? $j->subject ?? $j->pelajaran ?? null;
-                    $j->mataPelajaran = $mapel;
-                }
-
-                // Normalisasi relasi kelas / study group
-                if (!isset($j->kelas) || !$j->kelas) {
-                    $kls = $j->studyGroup ?? $j->class ?? $j->group ?? null;
-                    $j->kelas = $kls;
-                }
-
-                // Normalisasi kelas_id untuk link absensi
-                if (!$j->kelas_id) {
-                    $j->kelas_id = $j->study_group_id ?? ($j->kelas?->id ?? null);
-                }
-
-                return $j;
-            });
-
+                ->where('day_of_week', $hariHariIni)
+                ->orderBy('start_time')
+                ->get()
+                ->map(function ($j) {
+                    /*
+                     * Normalisasi ke field standar:
+                     *   _jam_mulai   → start_time
+                     *   _jam_selesai → end_time
+                     *   _mapel       → studySubject->name
+                     *   _kelas       → studyGroup->name
+                     *   _ruangan     → room
+                     *   _kelas_id    → study_group_id  (untuk link ke absensi)
+                     *   _sumber      → 'Timetable'
+                     */
+                    $j->_jam_mulai   = $j->start_time ?? null;
+                    $j->_jam_selesai = $j->end_time   ?? null;
+                    $j->_mapel       = $j->studySubject?->name
+                                    ?? $j->studySubject?->nama
+                                    ?? $j->subject_name
+                                    ?? '—';
+                    $j->_kelas       = $j->studyGroup?->name
+                                    ?? $j->studyGroup?->nama
+                                    ?? $j->group_name
+                                    ?? '—';
+                    $j->_ruangan     = $j->room ?? $j->ruangan ?? null;
+                    // study_group_id = kelas_id yang dipakai di AbsensiSiswa
+                    $j->_kelas_id    = $j->study_group_id ?? null;
+                    $j->_sumber      = 'Timetable';
+                    $j->_warna       = $j->studySubject?->color ?? null;
+                    return $j;
+                });
         } catch (\Exception $e) {
-            // Fallback query minimal
-            try {
-                $jadwalHariIni = Timetable::where('teacher_id', $user->id)
-                    ->where(function ($q) use ($hariIni) {
-                        $q->where('day_of_week', $hariIni)
-                          ->orWhere('hari', $hariIni);
-                    })
-                    ->orderByRaw("COALESCE(start_time, jam_mulai) ASC")
-                    ->get()
-                    ->map(function ($j) {
-                        $j->jam_mulai   = $j->start_time   ?? $j->jam_mulai   ?? null;
-                        $j->jam_selesai = $j->end_time      ?? $j->jam_selesai ?? null;
-                        return $j;
-                    });
-            } catch (\Exception $e2) {
-                $jadwalHariIni = collect();
-            }
+            $jadwalHariIni = collect();
         }
 
-        /* =====================================================
-           9. REKAP WALI KELAS
-        ===================================================== */
+        /* ─────────────────────────────────────────────────────────
+           10. REKAP ABSENSI WALI KELAS (widget dashboard)
+        ───────────────────────────────────────────────────────── */
         $siswaRekapDashboard = collect();
         $rekapDataDashboard  = [];
         $rekapBulan          = $request->input('rekap_bulan', $bulanIni);
@@ -389,22 +340,26 @@ class DashboardController extends Controller
                     ->get();
 
                 foreach ($siswaRekapDashboard as $siswa) {
-                    $r = AbsensiSiswa::where('siswa_id', $siswa->id)
-                        ->whereMonth('tanggal', $rekapBulan)
-                        ->whereYear('tanggal', $rekapTahun)
-                        ->selectRaw("
-                            SUM(CASE WHEN status='hadir' THEN 1 ELSE 0 END) as hadir,
-                            SUM(CASE WHEN status='sakit' THEN 1 ELSE 0 END) as sakit,
-                            SUM(CASE WHEN status='izin'  THEN 1 ELSE 0 END) as izin,
-                            SUM(CASE WHEN status='alpha' THEN 1 ELSE 0 END) as alpha
-                        ")
-                        ->first();
+                    try {
+                        $r = AbsensiSiswa::where('siswa_id', $siswa->id)
+                            ->whereMonth('tanggal', $rekapBulan)
+                            ->whereYear('tanggal', $rekapTahun)
+                            ->selectRaw("
+                                SUM(CASE WHEN status='hadir' THEN 1 ELSE 0 END) as hadir,
+                                SUM(CASE WHEN status='sakit' THEN 1 ELSE 0 END) as sakit,
+                                SUM(CASE WHEN status='izin'  THEN 1 ELSE 0 END) as izin,
+                                SUM(CASE WHEN status='alpha' THEN 1 ELSE 0 END) as alpha
+                            ")
+                            ->first();
+                    } catch (\Exception $e) {
+                        $r = null;
+                    }
 
                     $rekapDataDashboard[$siswa->id] = [
-                        'hadir' => $r->hadir ?? 0,
-                        'sakit' => $r->sakit ?? 0,
-                        'izin'  => $r->izin  ?? 0,
-                        'alpha' => $r->alpha ?? 0,
+                        'hadir' => $r?->hadir ?? 0,
+                        'sakit' => $r?->sakit ?? 0,
+                        'izin'  => $r?->izin  ?? 0,
+                        'alpha' => $r?->alpha ?? 0,
                     ];
                 }
             } catch (\Exception $e) {
@@ -413,9 +368,9 @@ class DashboardController extends Controller
             }
         }
 
-        /* =====================================================
+        /* ─────────────────────────────────────────────────────────
            RETURN VIEW
-        ===================================================== */
+        ───────────────────────────────────────────────────────── */
         return view('guru.dashboard', compact(
             'totalSiswa',
             'kehadiranPct',
