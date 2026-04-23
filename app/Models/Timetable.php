@@ -70,4 +70,14 @@ class Timetable extends Model
 
         return $query->exists();
     }
+
+    public function studySubject()
+    {
+        return $this->belongsTo(StudySubject::class, 'study_subject_id');
+    }
+
+    public function studyGroup()
+    {
+        return $this->belongsTo(StudyGroup::class, 'study_group_id');
+    }
 }
