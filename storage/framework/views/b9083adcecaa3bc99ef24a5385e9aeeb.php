@@ -235,6 +235,24 @@
 
 
 
+
+<?php
+    $kelasForJs = ($kelasList ?? collect())->map(function ($k) {
+        return [
+            'id'            => $k->id,
+            'name'          => $k->name,
+            'grade'         => (string) ($k->grade ?? ''),
+            'semester'      => (string) ($k->semester ?? ''),
+            'academic_year' => $k->academic_year ?? '',
+            'is_active'     => (bool) ($k->is_active ?? true),
+        ];
+    })->values();
+?>
+<script id="kelasListData" type="application/json"><?php echo json_encode($kelasForJs); ?></script>
+
+
+
+
 <div id="modalImport"
      class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200
@@ -270,7 +288,6 @@
                 </label>
                 <div class="grid grid-cols-2 gap-2">
                     <label class="cursor-pointer">
-                        
                         <input type="radio" name="role" value="guru"
                                id="importRoleGuru"
                                class="peer hidden" checked>
@@ -283,7 +300,6 @@
                         </div>
                     </label>
                     <label class="cursor-pointer">
-                        
                         <input type="radio" name="role" value="siswa"
                                id="importRoleSiswa"
                                class="peer hidden">
@@ -317,7 +333,6 @@
                                       uppercase tracking-wide mb-1">
                             Tingkat <span class="text-red-400">*</span>
                         </label>
-                        
                         <select name="import_grade" id="importGrade"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                        px-3 py-2 text-xs transition
@@ -335,7 +350,6 @@
                                       uppercase tracking-wide mb-1">
                             Semester <span class="text-red-400">*</span>
                         </label>
-                        
                         <select name="import_semester" id="importSemester"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                        px-3 py-2 text-xs transition
@@ -354,7 +368,6 @@
                                   uppercase tracking-wide mb-1">
                         Kelas <span class="text-red-400">*</span>
                     </label>
-                    
                     <select name="import_kelas_id" id="importKelasId"
                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                    px-3 py-2 text-xs transition
@@ -468,7 +481,6 @@
         </form>
     </div>
 </div>
-</div>
 
 
 <?php echo $__env->make('admin.users._modal_detail', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
@@ -581,35 +593,26 @@ function openDeleteModal(userId, userName) {
 // ── Import Modal: Toggle section siswa & filter kelas dinamis ────────────────
 document.addEventListener('DOMContentLoaded', function () {
 
-    <?php
-        $kelasJson = ($kelasList ?? collect())->map(function ($k) {
-            return [
-                'id'            => $k->id,
-                'name'          => $k->name,
-                'grade'         => (string) ($k->grade ?? ''),
-                'semester'      => (string) ($k->semester ?? ''),
-                'academic_year' => $k->academic_year ?? '',
-            ];
-        })->values()->toJson();
-    ?>
+    // Baca data kelas dari script tag — aman dari Blade parser error
+    var rawJson  = document.getElementById('kelasListData');
+    var allKelas = rawJson ? JSON.parse(rawJson.textContent) : [];
 
-    // Data semua kelas dari controller (di-render saat halaman dimuat)
-    const allKelas = <?php echo $kelasJson; ?>;
+    var roleGuru       = document.getElementById('importRoleGuru');
+    var roleSiswa      = document.getElementById('importRoleSiswa');
+    var sectionSiswa   = document.getElementById('sectionSiswaImport');
+    var selectGrade    = document.getElementById('importGrade');
+    var selectSemester = document.getElementById('importSemester');
+    var selectKelas    = document.getElementById('importKelasId');
 
-    const roleGuru       = document.getElementById('importRoleGuru');
-    const roleSiswa      = document.getElementById('importRoleSiswa');
-    const sectionSiswa   = document.getElementById('sectionSiswaImport');
-    const selectGrade    = document.getElementById('importGrade');
-    const selectSemester = document.getElementById('importSemester');
-    const selectKelas    = document.getElementById('importKelasId');
-
-    // Guard: jika salah satu elemen tidak ditemukan, hentikan eksekusi
+    // Guard: jika salah satu elemen tidak ada di DOM, hentikan
     if (!roleGuru || !roleSiswa || !sectionSiswa ||
-        !selectGrade || !selectSemester || !selectKelas) return;
+        !selectGrade || !selectSemester || !selectKelas) {
+        return;
+    }
 
     // Tampilkan / sembunyikan section kelas siswa sesuai role yang dipilih
     function toggleSiswaSection() {
-        const isSiswa = roleSiswa.checked;
+        var isSiswa = roleSiswa.checked;
 
         if (isSiswa) {
             sectionSiswa.classList.remove('hidden');
@@ -621,46 +624,54 @@ document.addEventListener('DOMContentLoaded', function () {
             selectGrade.removeAttribute('required');
             selectSemester.removeAttribute('required');
             selectKelas.removeAttribute('required');
+            // Reset semua pilihan agar tidak ikut terkirim dengan nilai lama
             selectGrade.value     = '';
             selectSemester.value  = '';
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
         }
     }
 
-    // Filter dropdown kelas berdasarkan tingkat + semester yang dipilih
+    // Filter dropdown kelas dari data kelola kelas berdasarkan grade + semester
     function filterKelas() {
-        const grade    = selectGrade.value;
-        const semester = selectSemester.value;
+        var grade    = selectGrade.value;
+        var semester = selectSemester.value;
 
+        // Belum memilih salah satu → tampilkan placeholder
         if (!grade || !semester) {
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
             return;
         }
 
-        const filtered = allKelas.filter(
-            k => k.grade === String(grade) && k.semester === String(semester)
-        );
+        // Filter hanya kelas yang cocok dengan grade DAN semester yang dipilih
+        var filtered = allKelas.filter(function (k) {
+            return k.grade === String(grade) && k.semester === String(semester);
+        });
 
         if (filtered.length === 0) {
-            selectKelas.innerHTML = '<option value="">Tidak ada kelas untuk pilihan ini</option>';
+            selectKelas.innerHTML =
+                '<option value="">Tidak ada kelas untuk pilihan ini — tambahkan di Kelola Kelas</option>';
             return;
         }
 
-        let html = '<option value="">— Pilih Kelas —</option>';
+        // Bangun opsi dropdown dari data kelas yang sudah difilter
+        var html = '<option value="">— Pilih Kelas —</option>';
         filtered.forEach(function (k) {
-            const label = k.name + (k.academic_year ? ' \u2014 ' + k.academic_year : '');
+            var label = k.name;
+            if (k.academic_year) {
+                label += ' \u2014 ' + k.academic_year;
+            }
             html += '<option value="' + k.id + '">' + label + '</option>';
         });
         selectKelas.innerHTML = html;
     }
 
-    // Pasang event listener
+    // Pasang event listener ke radio dan select
     roleGuru.addEventListener('change', toggleSiswaSection);
     roleSiswa.addEventListener('change', toggleSiswaSection);
     selectGrade.addEventListener('change', filterKelas);
     selectSemester.addEventListener('change', filterKelas);
 
-    // Jalankan inisialisasi awal
+    // Jalankan inisialisasi awal (Guru terpilih default → section siswa tersembunyi)
     toggleSiswaSection();
 });
 </script>
