@@ -1,4 +1,15 @@
 {{-- resources/views/guru/dashboard/jadwal-mengajar.blade.php --}}
+{{--
+   Field ternormalisasi dari DashboardController (semua dari Timetable):
+     $jadwal->_jam_mulai    = start_time
+     $jadwal->_jam_selesai  = end_time
+     $jadwal->_mapel        = studySubject->name
+     $jadwal->_kelas        = studyGroup->name
+     $jadwal->_ruangan      = room
+     $jadwal->_kelas_id     = study_group_id  (link ke absensi)
+     $jadwal->_warna        = studySubject->color  (opsional)
+     $jadwal->_sumber       = 'Timetable'
+--}}
 @php
     $jadwalHariIni = $jadwalHariIni ?? collect();
 
@@ -20,83 +31,7 @@
 
     $nowTime = now()->format('H:i');
 
-    /**
-     * Ambil jam dari jadwal — support start_time/end_time maupun jam_mulai/jam_selesai
-     */
-    $resolveJam = function($jadwal) {
-        $mulai   = null;
-        $selesai = null;
-
-        // Coba berbagai nama kolom
-        foreach (['jam_mulai', 'start_time', 'jam_awal', 'waktu_mulai'] as $k) {
-            if (!empty($jadwal->$k)) { $mulai = $jadwal->$k; break; }
-        }
-        foreach (['jam_selesai', 'end_time', 'jam_akhir', 'waktu_selesai'] as $k) {
-            if (!empty($jadwal->$k)) { $selesai = $jadwal->$k; break; }
-        }
-
-        return [$mulai, $selesai];
-    };
-
-    /**
-     * Ambil nama mata pelajaran — support berbagai relasi & kolom
-     */
-    $resolveMapel = function($jadwal) {
-        // Coba relasi objek dulu
-        $relasi = $jadwal->mataPelajaran
-            ?? $jadwal->studySubject
-            ?? $jadwal->subject
-            ?? $jadwal->pelajaran
-            ?? null;
-
-        if ($relasi) {
-            return $relasi->nama ?? $relasi->name ?? $relasi->nama_mapel ?? null;
-        }
-
-        // Coba kolom langsung
-        foreach (['nama_mapel','mata_pelajaran','mapel','subject_name','nama_pelajaran'] as $k) {
-            if (!empty($jadwal->$k)) return $jadwal->$k;
-        }
-
-        return '—';
-    };
-
-    /**
-     * Ambil nama kelas — support berbagai relasi & kolom
-     */
-    $resolveKelas = function($jadwal) {
-        $relasi = $jadwal->kelas
-            ?? $jadwal->studyGroup
-            ?? $jadwal->class
-            ?? $jadwal->group
-            ?? null;
-
-        if ($relasi) {
-            return $relasi->nama ?? $relasi->name ?? $relasi->nama_kelas ?? null;
-        }
-
-        foreach (['nama_kelas','kelas_nama','class_name','group_name'] as $k) {
-            if (!empty($jadwal->$k)) return $jadwal->$k;
-        }
-
-        return '—';
-    };
-
-    /**
-     * Ambil kelas_id untuk link absensi
-     */
-    $resolveKelasId = function($jadwal) {
-        foreach (['kelas_id','study_group_id','class_id','group_id'] as $k) {
-            if (!empty($jadwal->$k)) return $jadwal->$k;
-        }
-
-        $relasi = $jadwal->kelas ?? $jadwal->studyGroup ?? $jadwal->class ?? null;
-        return $relasi?->id ?? null;
-    };
-
-    /**
-     * Hitung status jadwal
-     */
+    // Helper status berdasarkan jam sekarang vs jam jadwal
     $getStatus = function($jamMulai, $jamSelesai) use ($nowTime) {
         if (!$jamMulai || !$jamSelesai) return 'akan';
         $m = substr($jamMulai, 0, 5);
@@ -109,7 +44,7 @@
 
 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 
-    {{-- ─── Header ─────────────────────────────────────────── --}}
+    {{-- ─── Header ─────────────────────────────────────────────── --}}
     <div style="display:flex;align-items:center;justify-content:space-between;
                 padding:10px 14px;border-bottom:1px solid #f1f5f9;background:#fff;">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -145,7 +80,7 @@
         </div>
     </div>
 
-    {{-- ─── Empty State ─────────────────────────────────────── --}}
+    {{-- ─── Empty State ─────────────────────────────────────────── --}}
     @if($jadwalHariIni->isEmpty())
         <div style="padding:40px 20px;text-align:center;">
             <div style="width:60px;height:60px;border-radius:18px;background:#f1f5f9;
@@ -157,17 +92,26 @@
             <p style="font-size:.62rem;color:#94a3b8;margin:0;">
                 Selamat menikmati hari {{ $hariIniLabel }}!
             </p>
+            @if(Route::has('guru.jadwal-mengajar.index'))
+                <a href="{{ route('guru.jadwal-mengajar.index') }}"
+                   style="display:inline-flex;align-items:center;gap:4px;margin-top:12px;
+                          font-size:.62rem;font-weight:700;color:#4f46e5;text-decoration:none;
+                          background:#eef2ff;border:1px solid #c7d2fe;border-radius:7px;
+                          padding:5px 12px;">
+                    ➕ Kelola Jadwal
+                </a>
+            @endif
         </div>
 
     @else
-    {{-- ─── Tabel Jadwal ────────────────────────────────────── --}}
+    {{-- ─── Tabel Jadwal ────────────────────────────────────────── --}}
     <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;min-width:500px;">
             <thead>
                 <tr style="background:#f8fafc;">
                     <th style="padding:8px 14px;text-align:left;font-size:.575rem;font-weight:700;
                                color:#64748b;text-transform:uppercase;letter-spacing:.05em;
-                               border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:110px;">
+                               border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:115px;">
                         Jam
                     </th>
                     <th style="padding:8px 12px;text-align:left;font-size:.575rem;font-weight:700;
@@ -177,7 +121,7 @@
                     </th>
                     <th style="padding:8px 10px;text-align:center;font-size:.575rem;font-weight:700;
                                color:#64748b;text-transform:uppercase;letter-spacing:.05em;
-                               border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:80px;">
+                               border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:85px;">
                         Kelas
                     </th>
                     <th style="padding:8px 10px;text-align:center;font-size:.575rem;font-weight:700;
@@ -187,12 +131,12 @@
                     </th>
                     <th style="padding:8px 10px;text-align:center;font-size:.575rem;font-weight:700;
                                color:#64748b;text-transform:uppercase;letter-spacing:.05em;
-                               border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:110px;">
+                               border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:115px;">
                         Status
                     </th>
                     <th style="padding:8px 14px;text-align:center;font-size:.575rem;font-weight:700;
                                color:#64748b;text-transform:uppercase;letter-spacing:.05em;
-                               border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:90px;">
+                               border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:95px;">
                         Aksi
                     </th>
                 </tr>
@@ -200,20 +144,20 @@
             <tbody>
                 @foreach($jadwalHariIni as $idx => $jadwal)
                 @php
-                    $stripColor  = $warnaPalet[$idx % count($warnaPalet)];
+                    // Baca field yang sudah dinormalisasi di controller
+                    $jamMulai   = $jadwal->_jam_mulai   ?? null;
+                    $jamSelesai = $jadwal->_jam_selesai ?? null;
+                    $mapel      = $jadwal->_mapel       ?? '—';
+                    $namaKelas  = $jadwal->_kelas       ?? '—';
+                    $ruangan    = $jadwal->_ruangan     ?? null;
+                    $kelasId    = $jadwal->_kelas_id    ?? null;
+                    $jadwalId   = $jadwal->id           ?? null;
+                    $warna      = $jadwal->_warna       ?? null;
 
-                    [$jamMulai, $jamSelesai] = $resolveJam($jadwal);
-                    $mapel     = $resolveMapel($jadwal);
-                    $namaKelas = $resolveKelas($jadwal);
-                    $kelasId   = $resolveKelasId($jadwal);
-                    $jadwalId  = $jadwal->id ?? null;
+                    // Warna strip: pakai warna dari studySubject->color jika ada
+                    $stripColor = $warna ?? $warnaPalet[$idx % count($warnaPalet)];
 
-                    // Ruangan — coba berbagai nama kolom
-                    $ruangan = null;
-                    foreach (['ruangan','ruang','room','classroom','lokasi'] as $k) {
-                        if (!empty($jadwal->$k)) { $ruangan = $jadwal->$k; break; }
-                    }
-
+                    // Hitung status
                     $status        = $getStatus($jamMulai, $jamSelesai);
                     $isBerlangsung = $status === 'berlangsung';
                     $isSelesai     = $status === 'selesai';
@@ -239,11 +183,8 @@
                         $statusBorder = '#bfdbfe';
                     }
 
-                    // Bangun parameter absensi
-                    $absensiParams = array_filter([
-                        'kelas_id'  => $kelasId,
-                        'jadwal_id' => $jadwalId,
-                    ]);
+                    // Parameter link absensi
+                    $absensiParams = array_filter(['kelas_id' => $kelasId, 'jadwal_id' => $jadwalId]);
                 @endphp
                 <tr style="background:{{ $rowBg }};border-bottom:1px solid #f1f5f9;"
                     onmouseover="this.style.background='{{ $isBerlangsung ? '#dcfce7' : '#f0f4ff' }}'"
@@ -252,23 +193,25 @@
                     {{-- ── Jam ── --}}
                     <td style="padding:9px 14px;white-space:nowrap;">
                         <div style="display:flex;align-items:center;gap:8px;">
+                            {{-- Color strip --}}
                             <div style="width:3px;height:40px;border-radius:3px;flex-shrink:0;
                                          background:{{ $isBerlangsung ? '#059669' : ($isSelesai ? '#cbd5e1' : $stripColor) }};"></div>
-                            <div style="text-align:center;
+                            {{-- Jam box --}}
+                            <div style="text-align:center;min-width:62px;
                                          background:{{ $isBerlangsung ? '#dcfce7' : '#f8fafc' }};
                                          border:1.5px solid {{ $isBerlangsung ? '#a7f3d0' : '#e2e8f0' }};
-                                         border-radius:8px;padding:5px 9px;min-width:62px;">
+                                         border-radius:8px;padding:5px 9px;">
                                 @if($jamMulai && $jamSelesai)
-                                    <p style="font-size:.7rem;font-weight:800;line-height:1.2;
+                                    <p style="font-size:.7rem;font-weight:800;line-height:1.2;margin:0;
                                                color:{{ $isBerlangsung ? '#059669' : ($isSelesai ? '#94a3b8' : '#1e293b') }};">
                                         {{ substr($jamMulai, 0, 5) }}
                                     </p>
                                     <div style="width:16px;height:1px;background:#e2e8f0;margin:2px auto;"></div>
-                                    <p style="font-size:.58rem;color:#94a3b8;line-height:1.2;">
+                                    <p style="font-size:.58rem;color:#94a3b8;line-height:1.2;margin:0;">
                                         {{ substr($jamSelesai, 0, 5) }}
                                     </p>
                                 @else
-                                    <p style="font-size:.62rem;color:#94a3b8;">—</p>
+                                    <p style="font-size:.62rem;color:#94a3b8;margin:0;">—</p>
                                 @endif
                             </div>
                         </div>
@@ -277,6 +220,7 @@
                     {{-- ── Mata Pelajaran ── --}}
                     <td style="padding:9px 12px;">
                         <div style="display:flex;align-items:center;gap:8px;">
+                            {{-- Badge inisial mapel --}}
                             <div style="width:30px;height:30px;border-radius:9px;flex-shrink:0;
                                          display:flex;align-items:center;justify-content:center;
                                          font-size:.6rem;font-weight:800;color:#fff;
@@ -285,14 +229,15 @@
                                 {{ strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $mapel), 0, 2)) ?: '??' }}
                             </div>
                             <div style="min-width:0;">
-                                <p style="font-size:.72rem;font-weight:700;line-height:1.25;
+                                <p style="font-size:.72rem;font-weight:700;line-height:1.25;margin:0;
                                            color:{{ $isSelesai ? '#94a3b8' : '#1e293b' }};
                                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
                                            max-width:180px;">
                                     {{ $mapel }}
                                 </p>
                                 @if($isBerlangsung)
-                                    <p style="font-size:.55rem;font-weight:700;color:#059669;line-height:1.2;">
+                                    <p style="font-size:.55rem;font-weight:700;color:#059669;
+                                               line-height:1.2;margin:0;">
                                         ● Sedang berlangsung
                                     </p>
                                 @endif
@@ -343,27 +288,27 @@
                     {{-- ── Aksi ── --}}
                     <td style="padding:9px 14px;text-align:center;">
                         @if(Route::has('guru.absensi-siswa.index'))
-                            @if($isSelesai)
+                            @if($isBerlangsung)
                                 <a href="{{ route('guru.absensi-siswa.index', $absensiParams) }}"
                                    style="display:inline-flex;align-items:center;justify-content:center;
-                                          gap:3px;padding:5px 10px;border-radius:7px;font-size:.6rem;
+                                          gap:3px;padding:5px 11px;border-radius:7px;font-size:.6rem;
+                                          font-weight:700;text-decoration:none;white-space:nowrap;
+                                          background:#4f46e5;color:#fff;
+                                          box-shadow:0 2px 8px rgba(79,70,229,.3);">
+                                    ✅ Absensi
+                                </a>
+                            @elseif($isSelesai)
+                                <a href="{{ route('guru.absensi-siswa.index', $absensiParams) }}"
+                                   style="display:inline-flex;align-items:center;justify-content:center;
+                                          gap:3px;padding:5px 11px;border-radius:7px;font-size:.6rem;
                                           font-weight:600;text-decoration:none;white-space:nowrap;
                                           background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;">
                                     👁 Lihat
                                 </a>
-                            @elseif($isBerlangsung)
-                                <a href="{{ route('guru.absensi-siswa.index', $absensiParams) }}"
-                                   style="display:inline-flex;align-items:center;justify-content:center;
-                                          gap:3px;padding:5px 10px;border-radius:7px;font-size:.6rem;
-                                          font-weight:700;text-decoration:none;white-space:nowrap;
-                                          background:#4f46e5;color:#fff;
-                                          box-shadow:0 2px 8px rgba(79,70,229,.25);">
-                                    ✅ Absensi
-                                </a>
                             @else
                                 <a href="{{ route('guru.absensi-siswa.index', $absensiParams) }}"
                                    style="display:inline-flex;align-items:center;justify-content:center;
-                                          gap:3px;padding:5px 10px;border-radius:7px;font-size:.6rem;
+                                          gap:3px;padding:5px 11px;border-radius:7px;font-size:.6rem;
                                           font-weight:600;text-decoration:none;white-space:nowrap;
                                           background:#f8fafc;color:#475569;border:1px solid #e2e8f0;">
                                     ✅ Absensi
@@ -380,15 +325,13 @@
         </table>
     </div>
 
-    {{-- ─── Footer Ringkasan ───────────────────────────────── --}}
+    {{-- ─── Footer ringkasan ────────────────────────────────────── --}}
     @php
-        $jmlBerlangsung = $jadwalHariIni->filter(function($j) use ($resolveJam, $getStatus) {
-            [$m, $s] = $resolveJam($j);
-            return $getStatus($m, $s) === 'berlangsung';
+        $jmlBerlangsung = $jadwalHariIni->filter(function($j) use ($getStatus) {
+            return $getStatus($j->_jam_mulai ?? null, $j->_jam_selesai ?? null) === 'berlangsung';
         })->count();
-        $jmlSelesai = $jadwalHariIni->filter(function($j) use ($resolveJam, $getStatus) {
-            [$m, $s] = $resolveJam($j);
-            return $getStatus($m, $s) === 'selesai';
+        $jmlSelesai = $jadwalHariIni->filter(function($j) use ($getStatus) {
+            return $getStatus($j->_jam_mulai ?? null, $j->_jam_selesai ?? null) === 'selesai';
         })->count();
         $jmlAkan = $jadwalHariIni->count() - $jmlBerlangsung - $jmlSelesai;
     @endphp

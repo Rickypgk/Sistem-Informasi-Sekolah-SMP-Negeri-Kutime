@@ -1,11 +1,13 @@
 
 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
-    <div class="flex items-center justify-between mb-3">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
         <div>
-            <p class="font-semibold text-slate-800 dark:text-slate-100" style="font-size:.8rem;">
+            <p style="font-size:.78rem;font-weight:700;color:#1e293b;margin:0;">
                 📈 Tren Kehadiran 7 Hari Terakhir
             </p>
-            <p class="text-slate-400" style="font-size:.6rem;">Perbandingan hadir vs tidak hadir</p>
+            <p style="font-size:.6rem;color:#94a3b8;margin:2px 0 0;">
+                Perbandingan hadir vs tidak hadir harian
+            </p>
         </div>
         <?php if(isset($totalSiswa) && $totalSiswa > 0): ?>
             <span style="font-size:.6rem;font-weight:600;color:#4f46e5;background:#eef2ff;
