@@ -80,8 +80,8 @@ class DashboardController extends Controller
         /* =====================================================
            3. KELAS DIAJAR
         ===================================================== */
-        $kelasIds = JadwalMengajar::where('guru_id', $guru->id)
-            ->pluck('kelas_id')
+        $kelasIds = StudyClassAssignment::where('teacher_id', $user->id)
+            ->pluck('study_group_id')
             ->unique()
             ->filter();
 
