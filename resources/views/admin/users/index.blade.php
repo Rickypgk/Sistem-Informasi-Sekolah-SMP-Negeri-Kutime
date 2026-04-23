@@ -268,10 +268,12 @@
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                     Role Tujuan
                 </label>
-                <div class="grid grid-cols-2 gap-2" id="roleSelector">
+                <div class="grid grid-cols-2 gap-2">
                     <label class="cursor-pointer">
-                        <input type="radio" name="role" value="guru" class="peer hidden" checked
-                               onchange="toggleSiswaFields(this.value)">
+                        {{-- id="importRoleGuru" wajib ada agar JS dapat menemukannya --}}
+                        <input type="radio" name="role" value="guru"
+                               id="importRoleGuru"
+                               class="peer hidden" checked>
                         <div class="text-center py-2.5 rounded-xl border-2 border-slate-100 dark:border-slate-700
                                     peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-950/50
                                     text-xs font-semibold text-slate-600 dark:text-slate-400
@@ -281,8 +283,10 @@
                         </div>
                     </label>
                     <label class="cursor-pointer">
-                        <input type="radio" name="role" value="siswa" class="peer hidden"
-                               onchange="toggleSiswaFields(this.value)">
+                        {{-- id="importRoleSiswa" wajib ada agar JS dapat menemukannya --}}
+                        <input type="radio" name="role" value="siswa"
+                               id="importRoleSiswa"
+                               class="peer hidden">
                         <div class="text-center py-2.5 rounded-xl border-2 border-slate-100 dark:border-slate-700
                                     peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-950/50
                                     text-xs font-semibold text-slate-600 dark:text-slate-400
@@ -295,13 +299,15 @@
             </div>
 
             {{-- ===== FIELD KHUSUS SISWA ===== --}}
-            <div id="siswaImportFields" class="hidden space-y-3
-                                                bg-violet-50 dark:bg-violet-950/20
-                                                border border-violet-200 dark:border-violet-800
-                                                rounded-2xl p-4">
+            {{-- id="sectionSiswaImport" harus sama persis dengan yang dirujuk JS --}}
+            <div id="sectionSiswaImport"
+                 class="hidden space-y-3
+                        bg-violet-50 dark:bg-violet-950/20
+                        border border-violet-200 dark:border-violet-800
+                        rounded-2xl p-4">
 
                 <p class="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">
-                    📋 Info Kelas Siswa
+                    📋 Penempatan Kelas Siswa
                 </p>
 
                 {{-- Tingkat + Semester --}}
@@ -311,12 +317,13 @@
                                       uppercase tracking-wide mb-1">
                             Tingkat <span class="text-red-400">*</span>
                         </label>
+                        {{-- id="importGrade" harus sama persis dengan yang dirujuk JS --}}
                         <select name="import_grade" id="importGrade"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                        px-3 py-2 text-xs transition
                                        focus:outline-none focus:ring-2 focus:ring-indigo-300
                                        bg-white dark:bg-slate-700 dark:text-slate-200">
-                            <option value="">— Pilih —</option>
+                            <option value="">— Pilih Tingkat —</option>
                             <option value="7">VII (Kelas 7)</option>
                             <option value="8">VIII (Kelas 8)</option>
                             <option value="9">IX (Kelas 9)</option>
@@ -328,40 +335,32 @@
                                       uppercase tracking-wide mb-1">
                             Semester <span class="text-red-400">*</span>
                         </label>
+                        {{-- id="importSemester" harus sama persis dengan yang dirujuk JS --}}
                         <select name="import_semester" id="importSemester"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                        px-3 py-2 text-xs transition
                                        focus:outline-none focus:ring-2 focus:ring-indigo-300
                                        bg-white dark:bg-slate-700 dark:text-slate-200">
-                            <option value="">— Pilih —</option>
+                            <option value="">— Pilih Semester —</option>
                             <option value="1">Semester 1 (Ganjil)</option>
                             <option value="2">Semester 2 (Genap)</option>
                         </select>
                     </div>
                 </div>
 
-                {{-- Pilih Kelas --}}
+                {{-- Pilih Kelas (diisi dinamis oleh JS) --}}
                 <div>
                     <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                   uppercase tracking-wide mb-1">
                         Kelas <span class="text-red-400">*</span>
                     </label>
+                    {{-- id="importKelasId" harus sama persis dengan yang dirujuk JS --}}
                     <select name="import_kelas_id" id="importKelasId"
                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                    px-3 py-2 text-xs transition
                                    focus:outline-none focus:ring-2 focus:ring-indigo-300
                                    bg-white dark:bg-slate-700 dark:text-slate-200">
-                        <option value="">— Pilih tingkat & semester dulu —</option>
-                        @foreach($kelasList ?? [] as $kelas)
-                            <option value="{{ $kelas->id }}"
-                                    data-grade="{{ $kelas->grade }}"
-                                    data-semester="{{ $kelas->semester }}">
-                                {{ $kelas->name }}
-                                @if($kelas->academic_year)
-                                    ({{ $kelas->academic_year }})
-                                @endif
-                            </option>
-                        @endforeach
+                        <option value="">— Pilih tingkat &amp; semester dulu —</option>
                     </select>
                     <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
                         Semua siswa dari file ini akan masuk ke kelas yang dipilih.
@@ -594,6 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })->values()->toJson();
     @endphp
 
+    // Data semua kelas dari controller (di-render saat halaman dimuat)
     const allKelas = {!! $kelasJson !!};
 
     const roleGuru       = document.getElementById('importRoleGuru');
@@ -603,14 +603,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectSemester = document.getElementById('importSemester');
     const selectKelas    = document.getElementById('importKelasId');
 
-    // Guard: elemen tidak ada di DOM → hentikan
+    // Guard: jika salah satu elemen tidak ditemukan, hentikan eksekusi
     if (!roleGuru || !roleSiswa || !sectionSiswa ||
         !selectGrade || !selectSemester || !selectKelas) return;
 
-    /**
-     * Tampilkan / sembunyikan section penempatan kelas siswa
-     * dan atur atribut required sesuai role yang dipilih.
-     */
+    // Tampilkan / sembunyikan section kelas siswa sesuai role yang dipilih
     function toggleSiswaSection() {
         const isSiswa = roleSiswa.checked;
 
@@ -624,22 +621,17 @@ document.addEventListener('DOMContentLoaded', function () {
             selectGrade.removeAttribute('required');
             selectSemester.removeAttribute('required');
             selectKelas.removeAttribute('required');
-            // Reset agar tidak ikut terkirim dengan value lama
             selectGrade.value     = '';
             selectSemester.value  = '';
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
         }
     }
 
-    /**
-     * Filter dropdown kelas berdasarkan kombinasi tingkat + semester.
-     * Kelas yang tampil hanya yang cocok dengan kedua kriteria tersebut.
-     */
+    // Filter dropdown kelas berdasarkan tingkat + semester yang dipilih
     function filterKelas() {
         const grade    = selectGrade.value;
         const semester = selectSemester.value;
 
-        // Belum memilih salah satu → reset dropdown kelas
         if (!grade || !semester) {
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
             return;
@@ -650,29 +642,26 @@ document.addEventListener('DOMContentLoaded', function () {
         );
 
         if (filtered.length === 0) {
-            selectKelas.innerHTML =
-                '<option value="">Tidak ada kelas untuk pilihan ini</option>';
+            selectKelas.innerHTML = '<option value="">Tidak ada kelas untuk pilihan ini</option>';
             return;
         }
 
-        // Bangun opsi dropdown
         let html = '<option value="">— Pilih Kelas —</option>';
-        filtered.forEach(k => {
-            const label = k.name + (k.academic_year ? ' — ' + k.academic_year : '');
-            html += `<option value="${k.id}">${label}</option>`;
+        filtered.forEach(function (k) {
+            const label = k.name + (k.academic_year ? ' \u2014 ' + k.academic_year : '');
+            html += '<option value="' + k.id + '">' + label + '</option>';
         });
         selectKelas.innerHTML = html;
     }
 
-    // Event listeners
+    // Pasang event listener
     roleGuru.addEventListener('change', toggleSiswaSection);
     roleSiswa.addEventListener('change', toggleSiswaSection);
     selectGrade.addEventListener('change', filterKelas);
     selectSemester.addEventListener('change', filterKelas);
 
-    // Inisialisasi awal (default: Guru terpilih → section siswa tersembunyi)
+    // Jalankan inisialisasi awal
     toggleSiswaSection();
-
 });
 </script>
 @endpush
