@@ -46,11 +46,11 @@
             {{-- Pengumuman --}}
             @include('guru.dashboard.announcements')
 
+
             {{-- Ringkasan Wali Kelas (hanya wali kelas) --}}
             @if(isset($isWaliKelas) && $isWaliKelas)
                 @include('guru.dashboard.wali-kelas-summary')
             @endif
-
         </div>
 
     </div>
