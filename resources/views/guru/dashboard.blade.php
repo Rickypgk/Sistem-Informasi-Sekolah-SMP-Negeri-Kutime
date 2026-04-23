@@ -12,40 +12,45 @@
 
 <div class="space-y-4">
 
-    {{-- HEADER SELAMAT DATANG --}}
+    {{-- ── HEADER SELAMAT DATANG ── --}}
     @include('guru.dashboard.header')
 
-    {{-- GRID UTAMA --}}
+    {{-- ── GRID UTAMA ── --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {{-- Kolom kiri: Konten utama --}}
+        {{-- ════ Kolom kiri: Konten utama ════ --}}
         <div class="lg:col-span-2 space-y-4">
 
-            {{-- KPI Cards --}}
+            {{-- 1. KPI Cards + Absensi Hari Ini --}}
             @include('guru.dashboard.performance-summary')
 
-            {{-- Tren Kehadiran 7 Hari Terakhir --}}
+            {{-- 2. JADWAL MENGAJAR HARI INI (naik ke sini) --}}
+            @include('guru.dashboard.jadwal-mengajar')
+
+            {{-- 3. Tren Kehadiran 7 Hari --}}
             @include('guru.dashboard.attendance-trend')
 
-            {{-- Rekap Absensi Bulanan (hanya wali kelas) --}}
+            {{-- 4. Rekap Absensi Bulanan (hanya wali kelas) --}}
             @if(isset($isWaliKelas) && $isWaliKelas)
                 @include('guru.dashboard.rekap-absensi')
             @endif
 
-            {{-- Siswa Berisiko --}}
+            {{-- 5. Siswa Berisiko --}}
             @include('guru.dashboard.at-risk-students')
-
-            {{-- Jadwal Mengajar Hari Ini --}}
-            @include('guru.dashboard.jadwal-mengajar')
 
         </div>
 
-        {{-- Kolom kanan: Widget --}}
+        {{-- ════ Kolom kanan: Widget sidebar ════ --}}
         <div class="lg:col-span-1 space-y-4">
+
+            {{-- Pengumuman --}}
             @include('guru.dashboard.announcements')
+
+            {{-- Ringkasan Wali Kelas (hanya wali kelas) --}}
             @if(isset($isWaliKelas) && $isWaliKelas)
                 @include('guru.dashboard.wali-kelas-summary')
             @endif
+
         </div>
 
     </div>
