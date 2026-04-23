@@ -580,7 +580,7 @@ function openDeleteModal(userId, userName) {
 @endif
 
 // ── Import Modal: Toggle section siswa & filter kelas dinamis ────────────────
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
 
     /**
      * Data seluruh kelas aktif dari controller.
@@ -603,6 +603,10 @@ function openDeleteModal(userId, userName) {
     const selectGrade    = document.getElementById('importGrade');
     const selectSemester = document.getElementById('importSemester');
     const selectKelas    = document.getElementById('importKelasId');
+
+    // Elemen tidak ada di DOM → hentikan (guard)
+    if (!roleGuru || !roleSiswa || !sectionSiswa ||
+        !selectGrade || !selectSemester || !selectKelas) return;
 
     /**
      * Tampilkan / sembunyikan section penempatan kelas siswa
@@ -670,6 +674,6 @@ function openDeleteModal(userId, userName) {
     // Inisialisasi awal (default: Guru terpilih → section siswa tersembunyi)
     toggleSiswaSection();
 
-})();
+});
 </script>
 @endpush
