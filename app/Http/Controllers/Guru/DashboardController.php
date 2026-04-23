@@ -8,7 +8,7 @@ use App\Models\Siswa;
 use App\Models\AbsensiSiswa;
 use App\Models\Timetable;
 use App\Models\Kelas;
-use App\Models\JadwalMengajar;
+use App\Models\StudyClassAssignment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
