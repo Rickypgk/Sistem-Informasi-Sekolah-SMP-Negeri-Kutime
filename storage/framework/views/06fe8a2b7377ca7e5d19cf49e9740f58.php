@@ -45,11 +45,11 @@
             
             <?php echo $__env->make('guru.dashboard.announcements', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
+
             
             <?php if(isset($isWaliKelas) && $isWaliKelas): ?>
                 <?php echo $__env->make('guru.dashboard.wali-kelas-summary', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <?php endif; ?>
-
         </div>
 
     </div>
