@@ -1,124 +1,351 @@
 
 <?php
     $jadwalHariIni = $jadwalHariIni ?? collect();
-    $hariIni = now()->isoFormat('dddd');
+
+    $hariMap = [
+        'Sunday'    => 'Minggu',
+        'Monday'    => 'Senin',
+        'Tuesday'   => 'Selasa',
+        'Wednesday' => 'Rabu',
+        'Thursday'  => 'Kamis',
+        'Friday'    => 'Jumat',
+        'Saturday'  => 'Sabtu',
+    ];
+    $hariIniLabel = $hariMap[now()->format('l')] ?? now()->format('l');
+
+    $warnaPalet = [
+        '#4f46e5','#059669','#2563eb','#d97706',
+        '#7c3aed','#0891b2','#db2777','#ea580c',
+    ];
+
+    $nowTime = now()->format('H:i');
+
+    // Fungsi helper untuk cek status jadwal
+    $getStatus = function($jamMulai, $jamSelesai) use ($nowTime) {
+        if (!$jamMulai || !$jamSelesai) return 'akan';
+        $m = substr($jamMulai, 0, 5);
+        $s = substr($jamSelesai, 0, 5);
+        if ($nowTime >= $m && $nowTime < $s) return 'berlangsung';
+        if ($nowTime >= $s) return 'selesai';
+        return 'akan';
+    };
 ?>
 
 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 
-    <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-            <span style="font-size:1rem;">🗓️</span>
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:10px 14px;border-bottom:1px solid #f1f5f9;background:#fff;">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                        display:flex;align-items:center;justify-content:center;font-size:.9rem;">
+                🗓️
+            </div>
             <div>
-                <p class="font-semibold text-slate-800 dark:text-slate-100" style="font-size:.8rem;">
+                <p style="font-size:.78rem;font-weight:700;color:#1e293b;line-height:1.2;margin:0;">
                     Jadwal Mengajar Hari Ini
                 </p>
-                <p class="text-slate-400" style="font-size:.6rem;"><?php echo e($hariIni); ?>, <?php echo e(now()->isoFormat('D MMMM Y')); ?></p>
+                <p style="font-size:.6rem;color:#94a3b8;line-height:1.3;margin:0;">
+                    <?php echo e($hariIniLabel); ?>, <?php echo e(now()->isoFormat('D MMMM Y')); ?>
+
+                </p>
             </div>
         </div>
-        <a href="<?php echo e(route('guru.jadwal-mengajar.index')); ?>"
-           style="font-size:.6rem;font-weight:700;color:#4f46e5;text-decoration:none;
-                  background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;padding:3px 8px;">
-            Semua Jadwal
-        </a>
+        <div style="display:flex;align-items:center;gap:6px;">
+            <?php if($jadwalHariIni->isNotEmpty()): ?>
+                <span style="font-size:.58rem;font-weight:700;background:#ecfdf5;color:#059669;
+                             border:1px solid #a7f3d0;border-radius:99px;padding:2px 8px;">
+                    <?php echo e($jadwalHariIni->count()); ?> sesi
+                </span>
+            <?php endif; ?>
+            <a href="<?php echo e(route('guru.jadwal-mengajar.index')); ?>"
+               style="font-size:.6rem;font-weight:700;color:#4f46e5;text-decoration:none;
+                      background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;
+                      padding:4px 10px;white-space:nowrap;">
+                Semua Jadwal →
+            </a>
+        </div>
     </div>
 
     <?php if($jadwalHariIni->isEmpty()): ?>
-        <div style="padding:32px;text-align:center;color:#94a3b8;">
-            <p style="font-size:2rem;margin-bottom:6px;">😊</p>
-            <p style="font-size:.7rem;font-weight:600;color:#64748b;">Tidak ada jadwal mengajar hari ini</p>
-            <p style="font-size:.6rem;color:#94a3b8;margin-top:2px;">Selamat beristirahat!</p>
-        </div>
-    <?php else: ?>
-        <div>
-            <?php $__currentLoopData = $jadwalHariIni; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $jadwal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-            <?php
-                $colors = ['#4f46e5','#059669','#2563eb','#d97706','#dc2626','#7c3aed','#0891b2'];
-                $stripColor = $colors[$idx % count($colors)];
-                $now = now();
-                $jamMulai = $jadwal->jam_mulai ?? null;
-                $jamSelesai = $jadwal->jam_selesai ?? null;
-                $isCurrent = false;
-                if($jamMulai && $jamSelesai) {
-                    $mulai   = \Carbon\Carbon::parse($now->format('Y-m-d') . ' ' . $jamMulai);
-                    $selesai = \Carbon\Carbon::parse($now->format('Y-m-d') . ' ' . $jamSelesai);
-                    $isCurrent = $now->between($mulai, $selesai);
-                }
-            ?>
-            <div style="display:flex;align-items:center;gap:10px;
-                         padding:10px 14px;border-bottom:1px solid #f1f5f9;
-                         <?php echo e($isCurrent ? 'background:#f0fdf4;' : ''); ?>"
-                 onmouseover="this.style.background='#f8fafc'"
-                 onmouseout="this.style.background='<?php echo e($isCurrent ? '#f0fdf4' : 'transparent'); ?>'">
-
-                
-                <div style="width:3px;height:36px;border-radius:2px;
-                             background:<?php echo e($stripColor); ?>;flex-shrink:0;"></div>
-
-                
-                <div style="min-width:68px;flex-shrink:0;text-align:center;
-                             background:<?php echo e($isCurrent ? '#dcfce7' : '#f8fafc'); ?>;
-                             border:1px solid <?php echo e($isCurrent ? '#a7f3d0' : '#e2e8f0'); ?>;
-                             border-radius:7px;padding:4px 6px;">
-                    <?php if($jamMulai && $jamSelesai): ?>
-                        <p style="font-size:.62rem;font-weight:800;color:<?php echo e($isCurrent ? '#059669' : '#1e293b'); ?>;
-                                   line-height:1.2;"><?php echo e(substr($jamMulai,0,5)); ?></p>
-                        <p style="font-size:.55rem;color:#94a3b8;line-height:1.2;"><?php echo e(substr($jamSelesai,0,5)); ?></p>
-                    <?php else: ?>
-                        <p style="font-size:.62rem;color:#94a3b8;">—</p>
-                    <?php endif; ?>
-                </div>
-
-                
-                <div class="flex-1 min-w-0">
-                    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-                        <p style="font-size:.72rem;font-weight:700;color:#1e293b;
-                                   line-height:1.2;white-space:nowrap;overflow:hidden;
-                                   text-overflow:ellipsis;max-width:160px;">
-                            <?php echo e($jadwal->mataPelajaran->nama ?? $jadwal->mata_pelajaran ?? '—'); ?>
-
-                        </p>
-                        <?php if($isCurrent): ?>
-                            <span style="font-size:.5rem;font-weight:800;background:#dcfce7;
-                                          color:#059669;border:1px solid #a7f3d0;border-radius:4px;
-                                          padding:1px 5px;flex-shrink:0;">SEDANG BERLANGSUNG</span>
-                        <?php endif; ?>
-                    </div>
-                    <p style="font-size:.6rem;color:#64748b;margin-top:1px;">
-                        <?php echo e($jadwal->kelas->nama ?? $jadwal->nama_kelas ?? '—'); ?>
-
-                        <?php if($jadwal->ruangan ?? null): ?>
-                            &nbsp;·&nbsp; <?php echo e($jadwal->ruangan); ?>
-
-                        <?php endif; ?>
-                    </p>
-                </div>
-
-                
-                <?php if($isCurrent || true): ?>
-                <a href="<?php echo e(route('guru.absensi-siswa.index', ['jadwal_id' => $jadwal->id ?? '', 'kelas_id' => $jadwal->kelas_id ?? ''])); ?>"
-                   style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;
-                          padding:5px 10px;border-radius:7px;font-size:.6rem;font-weight:700;
-                          text-decoration:none;
-                          <?php echo e($isCurrent
-                              ? 'background:#4f46e5;color:#fff;'
-                              : 'background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;'); ?>">
-                    ✅ Absen
-                </a>
-                <?php endif; ?>
-
-            </div>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        </div>
-
-        <div style="padding:8px 14px;border-top:1px solid #f1f5f9;background:#f8fafc;
-                     display:flex;align-items:center;justify-content:space-between;">
-            <p style="font-size:.6rem;color:#64748b;">
-                <?php echo e($jadwalHariIni->count()); ?> sesi mengajar hari ini
+        
+        <div style="padding:40px 20px;text-align:center;">
+            <div style="width:60px;height:60px;border-radius:18px;background:#f1f5f9;
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:1.8rem;margin:0 auto 12px;">😊</div>
+            <p style="font-size:.75rem;font-weight:700;color:#475569;margin:0 0 4px;">
+                Tidak ada jadwal mengajar hari ini
             </p>
+            <p style="font-size:.62rem;color:#94a3b8;margin:0;">
+                Selamat menikmati hari <?php echo e($hariIniLabel); ?>!
+            </p>
+        </div>
+
+    <?php else: ?>
+        
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;min-width:500px;">
+                <thead>
+                    <tr style="background:#f8fafc;">
+                        <th style="padding:8px 14px;text-align:left;font-size:.575rem;font-weight:700;
+                                   color:#64748b;text-transform:uppercase;letter-spacing:.05em;
+                                   border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:110px;">
+                            Jam
+                        </th>
+                        <th style="padding:8px 12px;text-align:left;font-size:.575rem;font-weight:700;
+                                   color:#64748b;text-transform:uppercase;letter-spacing:.05em;
+                                   border-bottom:1.5px solid #e2e8f0;">
+                            Mata Pelajaran
+                        </th>
+                        <th style="padding:8px 10px;text-align:center;font-size:.575rem;font-weight:700;
+                                   color:#64748b;text-transform:uppercase;letter-spacing:.05em;
+                                   border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:80px;">
+                            Kelas
+                        </th>
+                        <th style="padding:8px 10px;text-align:center;font-size:.575rem;font-weight:700;
+                                   color:#64748b;text-transform:uppercase;letter-spacing:.05em;
+                                   border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:80px;">
+                            Ruangan
+                        </th>
+                        <th style="padding:8px 10px;text-align:center;font-size:.575rem;font-weight:700;
+                                   color:#64748b;text-transform:uppercase;letter-spacing:.05em;
+                                   border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:110px;">
+                            Status
+                        </th>
+                        <th style="padding:8px 14px;text-align:center;font-size:.575rem;font-weight:700;
+                                   color:#64748b;text-transform:uppercase;letter-spacing:.05em;
+                                   border-bottom:1.5px solid #e2e8f0;white-space:nowrap;width:90px;">
+                            Aksi
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php $__currentLoopData = $jadwalHariIni; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $jadwal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php
+                        $stripColor = $warnaPalet[$idx % count($warnaPalet)];
+                        $jamMulai   = $jadwal->jam_mulai   ?? null;
+                        $jamSelesai = $jadwal->jam_selesai ?? null;
+
+                        // Resolve nama mapel — support berbagai relasi/kolom
+                        $mapel = $jadwal->mataPelajaran->nama
+                               ?? $jadwal->mataPelajaran->name
+                               ?? $jadwal->mata_pelajaran
+                               ?? $jadwal->mapel
+                               ?? $jadwal->nama_mapel
+                               ?? '—';
+
+                        // Resolve nama kelas
+                        $namaKelas = $jadwal->kelas->nama
+                                   ?? $jadwal->kelas->name
+                                   ?? $jadwal->nama_kelas
+                                   ?? $jadwal->kelas_nama
+                                   ?? '—';
+
+                        $ruangan   = $jadwal->ruangan ?? $jadwal->ruang ?? null;
+                        $kelasId   = $jadwal->kelas_id ?? $jadwal->kelas->id ?? null;
+                        $jadwalId  = $jadwal->id ?? null;
+                        $sumber    = $jadwal->sumber ?? $jadwal->dibuat_oleh ?? null;
+
+                        $status = $getStatus($jamMulai, $jamSelesai);
+                        $isBerlangsung = $status === 'berlangsung';
+                        $isSelesai     = $status === 'selesai';
+
+                        // Style per status
+                        if ($isBerlangsung) {
+                            $rowBg        = '#f0fdf4';
+                            $statusLabel  = 'Berlangsung';
+                            $statusBg     = '#dcfce7';
+                            $statusColor  = '#059669';
+                            $statusBorder = '#a7f3d0';
+                        } elseif ($isSelesai) {
+                            $rowBg        = $idx % 2 === 0 ? '#fff' : '#fafbfd';
+                            $statusLabel  = 'Selesai';
+                            $statusBg     = '#f1f5f9';
+                            $statusColor  = '#94a3b8';
+                            $statusBorder = '#e2e8f0';
+                        } else {
+                            $rowBg        = $idx % 2 === 0 ? '#fff' : '#fafbfd';
+                            $statusLabel  = 'Akan Datang';
+                            $statusBg     = '#eff6ff';
+                            $statusColor  = '#2563eb';
+                            $statusBorder = '#bfdbfe';
+                        }
+                    ?>
+                    <tr style="background:<?php echo e($rowBg); ?>;border-bottom:1px solid #f1f5f9;"
+                        onmouseover="this.style.background='<?php echo e($isBerlangsung ? '#dcfce7' : '#f0f4ff'); ?>'"
+                        onmouseout="this.style.background='<?php echo e($rowBg); ?>'">
+
+                        
+                        <td style="padding:9px 14px;white-space:nowrap;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                
+                                <div style="width:3px;height:40px;border-radius:3px;
+                                             background:<?php echo e($isBerlangsung ? '#059669' : ($isSelesai ? '#cbd5e1' : $stripColor)); ?>;
+                                             flex-shrink:0;"></div>
+                                
+                                <div style="text-align:center;
+                                             background:<?php echo e($isBerlangsung ? '#dcfce7' : '#f8fafc'); ?>;
+                                             border:1.5px solid <?php echo e($isBerlangsung ? '#a7f3d0' : '#e2e8f0'); ?>;
+                                             border-radius:8px;padding:5px 9px;min-width:62px;">
+                                    <?php if($jamMulai && $jamSelesai): ?>
+                                        <p style="font-size:.7rem;font-weight:800;line-height:1.2;
+                                                   color:<?php echo e($isBerlangsung ? '#059669' : ($isSelesai ? '#94a3b8' : '#1e293b')); ?>;">
+                                            <?php echo e(substr($jamMulai,0,5)); ?>
+
+                                        </p>
+                                        <div style="width:16px;height:1px;background:#e2e8f0;margin:2px auto;"></div>
+                                        <p style="font-size:.58rem;color:#94a3b8;line-height:1.2;">
+                                            <?php echo e(substr($jamSelesai,0,5)); ?>
+
+                                        </p>
+                                    <?php else: ?>
+                                        <p style="font-size:.62rem;color:#94a3b8;">—</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </td>
+
+                        
+                        <td style="padding:9px 12px;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                
+                                <div style="width:30px;height:30px;border-radius:9px;flex-shrink:0;
+                                             display:flex;align-items:center;justify-content:center;
+                                             font-size:.6rem;font-weight:800;color:#fff;
+                                             background:<?php echo e($isSelesai ? '#cbd5e1' : $stripColor); ?>;
+                                             opacity:<?php echo e($isSelesai ? '.7' : '1'); ?>;">
+                                    <?php echo e(strtoupper(substr(preg_replace('/[^A-Za-z]/','',$mapel), 0, 2)) ?: '??'); ?>
+
+                                </div>
+                                <div style="min-width:0;">
+                                    <p style="font-size:.72rem;font-weight:700;line-height:1.25;
+                                               color:<?php echo e($isSelesai ? '#94a3b8' : '#1e293b'); ?>;
+                                               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                                               max-width:180px;">
+                                        <?php echo e($mapel); ?>
+
+                                    </p>
+                                    <?php if($isBerlangsung): ?>
+                                        <p style="font-size:.55rem;font-weight:700;color:#059669;line-height:1.2;">
+                                            ● Sedang berlangsung
+                                        </p>
+                                    <?php elseif($sumber): ?>
+                                        <p style="font-size:.55rem;color:#cbd5e1;line-height:1.2;">
+                                            Dari: <?php echo e(ucfirst($sumber)); ?>
+
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </td>
+
+                        
+                        <td style="padding:9px 10px;text-align:center;">
+                            <span style="display:inline-flex;align-items:center;justify-content:center;
+                                          padding:3px 10px;border-radius:6px;font-size:.65rem;font-weight:700;
+                                          white-space:nowrap;
+                                          background:<?php echo e($isBerlangsung ? '#eef2ff' : ($isSelesai ? '#f8fafc' : '#f8fafc')); ?>;
+                                          color:<?php echo e($isBerlangsung ? '#4338ca' : ($isSelesai ? '#94a3b8' : '#475569')); ?>;
+                                          border:1px solid <?php echo e($isBerlangsung ? '#c7d2fe' : '#e2e8f0'); ?>;">
+                                <?php echo e($namaKelas); ?>
+
+                            </span>
+                        </td>
+
+                        
+                        <td style="padding:9px 10px;text-align:center;">
+                            <?php if($ruangan): ?>
+                                <span style="font-size:.65rem;font-weight:600;
+                                              color:<?php echo e($isSelesai ? '#94a3b8' : '#475569'); ?>;">
+                                    <?php echo e($ruangan); ?>
+
+                                </span>
+                            <?php else: ?>
+                                <span style="font-size:.65rem;color:#cbd5e1;">—</span>
+                            <?php endif; ?>
+                        </td>
+
+                        
+                        <td style="padding:9px 10px;text-align:center;">
+                            <span style="display:inline-flex;align-items:center;justify-content:center;
+                                          gap:3px;padding:3px 9px;border-radius:99px;font-size:.58rem;
+                                          font-weight:700;white-space:nowrap;
+                                          background:<?php echo e($statusBg); ?>;
+                                          color:<?php echo e($statusColor); ?>;
+                                          border:1px solid <?php echo e($statusBorder); ?>;">
+                                <?php if($isBerlangsung): ?>🟢
+                                <?php elseif($isSelesai): ?>✓
+                                <?php else: ?>🕐
+                                <?php endif; ?>
+                                <?php echo e($statusLabel); ?>
+
+                            </span>
+                        </td>
+
+                        
+                        <td style="padding:9px 14px;text-align:center;">
+                            <?php if($isSelesai): ?>
+                                <a href="<?php echo e(route('guru.absensi-siswa.index', array_filter(['kelas_id' => $kelasId, 'jadwal_id' => $jadwalId]))); ?>"
+                                   style="display:inline-flex;align-items:center;justify-content:center;
+                                          gap:3px;padding:5px 10px;border-radius:7px;font-size:.6rem;
+                                          font-weight:600;text-decoration:none;white-space:nowrap;
+                                          background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;">
+                                    👁 Lihat
+                                </a>
+                            <?php elseif($isBerlangsung): ?>
+                                <a href="<?php echo e(route('guru.absensi-siswa.index', array_filter(['kelas_id' => $kelasId, 'jadwal_id' => $jadwalId]))); ?>"
+                                   style="display:inline-flex;align-items:center;justify-content:center;
+                                          gap:3px;padding:5px 10px;border-radius:7px;font-size:.6rem;
+                                          font-weight:700;text-decoration:none;white-space:nowrap;
+                                          background:#4f46e5;color:#fff;
+                                          box-shadow:0 2px 8px rgba(79,70,229,.25);">
+                                    ✅ Absensi
+                                </a>
+                            <?php else: ?>
+                                <a href="<?php echo e(route('guru.absensi-siswa.index', array_filter(['kelas_id' => $kelasId, 'jadwal_id' => $jadwalId]))); ?>"
+                                   style="display:inline-flex;align-items:center;justify-content:center;
+                                          gap:3px;padding:5px 10px;border-radius:7px;font-size:.6rem;
+                                          font-weight:600;text-decoration:none;white-space:nowrap;
+                                          background:#f8fafc;color:#475569;border:1px solid #e2e8f0;">
+                                    ✅ Absensi
+                                </a>
+                            <?php endif; ?>
+                        </td>
+
+                    </tr>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </tbody>
+            </table>
+        </div>
+
+        
+        <?php
+            $jmlBerlangsung = $jadwalHariIni->filter(fn($j) => $getStatus($j->jam_mulai ?? null, $j->jam_selesai ?? null) === 'berlangsung')->count();
+            $jmlSelesai     = $jadwalHariIni->filter(fn($j) => $getStatus($j->jam_mulai ?? null, $j->jam_selesai ?? null) === 'selesai')->count();
+            $jmlAkan        = $jadwalHariIni->count() - $jmlBerlangsung - $jmlSelesai;
+        ?>
+        <div style="padding:8px 14px;border-top:1px solid #f1f5f9;background:#f8fafc;
+                     display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <?php if($jmlBerlangsung > 0): ?>
+                    <span style="font-size:.6rem;font-weight:700;color:#059669;">
+                        🟢 <?php echo e($jmlBerlangsung); ?> berlangsung
+                    </span>
+                <?php endif; ?>
+                <?php if($jmlSelesai > 0): ?>
+                    <span style="font-size:.6rem;color:#94a3b8;">
+                        ✓ <?php echo e($jmlSelesai); ?> selesai
+                    </span>
+                <?php endif; ?>
+                <?php if($jmlAkan > 0): ?>
+                    <span style="font-size:.6rem;color:#64748b;">
+                        🕐 <?php echo e($jmlAkan); ?> akan datang
+                    </span>
+                <?php endif; ?>
+            </div>
             <a href="<?php echo e(route('guru.jadwal-mengajar.index')); ?>"
                style="font-size:.6rem;font-weight:700;color:#4f46e5;text-decoration:none;">
-                Jadwal lengkap →
+                Lihat jadwal minggu ini →
             </a>
         </div>
     <?php endif; ?>

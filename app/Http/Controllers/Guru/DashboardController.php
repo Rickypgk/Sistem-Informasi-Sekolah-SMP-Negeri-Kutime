@@ -198,10 +198,10 @@ class DashboardController extends Controller
 
         $hariIni = $hariMap[Carbon::now()->format('l')];
 
-        $jadwalHariIni = JadwalMengajar::with(['kelas','mataPelajaran'])
-            ->where('guru_id', $guru->id)
-            ->where('hari', $hariIni)
-            ->orderBy('jam_mulai')
+        $jadwalHariIni = Timetable::with(['studySubject', 'studyGroup'])
+            ->where('teacher_id', $user->id)
+            ->where('day_of_week', $hariIni)
+            ->orderBy('start_time')
             ->get();
 
         // fallback timetable
