@@ -5,12 +5,15 @@
 
 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 
-    <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-            <span style="font-size:1rem;">📢</span>
-            <p class="font-semibold text-slate-800 dark:text-slate-100" style="font-size:.8rem;">
-                Pengumuman
-            </p>
+    {{-- Header --}}
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:10px 14px;border-bottom:1px solid #f1f5f9;">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#f59e0b,#ef4444);
+                        display:flex;align-items:center;justify-content:center;font-size:.9rem;">
+                📢
+            </div>
+            <p style="font-size:.78rem;font-weight:700;color:#1e293b;margin:0;">Pengumuman</p>
         </div>
         @if($widgetPengumuman->count() > 0)
             <span style="font-size:.55rem;font-weight:700;background:#eef2ff;color:#4f46e5;
@@ -21,50 +24,103 @@
     </div>
 
     @if($widgetPengumuman->isEmpty())
-        <div style="padding:32px 16px;text-align:center;color:#94a3b8;">
-            <p style="font-size:1.5rem;margin-bottom:6px;">📭</p>
-            <p style="font-size:.7rem;">Belum ada pengumuman</p>
+        <div style="padding:36px 16px;text-align:center;color:#94a3b8;">
+            <div style="width:56px;height:56px;border-radius:16px;background:#f1f5f9;
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:1.5rem;margin:0 auto 10px;">📭</div>
+            <p style="font-size:.7rem;font-weight:600;color:#475569;margin:0 0 3px;">Belum ada pengumuman</p>
+            <p style="font-size:.6rem;color:#94a3b8;margin:0;">Tidak ada pengumuman saat ini</p>
         </div>
     @else
         <div>
             @foreach($widgetPengumuman as $p)
             @php
-                $catColors = [
+                $catMap = [
                     'penting'  => ['bg'=>'#fee2e2','color'=>'#b91c1c','label'=>'Penting'],
                     'info'     => ['bg'=>'#e0f2fe','color'=>'#0369a1','label'=>'Info'],
                     'umum'     => ['bg'=>'#f8fafc','color'=>'#475569','label'=>'Umum'],
-                    'default'  => ['bg'=>'#eef2ff','color'=>'#4f46e5','label'=>'Umum'],
+                    'kegiatan' => ['bg'=>'#fef9c3','color'=>'#a16207','label'=>'Kegiatan'],
+                    'libur'    => ['bg'=>'#ecfdf5','color'=>'#059669','label'=>'Libur'],
                 ];
-                $cat = $catColors[$p->kategori ?? 'default'] ?? $catColors['default'];
+                $cat = $catMap[strtolower($p->kategori ?? '')] ?? ['bg'=>'#eef2ff','color'=>'#4f46e5','label'=>ucfirst($p->kategori ?? 'Umum')];
+
+                // Resolve gambar — support berbagai nama kolom
+                $gambar = $p->gambar ?? $p->image ?? $p->foto ?? $p->thumbnail ?? null;
+                $gambarUrl = null;
+                if ($gambar) {
+                    // Jika sudah berupa URL penuh
+                    if (str_starts_with($gambar, 'http')) {
+                        $gambarUrl = $gambar;
+                    } else {
+                        $gambarUrl = asset('storage/' . $gambar);
+                    }
+                }
+
+                // Data untuk modal
+                $modalData = json_encode([
+                    'judul'      => $p->judul,
+                    'isi'        => $p->isi,
+                    'tanggal'    => (string)($p->tanggal_tayang ?? $p->created_at),
+                    'kategori'   => $p->kategori ?? 'Umum',
+                    'gambarUrl'  => $gambarUrl,
+                    'widgetRole' => 'guru',
+                ], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT);
             @endphp
-            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 cursor-pointer
-                         hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors"
-                 onclick="wdgBuka({{ json_encode([
-                     'judul'       => $p->judul,
-                     'isi'         => $p->isi,
-                     'tanggal'     => $p->tanggal_tayang ?? $p->created_at,
-                     'kategori'    => $p->kategori ?? 'Umum',
-                     'widgetRole'  => 'guru',
-                 ]) }})">
 
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px;">
-                    <p style="font-size:.72rem;font-weight:700;color:#1e293b;line-height:1.3;flex:1;">
-                        {{ Str::limit($p->judul, 52) }}
+            <div style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .15s;"
+                 onmouseover="this.style.background='#f8fafc'"
+                 onmouseout="this.style.background='transparent'"
+                 onclick="wdgBuka({{ $modalData }})">
+
+                {{-- Gambar thumbnail jika ada --}}
+                @if($gambarUrl)
+                    <div style="width:100%;height:110px;overflow:hidden;background:#f1f5f9;">
+                        <img src="{{ $gambarUrl }}"
+                             alt="{{ $p->judul }}"
+                             style="width:100%;height:100%;object-fit:cover;display:block;
+                                    transition:transform .3s;"
+                             onmouseover="this.style.transform='scale(1.03)'"
+                             onmouseout="this.style.transform='scale(1)'"
+                             onerror="this.parentElement.style.display='none'">
+                    </div>
+                @endif
+
+                <div style="padding:10px 14px;">
+                    {{-- Kategori + tanggal --}}
+                    <div style="display:flex;align-items:center;justify-content:space-between;
+                                 gap:6px;margin-bottom:4px;">
+                        <span style="padding:2px 8px;border-radius:5px;font-size:.55rem;font-weight:700;
+                                      background:{{ $cat['bg'] }};color:{{ $cat['color'] }};">
+                            {{ $cat['label'] }}
+                        </span>
+                        <span style="font-size:.58rem;color:#94a3b8;white-space:nowrap;">
+                            {{ \Carbon\Carbon::parse($p->tanggal_tayang ?? $p->created_at)->isoFormat('D MMM Y') }}
+                        </span>
+                    </div>
+
+                    {{-- Judul --}}
+                    <p style="font-size:.72rem;font-weight:700;color:#1e293b;line-height:1.35;
+                               margin:0 0 4px;">
+                        {{ Str::limit($p->judul, 60) }}
                     </p>
-                    <span style="flex-shrink:0;padding:2px 7px;border-radius:5px;font-size:.55rem;
-                                  font-weight:700;background:{{ $cat['bg'] }};color:{{ $cat['color'] }};">
-                        {{ $cat['label'] }}
-                    </span>
+
+                    {{-- Preview isi --}}
+                    <p style="font-size:.62rem;color:#64748b;line-height:1.45;margin:0;">
+                        {{ Str::limit(strip_tags($p->isi), $gambarUrl ? 60 : 90) }}
+                    </p>
+
+                    {{-- Indikator ada gambar --}}
+                    @if($gambarUrl)
+                        <p style="font-size:.55rem;color:#94a3b8;margin-top:5px;
+                                   display:flex;align-items:center;gap:3px;">
+                            🖼 Ada gambar &nbsp;·&nbsp; Klik untuk lihat
+                        </p>
+                    @else
+                        <p style="font-size:.55rem;color:#94a3b8;margin-top:5px;">
+                            Klik untuk baca selengkapnya →
+                        </p>
+                    @endif
                 </div>
-
-                <p style="font-size:.62rem;color:#64748b;line-height:1.4;margin-bottom:4px;">
-                    {{ Str::limit(strip_tags($p->isi), 80) }}
-                </p>
-
-                <p style="font-size:.58rem;color:#94a3b8;">
-                    {{ \Carbon\Carbon::parse($p->tanggal_tayang ?? $p->created_at)->isoFormat('D MMM Y') }}
-                </p>
-
             </div>
             @endforeach
         </div>
