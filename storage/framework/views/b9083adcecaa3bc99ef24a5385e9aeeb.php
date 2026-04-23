@@ -1,12 +1,10 @@
-{{-- resources/views/admin/users/index.blade.php --}}
-@extends('layouts.app')
-@section('title', 'Kelola User')
+<?php $__env->startSection('title', 'Kelola User'); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
 <div class="space-y-4">
 
-    {{-- ===== PAGE HEADER ===== --}}
+    
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">Kelola User</h2>
@@ -17,7 +15,7 @@
 
         <div class="flex flex-wrap items-center gap-2">
 
-            {{-- Tombol Import --}}
+            
             <button onclick="openModal('modalImport')"
                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl
                            bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold
@@ -29,7 +27,7 @@
                 Import Excel
             </button>
 
-            {{-- Dropdown Export --}}
+            
             <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" @click.outside="open = false"
                         class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl
@@ -57,7 +55,7 @@
                     <div class="px-3 py-1.5">
                         <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Excel</p>
                     </div>
-                    <a href="{{ route('admin.users.export-excel', ['role' => 'guru']) }}"
+                    <a href="<?php echo e(route('admin.users.export-excel', ['role' => 'guru'])); ?>"
                        class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium
                               text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700">
                         <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,7 +65,7 @@
                         </svg>
                         Data Guru (.xlsx)
                     </a>
-                    <a href="{{ route('admin.users.export-excel', ['role' => 'siswa']) }}"
+                    <a href="<?php echo e(route('admin.users.export-excel', ['role' => 'siswa'])); ?>"
                        class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium
                               text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700">
                         <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +81,7 @@
                     <div class="px-3 py-1.5">
                         <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">PDF</p>
                     </div>
-                    <a href="{{ route('admin.users.export-pdf', ['role' => 'guru']) }}"
+                    <a href="<?php echo e(route('admin.users.export-pdf', ['role' => 'guru'])); ?>"
                        class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium
                               text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700">
                         <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +91,7 @@
                         </svg>
                         Data Guru (.pdf)
                     </a>
-                    <a href="{{ route('admin.users.export-pdf', ['role' => 'siswa']) }}"
+                    <a href="<?php echo e(route('admin.users.export-pdf', ['role' => 'siswa'])); ?>"
                        class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium
                               text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700">
                         <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,7 +104,7 @@
                 </div>
             </div>
 
-            {{-- Tombol Tambah User --}}
+            
             <button onclick="openModal('modalTambahUser')"
                     class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl
                            bg-indigo-600 text-white text-xs font-semibold
@@ -120,31 +118,31 @@
         </div>
     </div>
 
-    {{-- ===== ALERT SUCCESS ===== --}}
-    @if(session('success'))
+    
+    <?php if(session('success')): ?>
     <div class="flex items-start gap-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200
                 dark:border-emerald-800 rounded-2xl p-4">
         <svg class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
-        <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{{ session('success') }}</p>
+        <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-400"><?php echo e(session('success')); ?></p>
     </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- ===== ALERT ERROR ===== --}}
-    @if(session('error'))
+    
+    <?php if(session('error')): ?>
     <div class="flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200
                 dark:border-red-800 rounded-2xl p-4">
         <svg class="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
-        <p class="text-xs font-semibold text-red-600 dark:text-red-400">{{ session('error') }}</p>
+        <p class="text-xs font-semibold text-red-600 dark:text-red-400"><?php echo e(session('error')); ?></p>
     </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- ===== ALERT IMPORT ERRORS ===== --}}
-    @if(session('import_errors'))
+    
+    <?php if(session('import_errors')): ?>
     <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
         <div class="flex items-center gap-2 mb-2">
             <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,19 +151,19 @@
                          0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
             <p class="text-xs font-bold text-amber-700 dark:text-amber-400">
-                {{ count(session('import_errors')) }} baris gagal diimpor:
+                <?php echo e(count(session('import_errors'))); ?> baris gagal diimpor:
             </p>
         </div>
         <ul class="space-y-1 pl-6">
-            @foreach(session('import_errors') as $err)
-            <li class="text-[11px] text-amber-600 dark:text-amber-500 list-disc">{{ $err }}</li>
-            @endforeach
+            <?php $__currentLoopData = session('import_errors'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $err): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <li class="text-[11px] text-amber-600 dark:text-amber-500 list-disc"><?php echo e($err); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </ul>
     </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- ===== VALIDATION ERRORS ===== --}}
-    @if($errors->any())
+    
+    <?php if($errors->any()): ?>
     <div class="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl p-4">
         <div class="flex items-center gap-2 mb-2">
             <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,14 +173,14 @@
             <p class="text-xs font-bold text-red-600 dark:text-red-400">Terdapat kesalahan:</p>
         </div>
         <ul class="space-y-1 pl-6">
-            @foreach($errors->all() as $error)
-            <li class="text-[11px] text-red-600 dark:text-red-400 list-disc">{{ $error }}</li>
-            @endforeach
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <li class="text-[11px] text-red-600 dark:text-red-400 list-disc"><?php echo e($error); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </ul>
     </div>
-    @endif
+    <?php endif; ?>
 
-    {{-- ===== SEARCH ===== --}}
+    
     <div class="relative max-w-xs">
         <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"
              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,69 +194,53 @@
                       dark:focus:ring-indigo-700 transition">
     </div>
 
-    {{-- ===== TABS ===== --}}
+    
     <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
-        <a href="{{ route('admin.users.index', ['tab' => 'guru']) }}"
+        <a href="<?php echo e(route('admin.users.index', ['tab' => 'guru'])); ?>"
            class="px-4 py-1.5 rounded-lg text-xs font-semibold transition
-                  {{ $activeTab === 'guru'
+                  <?php echo e($activeTab === 'guru'
                      ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-700 dark:text-indigo-400'
-                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' }}">
+                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'); ?>">
             Guru
             <span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold
-                         {{ $activeTab === 'guru' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500' }}">
-                {{ $gurus->count() }}
+                         <?php echo e($activeTab === 'guru' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'); ?>">
+                <?php echo e($gurus->count()); ?>
+
             </span>
         </a>
-        <a href="{{ route('admin.users.index', ['tab' => 'siswa']) }}"
+        <a href="<?php echo e(route('admin.users.index', ['tab' => 'siswa'])); ?>"
            class="px-4 py-1.5 rounded-lg text-xs font-semibold transition
-                  {{ $activeTab === 'siswa'
+                  <?php echo e($activeTab === 'siswa'
                      ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-700 dark:text-indigo-400'
-                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' }}">
+                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'); ?>">
             Siswa
             <span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold
-                         {{ $activeTab === 'siswa' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500' }}">
-                {{ $siswas->count() }}
+                         <?php echo e($activeTab === 'siswa' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'); ?>">
+                <?php echo e($siswas->count()); ?>
+
             </span>
         </a>
     </div>
 
-    {{-- ===== TABEL KONTEN ===== --}}
-    <div id="tab-guru" class="{{ $activeTab !== 'guru' ? 'hidden' : '' }}">
-        @include('admin.users._table_guru', ['users' => $gurus])
+    
+    <div id="tab-guru" class="<?php echo e($activeTab !== 'guru' ? 'hidden' : ''); ?>">
+        <?php echo $__env->make('admin.users._table_guru', ['users' => $gurus], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     </div>
-    <div id="tab-siswa" class="{{ $activeTab !== 'siswa' ? 'hidden' : '' }}">
-        @include('admin.users._table_siswa', ['users' => $siswas])
+    <div id="tab-siswa" class="<?php echo e($activeTab !== 'siswa' ? 'hidden' : ''); ?>">
+        <?php echo $__env->make('admin.users._table_siswa', ['users' => $siswas], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     </div>
 
 </div>
 
-{{-- =========================================================== --}}
-{{-- DATA KELAS JSON — disimpan di script tag agar tidak ada      --}}
-{{-- konflik antara Blade parser dengan @json / arrow function    --}}
-{{-- =========================================================== --}}
-@php
-    $kelasForJs = ($kelasList ?? collect())->map(function ($k) {
-        return [
-            'id'            => $k->id,
-            'name'          => $k->name,
-            'grade'         => (string) ($k->grade ?? ''),
-            'semester'      => (string) ($k->semester ?? ''),
-            'academic_year' => $k->academic_year ?? '',
-            'is_active'     => (bool) ($k->is_active ?? true),
-        ];
-    })->values();
-@endphp
-<script id="kelasListData" type="application/json">{!! json_encode($kelasForJs) !!}</script>
 
-{{-- =========================================================== --}}
-{{-- MODAL IMPORT                                                  --}}
-{{-- =========================================================== --}}
+
+
 <div id="modalImport"
      class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200
                 dark:border-slate-700 w-full max-w-md overflow-hidden">
 
-        {{-- Header --}}
+        
         <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
@@ -277,17 +259,18 @@
             </button>
         </div>
 
-        <form action="{{ route('admin.users.import') }}" method="POST"
+        <form action="<?php echo e(route('admin.users.import')); ?>" method="POST"
               enctype="multipart/form-data" class="p-5 space-y-4">
-            @csrf
+            <?php echo csrf_field(); ?>
 
-            {{-- 1. Pilih Role --}}
+            
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                     Role Tujuan
                 </label>
                 <div class="grid grid-cols-2 gap-2">
                     <label class="cursor-pointer">
+                        
                         <input type="radio" name="role" value="guru"
                                id="importRoleGuru"
                                class="peer hidden" checked>
@@ -300,6 +283,7 @@
                         </div>
                     </label>
                     <label class="cursor-pointer">
+                        
                         <input type="radio" name="role" value="siswa"
                                id="importRoleSiswa"
                                class="peer hidden">
@@ -314,8 +298,8 @@
                 </div>
             </div>
 
-            {{-- ===== FIELD KHUSUS SISWA ===== --}}
-            {{-- Tersembunyi secara default, muncul saat role Siswa dipilih --}}
+            
+            
             <div id="sectionSiswaImport"
                  class="hidden space-y-3
                         bg-violet-50 dark:bg-violet-950/20
@@ -326,16 +310,14 @@
                     📋 Penempatan Kelas Siswa
                 </p>
 
-                {{--
-                    Tingkat + Semester digunakan untuk memfilter dropdown Kelas.
-                    Nilai tingkat & semester juga dikirim ke controller sebagai referensi.
-                --}}
+                
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                       uppercase tracking-wide mb-1">
                             Tingkat <span class="text-red-400">*</span>
                         </label>
+                        
                         <select name="import_grade" id="importGrade"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                        px-3 py-2 text-xs transition
@@ -353,6 +335,7 @@
                                       uppercase tracking-wide mb-1">
                             Semester <span class="text-red-400">*</span>
                         </label>
+                        
                         <select name="import_semester" id="importSemester"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                        px-3 py-2 text-xs transition
@@ -365,16 +348,13 @@
                     </div>
                 </div>
 
-                {{--
-                    Dropdown kelas diisi DINAMIS oleh JS dari data kelasListData.
-                    Filter berdasarkan grade + semester yang dipilih admin.
-                    Field ini yang dikirim ke controller: import_kelas_id
-                --}}
+                
                 <div>
                     <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
                                   uppercase tracking-wide mb-1">
                         Kelas <span class="text-red-400">*</span>
                     </label>
+                    
                     <select name="import_kelas_id" id="importKelasId"
                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600
                                    px-3 py-2 text-xs transition
@@ -388,9 +368,9 @@
                 </div>
 
             </div>
-            {{-- ===== END FIELD KHUSUS SISWA ===== --}}
+            
 
-            {{-- 2. Download Template --}}
+            
             <div class="rounded-xl border border-dashed border-slate-200 dark:border-slate-600
                         bg-slate-50 dark:bg-slate-900/50 p-3.5">
                 <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
@@ -398,7 +378,7 @@
                 </p>
                 <div class="flex gap-2">
                     <a id="btnTemplateGuru"
-                       href="{{ route('admin.users.template-import', ['role' => 'guru']) }}"
+                       href="<?php echo e(route('admin.users.template-import', ['role' => 'guru'])); ?>"
                        class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
                               border border-indigo-200 dark:border-indigo-800
                               bg-indigo-50 dark:bg-indigo-950/50
@@ -412,7 +392,7 @@
                         Template Guru
                     </a>
                     <a id="btnTemplateSiswa"
-                       href="{{ route('admin.users.template-import', ['role' => 'siswa']) }}"
+                       href="<?php echo e(route('admin.users.template-import', ['role' => 'siswa'])); ?>"
                        class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
                               border border-emerald-200 dark:border-emerald-800
                               bg-emerald-50 dark:bg-emerald-950/50
@@ -431,7 +411,7 @@
                 </p>
             </div>
 
-            {{-- 3. Password Default --}}
+            
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                     Password Default <span class="text-red-400">*</span>
@@ -444,7 +424,7 @@
                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Min. 5 karakter.</p>
             </div>
 
-            {{-- 4. Upload File --}}
+            
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                     File Excel (.xlsx / .xls) <span class="text-red-400">*</span>
@@ -470,7 +450,7 @@
                 </div>
             </div>
 
-            {{-- Tombol Aksi --}}
+            
             <div class="flex gap-2 pt-1">
                 <button type="submit"
                         class="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95
@@ -488,17 +468,18 @@
         </form>
     </div>
 </div>
+</div>
 
-{{-- ===== MODAL LAIN ===== --}}
-@include('admin.users._modal_detail')
-@include('admin.users._modal_tambah')
-@include('admin.users._modal_edit')
-@include('admin.users._modal_hapus')
-@include('admin.users._modal_reset_password')
 
-@endsection
+<?php echo $__env->make('admin.users._modal_detail', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php echo $__env->make('admin.users._modal_tambah', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php echo $__env->make('admin.users._modal_edit', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php echo $__env->make('admin.users._modal_hapus', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php echo $__env->make('admin.users._modal_reset_password', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
-@push('scripts')
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
 <script>
 // ── Buka / tutup modal ──────────────────────────────────────────────────────
 function openModal(id) {
@@ -589,37 +570,46 @@ function openDeleteModal(userId, userName) {
 }
 
 // ── Auto-open modal jika ada error validasi ──────────────────────────────────
-@if($errors->any() && old('_form_context') === 'tambah')
+<?php if($errors->any() && old('_form_context') === 'tambah'): ?>
     document.addEventListener('DOMContentLoaded', () => openModal('modalTambahUser'));
-@endif
+<?php endif; ?>
 
-@if($errors->any() && old('_form_context') === 'edit')
+<?php if($errors->any() && old('_form_context') === 'edit'): ?>
     document.addEventListener('DOMContentLoaded', () => openModal('modalEditUser'));
-@endif
+<?php endif; ?>
 
 // ── Import Modal: Toggle section siswa & filter kelas dinamis ────────────────
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Baca data kelas dari script tag — aman dari Blade parser error
-    var rawJson  = document.getElementById('kelasListData');
-    var allKelas = rawJson ? JSON.parse(rawJson.textContent) : [];
+    <?php
+        $kelasJson = ($kelasList ?? collect())->map(function ($k) {
+            return [
+                'id'            => $k->id,
+                'name'          => $k->name,
+                'grade'         => (string) ($k->grade ?? ''),
+                'semester'      => (string) ($k->semester ?? ''),
+                'academic_year' => $k->academic_year ?? '',
+            ];
+        })->values()->toJson();
+    ?>
 
-    var roleGuru       = document.getElementById('importRoleGuru');
-    var roleSiswa      = document.getElementById('importRoleSiswa');
-    var sectionSiswa   = document.getElementById('sectionSiswaImport');
-    var selectGrade    = document.getElementById('importGrade');
-    var selectSemester = document.getElementById('importSemester');
-    var selectKelas    = document.getElementById('importKelasId');
+    // Data semua kelas dari controller (di-render saat halaman dimuat)
+    const allKelas = <?php echo $kelasJson; ?>;
 
-    // Guard: jika salah satu elemen tidak ada di DOM, hentikan
+    const roleGuru       = document.getElementById('importRoleGuru');
+    const roleSiswa      = document.getElementById('importRoleSiswa');
+    const sectionSiswa   = document.getElementById('sectionSiswaImport');
+    const selectGrade    = document.getElementById('importGrade');
+    const selectSemester = document.getElementById('importSemester');
+    const selectKelas    = document.getElementById('importKelasId');
+
+    // Guard: jika salah satu elemen tidak ditemukan, hentikan eksekusi
     if (!roleGuru || !roleSiswa || !sectionSiswa ||
-        !selectGrade || !selectSemester || !selectKelas) {
-        return;
-    }
+        !selectGrade || !selectSemester || !selectKelas) return;
 
     // Tampilkan / sembunyikan section kelas siswa sesuai role yang dipilih
     function toggleSiswaSection() {
-        var isSiswa = roleSiswa.checked;
+        const isSiswa = roleSiswa.checked;
 
         if (isSiswa) {
             sectionSiswa.classList.remove('hidden');
@@ -631,55 +621,48 @@ document.addEventListener('DOMContentLoaded', function () {
             selectGrade.removeAttribute('required');
             selectSemester.removeAttribute('required');
             selectKelas.removeAttribute('required');
-            // Reset semua pilihan agar tidak ikut terkirim dengan nilai lama
             selectGrade.value     = '';
             selectSemester.value  = '';
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
         }
     }
 
-    // Filter dropdown kelas dari data kelola kelas berdasarkan grade + semester
+    // Filter dropdown kelas berdasarkan tingkat + semester yang dipilih
     function filterKelas() {
-        var grade    = selectGrade.value;
-        var semester = selectSemester.value;
+        const grade    = selectGrade.value;
+        const semester = selectSemester.value;
 
-        // Belum memilih salah satu → tampilkan placeholder
         if (!grade || !semester) {
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
             return;
         }
 
-        // Filter hanya kelas yang cocok dengan grade DAN semester yang dipilih
-        var filtered = allKelas.filter(function (k) {
-            return k.grade === String(grade) && k.semester === String(semester);
-        });
+        const filtered = allKelas.filter(
+            k => k.grade === String(grade) && k.semester === String(semester)
+        );
 
         if (filtered.length === 0) {
-            selectKelas.innerHTML =
-                '<option value="">Tidak ada kelas untuk pilihan ini — tambahkan di Kelola Kelas</option>';
+            selectKelas.innerHTML = '<option value="">Tidak ada kelas untuk pilihan ini</option>';
             return;
         }
 
-        // Bangun opsi dropdown dari data kelas yang sudah difilter
-        var html = '<option value="">— Pilih Kelas —</option>';
+        let html = '<option value="">— Pilih Kelas —</option>';
         filtered.forEach(function (k) {
-            var label = k.name;
-            if (k.academic_year) {
-                label += ' \u2014 ' + k.academic_year;
-            }
+            const label = k.name + (k.academic_year ? ' \u2014 ' + k.academic_year : '');
             html += '<option value="' + k.id + '">' + label + '</option>';
         });
         selectKelas.innerHTML = html;
     }
 
-    // Pasang event listener ke radio dan select
+    // Pasang event listener
     roleGuru.addEventListener('change', toggleSiswaSection);
     roleSiswa.addEventListener('change', toggleSiswaSection);
     selectGrade.addEventListener('change', filterKelas);
     selectSemester.addEventListener('change', filterKelas);
 
-    // Jalankan inisialisasi awal (Guru terpilih default → section siswa tersembunyi)
+    // Jalankan inisialisasi awal
     toggleSiswaSection();
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\PA 3\smpn-kutime\resources\views/admin/users/index.blade.php ENDPATH**/ ?>
