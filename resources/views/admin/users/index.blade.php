@@ -582,20 +582,19 @@ function openDeleteModal(userId, userName) {
 // ── Import Modal: Toggle section siswa & filter kelas dinamis ────────────────
 document.addEventListener('DOMContentLoaded', function () {
 
-    /**
-     * Data seluruh kelas aktif dari controller.
-     * Setiap item memiliki: id, name, grade, semester, academic_year
-     * Pastikan controller mengirim $kelasList ke view ini.
-     */
-    const allKelas = @json(
-        ($kelasList ?? collect())->map(fn($k) => [
-            'id'            => $k->id,
-            'name'          => $k->name,
-            'grade'         => (string) $k->grade,
-            'semester'      => (string) $k->semester,
-            'academic_year' => $k->academic_year ?? '',
-        ])->values()
-    );
+    @php
+        $kelasJson = ($kelasList ?? collect())->map(function ($k) {
+            return [
+                'id'            => $k->id,
+                'name'          => $k->name,
+                'grade'         => (string) ($k->grade ?? ''),
+                'semester'      => (string) ($k->semester ?? ''),
+                'academic_year' => $k->academic_year ?? '',
+            ];
+        })->values()->toJson();
+    @endphp
+
+    const allKelas = {!! $kelasJson !!};
 
     const roleGuru       = document.getElementById('importRoleGuru');
     const roleSiswa      = document.getElementById('importRoleSiswa');
@@ -604,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectSemester = document.getElementById('importSemester');
     const selectKelas    = document.getElementById('importKelasId');
 
-    // Elemen tidak ada di DOM → hentikan (guard)
+    // Guard: elemen tidak ada di DOM → hentikan
     if (!roleGuru || !roleSiswa || !sectionSiswa ||
         !selectGrade || !selectSemester || !selectKelas) return;
 
@@ -626,8 +625,8 @@ document.addEventListener('DOMContentLoaded', function () {
             selectSemester.removeAttribute('required');
             selectKelas.removeAttribute('required');
             // Reset agar tidak ikut terkirim dengan value lama
-            selectGrade.value    = '';
-            selectSemester.value = '';
+            selectGrade.value     = '';
+            selectSemester.value  = '';
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
         }
     }
