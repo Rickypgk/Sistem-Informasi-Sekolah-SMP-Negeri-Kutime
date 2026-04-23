@@ -202,7 +202,7 @@ class DashboardController extends Controller
             ->where('teacher_id', $user->id)
             ->where('day_of_week', $hariIni)
             ->orderBy('start_time')
-            ->get();
+            ->get() ?? collect();
 
         // fallback timetable
         if ($jadwalHariIni->isEmpty()) {
