@@ -247,6 +247,8 @@ Route::prefix('guru')->name('guru.')->middleware(['auth', 'role:guru'])->group(f
     Route::resource('study-subject', App\Http\Controllers\Guru\StudySubjectController::class)
          ->names('study-subject')
          ->only(['store', 'update', 'destroy']);
+
+    
 });
 
 // =================================================================
