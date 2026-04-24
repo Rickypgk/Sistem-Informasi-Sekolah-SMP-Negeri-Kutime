@@ -232,10 +232,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         //
         Route::prefix('dashboard')->name('dashboard.')->group(function () {
  
-            Route::get('/jadwal-hari-ini', [DashboardController::class, 'jadwalHariIni'])
+            Route::get('/jadwal-hari-ini', [AdminDashboardController::class, 'jadwalHariIni'])
                 ->name('jadwal');                            // optional live-refresh
  
-            Route::get('/stats',           [DashboardController::class, 'stats'])
+            Route::get('/stats',           [AdminDashboardController::class, 'stats'])
                 ->name('stats');                             // optional live-refresh
         });
 
