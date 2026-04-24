@@ -96,6 +96,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/absensi-guru',              [AbsensiGuruController::class, 'index'])->name('absensi-guru.index');
     Route::post('/absensi-guru',             [AbsensiGuruController::class, 'store'])->name('absensi-guru.store');
     Route::delete('/absensi-guru/{absensiGuru}', [AbsensiGuruController::class, 'destroy'])->name('absensi-guru.destroy');
+    Route::get('/absensi-guru/rekap', [AbsensiGuruController::class, 'rekap'])->name('absensi-guru.rekap');
 
     Route::get('/absensi-guru/export-excel', [App\Http\Controllers\Admin\AbsensiGuruController::class, 'exportExcel'])->name('absensi-guru.export-excel');
     Route::get('/absensi-guru/export-pdf', [App\Http\Controllers\Admin\AbsensiGuruController::class, 'exportPdf'])->name('absensi-guru.export-pdf');
