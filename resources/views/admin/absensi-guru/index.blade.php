@@ -12,7 +12,7 @@
     body { background: #f0f2f8; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; }
 
     .ag-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
-    .ag-title  { font-size:15px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:8px; margin:0; }
+    .ag-title  { font-size:15px; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:8px; ma rgin:0; }
     .ag-title i { color:#4f46e5; font-size:16px; }
     .ag-title .sub { font-size:11px; font-weight:500; color:#94a3b8; }
     .ag-btn-kelola {
