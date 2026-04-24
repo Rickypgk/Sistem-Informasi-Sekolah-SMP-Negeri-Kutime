@@ -202,6 +202,42 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         });
     }); // ✅ cukup satu penutup
 
+           // ── Activity Log ─────────────────────────────────────────────
+        //
+        //  GET  /admin/activity-log          → daftar log (full page)
+        //  GET  /admin/activity-log/data     → JSON untuk live-reload widget
+        //  DELETE /admin/activity-log/{id}   → hapus 1 entri (opsional)
+        //  DELETE /admin/activity-log/purge  → hapus semua log > 12 jam (manual trigger)
+        //
+        Route::prefix('activity-log')->name('activity-log.')->group(function () {
+ 
+            Route::get('/',      [ActivityLogController::class, 'index'])
+                ->name('index');
+ 
+            Route::get('/data',  [ActivityLogController::class, 'data'])
+                ->name('data');                              // JSON endpoint widget
+ 
+            Route::delete('/purge', [ActivityLogController::class, 'purge'])
+                ->name('purge');                             // manual purge
+ 
+            Route::delete('/{log}', [ActivityLogController::class, 'destroy'])
+                ->name('destroy');
+        });
+ 
+        // ── Dashboard widget data endpoints (AJAX / JSON) ─────────────
+        //
+        //  GET  /admin/dashboard/jadwal-hari-ini   → JSON jadwal hari ini
+        //  GET  /admin/dashboard/stats             → JSON statistik ringkasan
+        //
+        Route::prefix('dashboard')->name('dashboard.')->group(function () {
+ 
+            Route::get('/jadwal-hari-ini', [DashboardController::class, 'jadwalHariIni'])
+                ->name('jadwal');                            // optional live-refresh
+ 
+            Route::get('/stats',           [DashboardController::class, 'stats'])
+                ->name('stats');                             // optional live-refresh
+        });
+
 });
 
 // =================================================================
