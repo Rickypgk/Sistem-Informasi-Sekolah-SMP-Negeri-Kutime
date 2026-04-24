@@ -162,9 +162,8 @@ class DashboardController extends Controller
             return collect();
         }
     }
-}
 
-    // ── GET /admin/dashboard/jadwal-hari-ini  (JSON) ──────────────
+        // ── GET /admin/dashboard/jadwal-hari-ini  (JSON) ──────────────
     public function jadwalHariIni(): \Illuminate\Http\JsonResponse
     {
         $jadwal = $this->getJadwalHariIni()->map(fn($j) => [
@@ -194,4 +193,7 @@ class DashboardController extends Controller
             ],
         ]);
     }
+}
+
+
     
