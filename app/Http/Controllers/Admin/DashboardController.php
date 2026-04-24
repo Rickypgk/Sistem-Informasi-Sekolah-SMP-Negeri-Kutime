@@ -163,3 +163,35 @@ class DashboardController extends Controller
         }
     }
 }
+
+    // ── GET /admin/dashboard/jadwal-hari-ini  (JSON) ──────────────
+    public function jadwalHariIni(): \Illuminate\Http\JsonResponse
+    {
+        $jadwal = $this->getJadwalHariIni()->map(fn($j) => [
+            'guru_nama'  => $j->guru_nama,
+            'kelas_nama' => $j->kelas_nama,
+            'subject'    => $j->subject ?? '',
+            'room'       => $j->room ?? '',
+            'start_time' => \Carbon\Carbon::parse($j->start_time)->format('H:i'),
+            'end_time'   => \Carbon\Carbon::parse($j->end_time)->format('H:i'),
+            'is_now'     => now()->format('H:i') >= \Carbon\Carbon::parse($j->start_time)->format('H:i')
+                         && now()->format('H:i') <= \Carbon\Carbon::parse($j->end_time)->format('H:i'),
+        ]);
+
+        return response()->json(['success' => true, 'data' => $jadwal]);
+    }
+
+    // ── GET /admin/dashboard/stats  (JSON) ────────────────────────
+    public function stats(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'total_guru'  => \App\Models\User::where('role', 'guru')->count(),
+                'total_siswa' => \App\Models\User::where('role', 'siswa')->count(),
+                'total_kelas' => \App\Models\StudyGroup::count(),
+                'guru_hadir'  => $this->guruHadirHariIni(),
+            ],
+        ]);
+    }
+    
