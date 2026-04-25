@@ -1,37 +1,52 @@
 {{-- resources/views/guru/dashboard/wali-kelas-summary.blade.php --}}
 {{--
-    CATATAN PENTING:
-    - Guard @if(isWaliKelas) ADA DI SINI, BUKAN di dashboard.blade.php
-    - dashboard.blade.php selalu @include file ini tanpa kondisi
-    - Jika bukan wali kelas → tidak render apapun (return kosong)
-    - $isWaliKelas dikirim dari DashboardController → compact()
+    ══════════════════════════════════════════════════════════
+    CATATAN PENTING — ARSITEKTUR GUARD:
+    ──────────────────────────────────────────────────────────
+    File ini menggunakan DOUBLE-GUARD:
+
+    LAYER 1 (di dashboard.blade.php):
+      @if($isWaliKelas) @include(...) @endif
+      → File ini bahkan tidak di-include jika bukan wali kelas
+
+    LAYER 2 (di sini — internal guard):
+      @php $isWK = isset($isWaliKelas) && (bool)$isWaliKelas @endphp
+      @if($isWK) ... @endif
+      → Safety net jika file di-include langsung tanpa layer 1
+
+    Dengan double-guard, widget ini 100% aman:
+      • Tidak bisa tampil pada guru biasa dalam kondisi apapun
+      • Tidak error jika variabel tidak terdefinisi
+    ══════════════════════════════════════════════════════════
 --}}
 @php
+    // ── LAYER 2: Internal guard — safety net ──────────────
+    // Jika file ini di-include tanpa guard di luar,
+    // $isWaliKelas mungkin undefined → isset() mencegah error
+    $isWK = isset($isWaliKelas) && (bool)$isWaliKelas;
+
     // Baca variabel dari controller — semua pakai ?? untuk safety
-    $isWK          = isset($isWaliKelas) && (bool)$isWaliKelas;
-    $kelasWali     = $kelasWaliData   ?? null;
-    $jmlSiswa      = (int)($totalSiswaWali ?? 0);
-    $rekapDash     = is_array($rekapDataDashboard ?? null) ? $rekapDataDashboard : [];
-    $rekapBulan    = $rekapBulan      ?? now()->month;
-    $rekapTahun    = $rekapTahun      ?? now()->year;
-    $bulanNm       = now()->isoFormat('MMMM Y');
+    $kelasWali  = $kelasWaliData   ?? null;
+    $jmlSiswa   = (int)($totalSiswaWali ?? 0);
+    $rekapDash  = is_array($rekapDataDashboard ?? null) ? $rekapDataDashboard : [];
+    $rekapBulan = $rekapBulan ?? now()->month;
+    $rekapTahun = $rekapTahun ?? now()->year;
+    $bulanNm    = now()->locale('id')->isoFormat('MMMM Y');
 @endphp
 
 {{-- ══════════════════════════════════════════════════════════
-     WIDGET INI HANYA RENDER JIKA GURU ADALAH WALI KELAS
-     Jika $isWaliKelas = false → tidak ada output HTML sama sekali
+     WIDGET HANYA RENDER JIKA $isWK = true (wali kelas)
+     Jika guru biasa / $isWaliKelas false → tidak ada output HTML
 ══════════════════════════════════════════════════════════ --}}
 @if($isWK)
 @php
     /* ── Distribusi kehadiran dari rekapDataDashboard ──────────
        Hitung siswa berdasarkan % kehadiran bulan ini.
-       Jika rekapDash kosong (belum ada absensi), tampilkan
-       "Belum ada data" alih-alih angka 0 yang membingungkan.
     ────────────────────────────────────────────────────────── */
-    $pctTinggi       = 0; // ≥ 80%
-    $pctSedang       = 0; // 60–79%
-    $pctRendah       = 0; // < 60%
-    $adaDataAbsensi  = false;
+    $pctTinggi      = 0;  // ≥ 80%
+    $pctSedang      = 0;  // 60–79%
+    $pctRendah      = 0;  // < 60%
+    $adaDataAbsensi = false;
 
     foreach ($rekapDash as $sid => $r) {
         if (!is_array($r)) continue;
@@ -266,4 +281,4 @@
     </div>
 </div>
 
-@endif {{-- end @if($isWK) --}}
+@endif {{-- end @if($isWK) — LAYER 2 guard --}}
