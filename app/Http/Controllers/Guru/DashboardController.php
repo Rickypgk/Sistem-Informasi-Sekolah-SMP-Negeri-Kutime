@@ -316,4 +316,4 @@ class DashboardController extends Controller
             'rekapBulan', 'rekapTahun', 'widgetPengumuman'
         ));
     }
-}
+},
