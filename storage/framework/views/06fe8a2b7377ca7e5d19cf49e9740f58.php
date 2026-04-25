@@ -50,6 +50,14 @@
 
         </div>
 
+        
+        <div style="background:red;color:white;padding:10px;font-size:12px;">
+            isWaliKelas = <?php echo e(var_export($isWaliKelas ?? 'UNDEFINED', true)); ?> <br>
+            kelasWaliData = <?php echo e(var_export($kelasWaliData ?? 'NULL', true)); ?> <br>
+            PHP isset: <?php echo e(isset($isWaliKelas) ? 'YES' : 'NO'); ?>
+
+        </div>
+
     </div>
 
 </div>

@@ -56,6 +56,13 @@
 
         </div>
 
+        {{-- TEMPORARY DEBUG - hapus setelah fix --}}
+        <div style="background:red;color:white;padding:10px;font-size:12px;">
+            isWaliKelas = {{ var_export($isWaliKelas ?? 'UNDEFINED', true) }} <br>
+            kelasWaliData = {{ var_export($kelasWaliData ?? 'NULL', true) }} <br>
+            PHP isset: {{ isset($isWaliKelas) ? 'YES' : 'NO' }}
+        </div>
+
     </div>
 
 </div>
