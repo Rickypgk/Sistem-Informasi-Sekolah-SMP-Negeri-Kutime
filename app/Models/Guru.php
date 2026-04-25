@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Kelas;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Guru extends Model
 {
@@ -13,7 +12,6 @@ class Guru extends Model
         'user_id',
         'nip',
         'kelas_id',
-        // Data diri lengkap
         'nama',
         'tempat_lahir',
         'tanggal_lahir',
@@ -35,19 +33,24 @@ class Guru extends Model
     }
 
     /**
-     * Relasi ke Kelas sebagai Wali Kelas.
+     * Relasi ke tabel kelas lama (tidak dipakai untuk wali kelas).
      */
-    public function kelas()
+    public function kelas(): BelongsTo
     {
         return $this->belongsTo(Kelas::class, 'kelas_id');
     }
-    public function studyGroup()
+
+    /**
+     * Wali kelas via study_groups — pakai user_id sebagai foreign key
+     * karena homeroom_teacher_id di study_groups = users.id, bukan gurus.id
+     */
+    public function homeroomGroups(): HasMany
     {
-        return $this->belongsTo(StudyGroup::class);
+        return $this->hasMany(StudyGroup::class, 'homeroom_teacher_id', 'user_id');
     }
 
-    public function homeroomGroups()
+    public function studyGroup(): BelongsTo
     {
-        return $this->hasMany(StudyGroup::class, 'homeroom_teacher_id');
+        return $this->belongsTo(StudyGroup::class);
     }
 }
