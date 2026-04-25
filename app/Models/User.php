@@ -58,17 +58,16 @@ class User extends Authenticatable
         return $this->hasOne(Siswa::class);
     }
 
-    // ── Wali Kelas — via study_groups.homeroom_teacher_id ─────
+    // ── Wali Kelas via study_groups.homeroom_teacher_id ───────
 
     public function homeroomGroups(): HasMany
     {
-        // homeroom_teacher_id di tabel study_groups = users.id
         return $this->hasMany(StudyGroup::class, 'homeroom_teacher_id');
     }
 
     /**
-     * Cek apakah user ini adalah wali kelas.
-     * Return: bool
+     * Cek apakah user ini wali kelas.
+     * Query: study_groups WHERE homeroom_teacher_id = users.id
      */
     public function isWaliKelas(): bool
     {
@@ -77,7 +76,6 @@ class User extends Authenticatable
 
     /**
      * Ambil study_group pertama yang diwali user ini.
-     * Return: StudyGroup|null
      */
     public function kelasWali(): ?StudyGroup
     {
