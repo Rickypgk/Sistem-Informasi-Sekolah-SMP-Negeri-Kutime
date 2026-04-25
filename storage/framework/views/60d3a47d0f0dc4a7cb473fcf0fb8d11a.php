@@ -1,16 +1,12 @@
-{{-- resources/views/guru/dashboard/announcements.blade.php --}}
-{{--
-   Pengumuman dashboard — selaraskan dengan index.blade.php (pengumuman penuh).
-   Mendukung tipe_konten: teks, gambar, dokumen, link.
-   Modal detail memakai pgBuka() yang sama dengan halaman pengumuman penuh.
---}}
-@php
+
+
+<?php
 $widgetPengumuman = $widgetPengumuman ?? collect();
-@endphp
+?>
 
 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 
-    {{-- Header --}}
+    
     <div style="display:flex;align-items:center;justify-content:space-between;
                 padding:10px 14px;border-bottom:1px solid #f1f5f9;">
         <div style="display:flex;align-items:center;gap:7px;">
@@ -23,22 +19,23 @@ $widgetPengumuman = $widgetPengumuman ?? collect();
             <p style="font-size:.75rem;font-weight:700;color:#1e293b;margin:0;">Pengumuman</p>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-            @if($widgetPengumuman->count() > 0)
+            <?php if($widgetPengumuman->count() > 0): ?>
             <span style="font-size:.55rem;font-weight:700;background:#eef2ff;color:#4f46e5;
                              border:1px solid #c7d2fe;border-radius:99px;padding:2px 7px;">
-                {{ $widgetPengumuman->count() }}
+                <?php echo e($widgetPengumuman->count()); ?>
+
             </span>
-            @endif
-            @if(Route::has('guru.pengumuman'))
-            <a href="{{ route('guru.pengumuman') }}"
+            <?php endif; ?>
+            <?php if(Route::has('guru.pengumuman')): ?>
+            <a href="<?php echo e(route('guru.pengumuman')); ?>"
                 style="font-size:.58rem;font-weight:700;color:#4f46e5;text-decoration:none;">
                 Semua →
             </a>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
-    @if($widgetPengumuman->isEmpty())
+    <?php if($widgetPengumuman->isEmpty()): ?>
     <div style="padding:32px 16px;text-align:center;">
         <div style="width:48px;height:48px;border-radius:14px;background:#f1f5f9;
                         display:flex;align-items:center;justify-content:center;
@@ -51,10 +48,10 @@ $widgetPengumuman = $widgetPengumuman ?? collect();
         </p>
     </div>
 
-    @else
+    <?php else: ?>
     <div>
-        @foreach($widgetPengumuman as $p)
-        @php
+        <?php $__currentLoopData = $widgetPengumuman; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php
         /*
         * Selaraskan dengan model Pengumuman di index.blade.php:
         * - tipe_konten: 'teks' | 'gambar' | 'dokumen' | 'link'
@@ -135,112 +132,113 @@ $widgetPengumuman = $widgetPengumuman ?? collect();
         ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
         $isNew = \Carbon\Carbon::parse($p->created_at)->gt(now()->subHours(24));
-        @endphp
+        ?>
 
-        {{-- Item card --}}
+        
         <div style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .15s;"
             onmouseover="this.style.background='#f8fafc'"
             onmouseout="this.style.background='transparent'"
-            onclick="pgBuka({{ $pgData }})">
+            onclick="pgBuka(<?php echo e($pgData); ?>)">
 
-            {{-- Thumbnail gambar (tipe gambar) --}}
-            @if($gambarUrl)
+            
+            <?php if($gambarUrl): ?>
             <div style="width:100%;height:100px;overflow:hidden;background:#f1f5f9;">
-                <img src="{{ $gambarUrl }}"
-                    alt="{{ $p->judul }}"
+                <img src="<?php echo e($gambarUrl); ?>"
+                    alt="<?php echo e($p->judul); ?>"
                     style="width:100%;height:100%;object-fit:cover;display:block;
                                     transition:transform .3s;"
                     onmouseover="this.style.transform='scale(1.04)'"
                     onmouseout="this.style.transform='scale(1)'"
                     onerror="this.parentElement.style.display='none'">
             </div>
-            @endif
+            <?php endif; ?>
 
             <div style="padding:9px 13px;">
 
-                {{-- Baris atas: tipe icon + kategori + tanggal --}}
+                
                 <div style="display:flex;align-items:center;justify-content:space-between;
                                  gap:6px;margin-bottom:4px;flex-wrap:wrap;">
                     <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                        <span style="font-size:.7rem;">{{ $tipeIcon }}</span>
+                        <span style="font-size:.7rem;"><?php echo e($tipeIcon); ?></span>
                         <span style="padding:2px 7px;border-radius:5px;font-size:.54rem;
-                                          font-weight:700;background:{{ $cat['bg'] }};
-                                          color:{{ $cat['color'] }};">
-                            {{ $cat['label'] }}
+                                          font-weight:700;background:<?php echo e($cat['bg']); ?>;
+                                          color:<?php echo e($cat['color']); ?>;">
+                            <?php echo e($cat['label']); ?>
+
                         </span>
-                        @if($isNew)
+                        <?php if($isNew): ?>
                         <span style="padding:2px 6px;border-radius:5px;font-size:.5rem;
                                               font-weight:800;background:#ecfdf5;color:#059669;
                                               border:1px solid #a7f3d0;letter-spacing:.02em;">
                             ✦ BARU
                         </span>
-                        @endif
+                        <?php endif; ?>
                     </div>
                     <span style="font-size:.56rem;color:#94a3b8;white-space:nowrap;">
-                        {{ $tglTampil }}
+                        <?php echo e($tglTampil); ?>
+
                     </span>
                 </div>
 
-                {{-- Judul --}}
+                
                 <p style="font-size:.7rem;font-weight:700;color:#1e293b;line-height:1.35;
                                margin:0 0 4px;display:-webkit-box;-webkit-line-clamp:2;
                                -webkit-box-orient:vertical;overflow:hidden;">
-                    {{ $p->judul }}
+                    <?php echo e($p->judul); ?>
+
                 </p>
 
-                {{-- Preview isi --}}
-                @if($p->isi && $tipeKonten === 'teks')
+                
+                <?php if($p->isi && $tipeKonten === 'teks'): ?>
                 <p style="font-size:.6rem;color:#64748b;line-height:1.45;margin:0 0 4px;
                                    display:-webkit-box;-webkit-line-clamp:2;
                                    -webkit-box-orient:vertical;overflow:hidden;">
-                    {{ Str::limit(strip_tags($p->isi), 80) }}
-                </p>
-                @endif
+                    <?php echo e(Str::limit(strip_tags($p->isi), 80)); ?>
 
-                {{-- Preview khusus tipe --}}
-                @if($tipeKonten === 'dokumen' && $fileUrl)
+                </p>
+                <?php endif; ?>
+
+                
+                <?php if($tipeKonten === 'dokumen' && $fileUrl): ?>
                 <div style="display:inline-flex;align-items:center;gap:4px;
                                      padding:3px 8px;border-radius:6px;
                                      background:#fffbeb;border:1px solid #fde68a;
                                      font-size:.58rem;font-weight:700;color:#a16207;">
-                    📄 {{ $fileExt ?: 'FILE' }} &nbsp;·&nbsp; Klik untuk unduh
+                    📄 <?php echo e($fileExt ?: 'FILE'); ?> &nbsp;·&nbsp; Klik untuk unduh
                 </div>
-                @elseif($tipeKonten === 'link' && $linkUrl)
+                <?php elseif($tipeKonten === 'link' && $linkUrl): ?>
                 <div style="display:inline-flex;align-items:center;gap:4px;
                                      padding:3px 8px;border-radius:6px;
                                      background:#e0f2fe;border:1px solid #bae6fd;
                                      font-size:.58rem;font-weight:700;color:#0369a1;">
-                    🔗 {{ Str::limit($linkLabel, 35) }}
-                </div>
-                @endif
+                    🔗 <?php echo e(Str::limit($linkLabel, 35)); ?>
 
-                {{-- Footer hint --}}
+                </div>
+                <?php endif; ?>
+
+                
                 <p style="font-size:.53rem;color:#94a3b8;margin-top:4px;">
                     Klik untuk lihat detail →
                 </p>
             </div>
         </div>
-        @endforeach
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
 
     <div style="padding:7px 14px;border-top:1px solid #f1f5f9;background:#f8fafc;text-align:center;">
-        @if(Route::has('guru.pengumuman'))
-        <a href="{{ route('guru.pengumuman') }}"
+        <?php if(Route::has('guru.pengumuman')): ?>
+        <a href="<?php echo e(route('guru.pengumuman')); ?>"
             style="font-size:.6rem;font-weight:700;color:#4f46e5;text-decoration:none;">
             Lihat semua pengumuman →
         </a>
-        @endif
+        <?php endif; ?>
     </div>
-    @endif
+    <?php endif; ?>
 
 </div>
 
-{{-- ══════════════════════════════════════════════════════════
-     MODAL DETAIL PENGUMUMAN (shared dengan index.blade.php)
-     Pakai pgBuka() / pgTutup() — sama persis dengan halaman
-     pengumuman penuh, agar konsisten tampil gambar, dokumen, link
-══════════════════════════════════════════════════════════ --}}
-@once
+
+<?php if (! $__env->hasRenderedOnce('0a4e0cee-d4d9-4294-8ba9-6491669ef601')): $__env->markAsRenderedOnce('0a4e0cee-d4d9-4294-8ba9-6491669ef601'); ?>
 <div id="pgModal"
     onclick="if(event.target===this)pgTutup()"
     class="fixed inset-0 z-[999] hidden items-center justify-center p-4"
@@ -259,4 +257,4 @@ $widgetPengumuman = $widgetPengumuman ?? collect();
         <div id="pgModalKonten" class="p-6 sm:p-8"></div>
     </div>
 </div>
-@endonce
+<?php endif; ?><?php /**PATH C:\PA 3\smpn-kutime\resources\views/guru/dashboard/announcements.blade.php ENDPATH**/ ?>

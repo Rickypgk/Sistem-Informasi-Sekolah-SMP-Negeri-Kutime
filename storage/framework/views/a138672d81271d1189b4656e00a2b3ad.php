@@ -1,11 +1,6 @@
-{{-- resources/views/guru/dashboard/scripts-modal.blade.php --}}
-{{--
-   Modal JS untuk pengumuman dashboard.
-   Memakai pgBuka() / pgTutup() yang SAMA dengan halaman pengumuman penuh
-   (guru/pengumuman/index.blade.php), sehingga tampilan konsisten:
-   gambar, dokumen, link semuanya ditampilkan dengan benar.
---}}
-@once
+
+
+<?php if (! $__env->hasRenderedOnce('f0868d52-fa6d-4db5-bccc-0ce8a8d9c068')): $__env->markAsRenderedOnce('f0868d52-fa6d-4db5-bccc-0ce8a8d9c068'); ?>
 <script>
     (function() {
         'use strict';
@@ -188,4 +183,4 @@
 
     })();
 </script>
-@endonce
+<?php endif; ?><?php /**PATH C:\PA 3\smpn-kutime\resources\views/guru/dashboard/scripts-modal.blade.php ENDPATH**/ ?>
