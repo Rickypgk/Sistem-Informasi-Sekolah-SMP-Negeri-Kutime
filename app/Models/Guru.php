@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Guru extends Model
 {
+    protected $table = 'gurus'; // eksplisit karena nama tabel plural
+
     protected $fillable = [
         'user_id',
         'nip',
-        'kelas_id',
         'nama',
         'tempat_lahir',
         'tanggal_lahir',
@@ -21,6 +22,8 @@ class Guru extends Model
         'no_sk_pertama',
         'no_sk_terakhir',
         'pendidikan_terakhir',
+        'study_group_id',
+        'kelas_id',
     ];
 
     protected $casts = [
@@ -32,25 +35,23 @@ class Guru extends Model
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Relasi ke tabel kelas lama (tidak dipakai untuk wali kelas).
-     */
     public function kelas(): BelongsTo
     {
         return $this->belongsTo(Kelas::class, 'kelas_id');
     }
 
+    public function studyGroup(): BelongsTo
+    {
+        return $this->belongsTo(StudyGroup::class, 'study_group_id');
+    }
+
     /**
-     * Wali kelas via study_groups — pakai user_id sebagai foreign key
-     * karena homeroom_teacher_id di study_groups = users.id, bukan gurus.id
+     * Study groups yang diwali guru ini.
+     * FK: homeroom_teacher_id di study_groups = users.id (bukan gurus.id)
+     * Gunakan user_id sebagai local key.
      */
     public function homeroomGroups(): HasMany
     {
         return $this->hasMany(StudyGroup::class, 'homeroom_teacher_id', 'user_id');
-    }
-
-    public function studyGroup(): BelongsTo
-    {
-        return $this->belongsTo(StudyGroup::class);
     }
 }
