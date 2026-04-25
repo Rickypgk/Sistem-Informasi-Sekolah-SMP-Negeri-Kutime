@@ -55,6 +55,12 @@
             @endif
 
         </div>
+        {{-- DEBUG SEMENTARA - hapus setelah konfirmasi --}}
+        <div style="background:#1e293b;color:#4ade80;padding:10px 14px;font-size:11px;font-family:monospace;border-radius:8px;margin-bottom:12px;">
+            isWaliKelas = {{ var_export($isWaliKelas ?? 'UNDEFINED', true) }} |
+            kelasWaliData = {{ $kelasWaliData ? $kelasWaliData->name : 'NULL' }} |
+            totalSiswaWali = {{ $totalSiswaWali ?? 0 }}
+        </div>
 
     </div>
 
