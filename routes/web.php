@@ -303,3 +303,28 @@ Route::prefix('siswa')->name('siswa.')->middleware(['auth', 'role:siswa'])->grou
     // Jadwal Pelajaran (read-only)
     Route::get('jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran');
 });
+
+
+
+
+// TEMPORARY DEBUG — hapus setelah selesai
+Route::get('/debug-wali', function () {
+    $user = auth()->user();
+    $guru = $user->guru;
+    
+    return response()->json([
+        'user_id'           => $user->id,
+        'guru_id'           => $guru?->id,
+        // Cek semua kemungkinan kolom di tabel kelas
+        'via_wali_guru_id'  => \App\Models\Kelas::where('wali_guru_id', $guru?->id)->first()?->toArray(),
+        'via_wali_kelas_id' => \App\Models\Kelas::where('wali_kelas_id', $guru?->id)->first()?->toArray(),
+        // Cek method di User model
+        'method_isWaliKelas_exists' => method_exists($user, 'isWaliKelas'),
+        'method_isWaliKelas_result' => method_exists($user, 'isWaliKelas') ? $user->isWaliKelas() : 'method tidak ada',
+        // Cek relasi guru
+        'guru_relations'    => $guru ? array_keys($guru->getRelations()) : [],
+        'guru_attributes'   => $guru?->getAttributes(),
+        // Cek tabel kelas semua kolom
+        'kelas_columns'     => \Illuminate\Support\Facades\Schema::getColumnListing('kelas'),
+    ]);
+})->middleware('auth');
