@@ -9,38 +9,31 @@
 
 <?php $__env->startSection('content'); ?>
 
-
 <?php
-    // Safety cast — pastikan boolean, bukan null/undefined
-    $isWaliKelas = (bool)($isWaliKelas ?? false);
+    /*
+     * SAFETY CAST — jamin $isWaliKelas selalu boolean di view ini.
+     * Meski controller gagal inject, ?? false mencegah undefined error.
+     */
+    $isWaliKelas = isset($isWaliKelas) ? (bool) $isWaliKelas : false;
 ?>
 
 <div class="space-y-4">
 
-    
     <?php echo $__env->make('guru.dashboard.header', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
-    
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         
         <div class="lg:col-span-2 space-y-4">
 
-            
             <?php echo $__env->make('guru.dashboard.performance-summary', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-
-            
             <?php echo $__env->make('guru.dashboard.jadwal-mengajar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-
-            
             <?php echo $__env->make('guru.dashboard.attendance-trend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
-            
             <?php if($isWaliKelas): ?>
                 <?php echo $__env->make('guru.dashboard.rekap-absensi', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <?php endif; ?>
 
-            
             <?php echo $__env->make('guru.dashboard.at-risk-students', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
         </div>
@@ -48,7 +41,6 @@
         
         <div class="lg:col-span-1 space-y-4">
 
-            
             <?php echo $__env->make('guru.dashboard.announcements', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
             
