@@ -9,6 +9,12 @@
 
 <?php $__env->startSection('content'); ?>
 
+
+<?php
+    // Safety cast — pastikan boolean, bukan null/undefined
+    $isWaliKelas = (bool)($isWaliKelas ?? false);
+?>
+
 <div class="space-y-4">
 
     
@@ -30,7 +36,7 @@
             <?php echo $__env->make('guru.dashboard.attendance-trend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
             
-            <?php if(!empty($isWaliKelas)): ?>
+            <?php if($isWaliKelas): ?>
                 <?php echo $__env->make('guru.dashboard.rekap-absensi', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <?php endif; ?>
 
@@ -46,7 +52,9 @@
             <?php echo $__env->make('guru.dashboard.announcements', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
             
-            <?php echo $__env->make('guru.dashboard.wali-kelas-summary', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            <?php if($isWaliKelas): ?>
+                <?php echo $__env->make('guru.dashboard.wali-kelas-summary', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            <?php endif; ?>
 
         </div>
 
