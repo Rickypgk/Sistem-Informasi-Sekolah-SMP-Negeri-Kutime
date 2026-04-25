@@ -15,7 +15,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',    // 'admin' | 'guru' | 'siswa'
+        'role',
         'photo',
     ];
 
@@ -29,7 +29,7 @@ class User extends Authenticatable
         'password'          => 'hashed',
     ];
 
-    // ── Role helpers ───────────────────────────────────────────
+    // ── Role helpers ──────────────────────────────────────────
 
     public function isAdmin(): bool
     {
@@ -46,7 +46,7 @@ class User extends Authenticatable
         return $this->role === 'siswa';
     }
 
-    // ── Relasi profil ──────────────────────────────────────────
+    // ── Relasi profil ─────────────────────────────────────────
 
     public function guru(): HasOne
     {
@@ -58,15 +58,29 @@ class User extends Authenticatable
         return $this->hasOne(Siswa::class);
     }
 
-    // ── Relasi wali kelas (FIX ERROR DI BLADE) ─────────────────
+    // ── Wali Kelas — via study_groups.homeroom_teacher_id ─────
 
     public function homeroomGroups(): HasMany
     {
+        // homeroom_teacher_id di tabel study_groups = users.id
         return $this->hasMany(StudyGroup::class, 'homeroom_teacher_id');
     }
 
-    public function isWaliKelas()
+    /**
+     * Cek apakah user ini adalah wali kelas.
+     * Return: bool
+     */
+    public function isWaliKelas(): bool
     {
         return $this->homeroomGroups()->exists();
+    }
+
+    /**
+     * Ambil study_group pertama yang diwali user ini.
+     * Return: StudyGroup|null
+     */
+    public function kelasWali(): ?StudyGroup
+    {
+        return $this->homeroomGroups()->first();
     }
 }
