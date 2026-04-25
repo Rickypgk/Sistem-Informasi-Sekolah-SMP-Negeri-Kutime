@@ -3,9 +3,7 @@
 <?php $__env->startPush('styles'); ?>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-    #mainContent {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-    }
+    #mainContent { font-family: 'Plus Jakarta Sans', sans-serif !important; }
 </style>
 <?php $__env->stopPush(); ?>
 
@@ -32,8 +30,8 @@
             <?php echo $__env->make('guru.dashboard.attendance-trend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
             
-            <?php if(isset($isWaliKelas) && $isWaliKelas): ?>
-            <?php echo $__env->make('guru.dashboard.rekap-absensi', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            <?php if(!empty($isWaliKelas)): ?>
+                <?php echo $__env->make('guru.dashboard.rekap-absensi', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <?php endif; ?>
 
             
@@ -48,9 +46,7 @@
             <?php echo $__env->make('guru.dashboard.announcements', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
             
-            <?php if(isset($isWaliKelas) && $isWaliKelas): ?>
             <?php echo $__env->make('guru.dashboard.wali-kelas-summary', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-            <?php endif; ?>
 
         </div>
 
@@ -61,10 +57,7 @@
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('scripts'); ?>
-
 <?php echo $__env->make('guru.dashboard.scripts-modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-
-
 <?php echo $__env->make('guru.dashboard.scripts-chart', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\PA 3\smpn-kutime\resources\views/guru/dashboard.blade.php ENDPATH**/ ?>
