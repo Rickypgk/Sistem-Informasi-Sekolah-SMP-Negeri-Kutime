@@ -53,6 +53,7 @@ class DashboardController extends Controller
                 'chartTidak'          => [],
                 'siswaBerisiko'       => collect(),
                 'jadwalHariIni'       => collect(),
+                // ── Wali Kelas: selalu ada meski false ──
                 'isWaliKelas'         => false,
                 'kelasWaliData'       => null,
                 'namaKelasWali'       => null,
@@ -65,7 +66,13 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           2. WALI KELAS CHECK
+           2. WALI KELAS CHECK — PALING KRITIS
+              Urutan pengecekan:
+              A) Kelas::where('wali_guru_id', $guru->id)
+              B) Kelas::where('wali_kelas_id', $guru->id)
+              C) method isWaliKelas() di model User
+              D) relasi guru->waliKelas
+           Sesuaikan dengan struktur DB Anda.
         ───────────────────────────────────────────────────────── */
         $isWaliKelas    = false;
         $kelasWaliData  = null;
@@ -73,34 +80,43 @@ class DashboardController extends Controller
         $totalSiswaWali = 0;
 
         try {
-            $isWaliKelas = Kelas::where('wali_guru_id', $guru->id)->exists()
-                        || Kelas::where('wali_kelas_id', $guru->id)->exists()
-                        || (method_exists($user, 'isWaliKelas') && $user->isWaliKelas());
+            // ── Cek via kolom di tabel kelas ──
+            $kelasWaliData = Kelas::where('wali_guru_id', $guru->id)->first()
+                          ?? Kelas::where('wali_kelas_id', $guru->id)->first();
 
-            if ($isWaliKelas) {
-                $kelasWaliData = Kelas::where('wali_guru_id', $guru->id)->first()
-                              ?? Kelas::where('wali_kelas_id', $guru->id)->first()
-                              ?? $guru->waliKelas?->kelas
-                              ?? null;
-
-                $namaKelasWali  = $kelasWaliData?->nama ?? $kelasWaliData?->name ?? null;
-                $totalSiswaWali = $kelasWaliData
-                    ? Siswa::where('kelas_id', $kelasWaliData->id)->count()
-                    : 0;
+            // ── Cek via method di model User (jika ada) ──
+            if (!$kelasWaliData && method_exists($user, 'isWaliKelas') && $user->isWaliKelas()) {
+                // Coba dapat kelas dari relasi guru
+                $kelasWaliData = $guru->waliKelas?->kelas ?? null;
             }
+
+            // ── Cek via relasi langsung guru->waliKelas ──
+            if (!$kelasWaliData && $guru->waliKelas) {
+                $kelasWaliData = $guru->waliKelas->kelas ?? $guru->waliKelas ?? null;
+            }
+
+            // ── Set flag berdasarkan hasil cek ──
+            $isWaliKelas = !is_null($kelasWaliData);
+
+            if ($isWaliKelas && $kelasWaliData) {
+                $namaKelasWali  = $kelasWaliData->nama ?? $kelasWaliData->name ?? null;
+                $totalSiswaWali = Siswa::where('kelas_id', $kelasWaliData->id)->count();
+            }
+
         } catch (\Exception $e) {
-            $isWaliKelas = false;
+            // Pastikan tetap false jika error — JANGAN biarkan undefined
+            $isWaliKelas    = false;
+            $kelasWaliData  = null;
+            $namaKelasWali  = null;
+            $totalSiswaWali = 0;
         }
 
         /* ─────────────────────────────────────────────────────────
            3. KUMPULKAN study_group_id dari Timetable
-              → jadikan kelas_id untuk query Siswa & AbsensiSiswa
-              Timetable menyimpan study_group_id yang = kelas_id di tabel siswa
         ───────────────────────────────────────────────────────── */
         $studyGroupIds = collect();
 
         try {
-            // Ambil semua study_group_id dari jadwal guru ini
             $studyGroupIds = Timetable::where('teacher_id', $user->id)
                 ->whereNotNull('study_group_id')
                 ->pluck('study_group_id')
@@ -114,21 +130,13 @@ class DashboardController extends Controller
             $studyGroupIds = $studyGroupIds->push($kelasWaliData->id)->unique()->filter()->values();
         }
 
-        /*
-         * Ambil siswa berdasarkan study_group_id
-         * CATATAN: study_group_id di Timetable = kelas_id di tabel siswa
-         * Sesuaikan kolom FK jika berbeda di proyek Anda.
-         */
         $siswaIds = collect();
         if ($studyGroupIds->isNotEmpty()) {
             try {
-                $siswaIds = Siswa::whereIn('kelas_id', $studyGroupIds)
-                    ->pluck('id');
+                $siswaIds = Siswa::whereIn('kelas_id', $studyGroupIds)->pluck('id');
             } catch (\Exception $e) {
-                // Coba kolom alternatif
                 try {
-                    $siswaIds = Siswa::whereIn('study_group_id', $studyGroupIds)
-                        ->pluck('id');
+                    $siswaIds = Siswa::whereIn('study_group_id', $studyGroupIds)->pluck('id');
                 } catch (\Exception $e2) {
                     $siswaIds = collect();
                 }
@@ -142,11 +150,10 @@ class DashboardController extends Controller
 
         /* ─────────────────────────────────────────────────────────
            5. KPI KEHADIRAN BULAN INI
-              Query: AbsensiSiswa berdasarkan siswa_id
         ───────────────────────────────────────────────────────── */
-        $bulanIni      = Carbon::now()->month;
-        $tahunIni      = Carbon::now()->year;
-        $kehadiranPct  = 0;
+        $bulanIni     = Carbon::now()->month;
+        $tahunIni     = Carbon::now()->year;
+        $kehadiranPct = 0;
 
         if ($siswaIds->isNotEmpty()) {
             try {
@@ -169,7 +176,6 @@ class DashboardController extends Controller
 
         /* ─────────────────────────────────────────────────────────
            6. ABSENSI HARI INI
-              Query: AbsensiSiswa by siswa_id, whereDate tanggal = today
         ───────────────────────────────────────────────────────── */
         $today          = Carbon::today();
         $absensiHariIni = ['hadir' => 0, 'sakit' => 0, 'izin' => 0, 'alpha' => 0];
@@ -177,18 +183,10 @@ class DashboardController extends Controller
         if ($siswaIds->isNotEmpty()) {
             try {
                 $absensiHariIni = [
-                    'hadir' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                        ->whereDate('tanggal', $today)
-                        ->where('status', 'hadir')->count(),
-                    'sakit' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                        ->whereDate('tanggal', $today)
-                        ->where('status', 'sakit')->count(),
-                    'izin'  => AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                        ->whereDate('tanggal', $today)
-                        ->where('status', 'izin')->count(),
-                    'alpha' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                        ->whereDate('tanggal', $today)
-                        ->where('status', 'alpha')->count(),
+                    'hadir' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $today)->where('status', 'hadir')->count(),
+                    'sakit' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $today)->where('status', 'sakit')->count(),
+                    'izin'  => AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $today)->where('status', 'izin')->count(),
+                    'alpha' => AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $today)->where('status', 'alpha')->count(),
                 ];
             } catch (\Exception $e) {}
         }
@@ -222,9 +220,9 @@ class DashboardController extends Controller
                         $tot       = $r?->total ?? 0;
                         $kehadiran = $tot > 0 ? round(($r->hadir / $tot) * 100, 1) : 0;
 
-                        $s->kehadiran  = $kehadiran;
-                        $s->alpha      = $r?->alpha ?? 0;
-                        $s->namaKelas  = $s->kelas?->nama ?? $s->kelas?->name ?? '—';
+                        $s->kehadiran = $kehadiran;
+                        $s->alpha     = $r?->alpha ?? 0;
+                        $s->namaKelas = $s->kelas?->nama ?? $s->kelas?->name ?? '—';
 
                         return $s;
                     })
@@ -250,11 +248,8 @@ class DashboardController extends Controller
 
             if ($siswaIds->isNotEmpty()) {
                 try {
-                    $hadir = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                        ->whereDate('tanggal', $tgl)
-                        ->where('status', 'hadir')->count();
-                    $total = AbsensiSiswa::whereIn('siswa_id', $siswaIds)
-                        ->whereDate('tanggal', $tgl)->count();
+                    $hadir        = AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $tgl)->where('status', 'hadir')->count();
+                    $total        = AbsensiSiswa::whereIn('siswa_id', $siswaIds)->whereDate('tanggal', $tgl)->count();
                     $chartHadir[] = $hadir;
                     $chartTidak[] = $total - $hadir;
                 } catch (\Exception $e) {
@@ -269,10 +264,6 @@ class DashboardController extends Controller
 
         /* ─────────────────────────────────────────────────────────
            9. JADWAL MENGAJAR HARI INI
-              Sumber: Timetable → teacher_id = user->id
-              Kolom hari: day_of_week (string Indonesia: Senin, Selasa…)
-              Kolom jam : start_time / end_time
-              Relasi    : studySubject (nama mapel), studyGroup (nama kelas)
         ───────────────────────────────────────────────────────── */
         $hariMap = [
             'Sunday'    => 'Minggu',
@@ -283,8 +274,7 @@ class DashboardController extends Controller
             'Friday'    => 'Jumat',
             'Saturday'  => 'Sabtu',
         ];
-        $hariHariIni = $hariMap[Carbon::now()->format('l')]; // e.g. 'Senin'
-
+        $hariHariIni   = $hariMap[Carbon::now()->format('l')];
         $jadwalHariIni = collect();
 
         try {
@@ -294,28 +284,11 @@ class DashboardController extends Controller
                 ->orderBy('start_time')
                 ->get()
                 ->map(function ($j) {
-                    /*
-                     * Normalisasi ke field standar:
-                     *   _jam_mulai   → start_time
-                     *   _jam_selesai → end_time
-                     *   _mapel       → studySubject->name
-                     *   _kelas       → studyGroup->name
-                     *   _ruangan     → room
-                     *   _kelas_id    → study_group_id  (untuk link ke absensi)
-                     *   _sumber      → 'Timetable'
-                     */
                     $j->_jam_mulai   = $j->start_time ?? null;
                     $j->_jam_selesai = $j->end_time   ?? null;
-                    $j->_mapel       = $j->studySubject?->name
-                                    ?? $j->studySubject?->nama
-                                    ?? $j->subject_name
-                                    ?? '—';
-                    $j->_kelas       = $j->studyGroup?->name
-                                    ?? $j->studyGroup?->nama
-                                    ?? $j->group_name
-                                    ?? '—';
+                    $j->_mapel       = $j->studySubject?->name ?? $j->studySubject?->nama ?? $j->subject_name ?? '—';
+                    $j->_kelas       = $j->studyGroup?->name  ?? $j->studyGroup?->nama  ?? $j->group_name   ?? '—';
                     $j->_ruangan     = $j->room ?? $j->ruangan ?? null;
-                    // study_group_id = kelas_id yang dipakai di AbsensiSiswa
                     $j->_kelas_id    = $j->study_group_id ?? null;
                     $j->_sumber      = 'Timetable';
                     $j->_warna       = $j->studySubject?->color ?? null;
@@ -327,6 +300,7 @@ class DashboardController extends Controller
 
         /* ─────────────────────────────────────────────────────────
            10. REKAP ABSENSI WALI KELAS (widget dashboard)
+               Hanya dijalankan jika $isWaliKelas = true
         ───────────────────────────────────────────────────────── */
         $siswaRekapDashboard = collect();
         $rekapDataDashboard  = [];
@@ -369,17 +343,17 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           RETURN VIEW
+           RETURN VIEW — semua variabel dijamin terdefinisi
         ───────────────────────────────────────────────────────── */
         return view('guru.dashboard', compact(
             'totalSiswa',
             'kehadiranPct',
             'siswaRisiko',
             'absensiHariIni',
-            'isWaliKelas',
-            'kelasWaliData',
-            'namaKelasWali',
-            'totalSiswaWali',
+            'isWaliKelas',        // ← boolean, selalu ada
+            'kelasWaliData',      // ← object|null
+            'namaKelasWali',      // ← string|null
+            'totalSiswaWali',     // ← int
             'siswaBerisiko',
             'chartLabels',
             'chartHadir',
