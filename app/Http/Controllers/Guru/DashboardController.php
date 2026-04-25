@@ -308,10 +308,10 @@ class DashboardController extends Controller
         /* ═══════════════════════════════════════════════════════
            RETURN VIEW
         ═══════════════════════════════════════════════════════ */
-    return view('...', compact(
+    return view('guru.dashboard', compact(
         'siswaBerisiko', 'chartLabels', 'chartHadir', 'chartTidak',
         'jadwalHariIni', 'siswaRekapDashboard', 'rekapDataDashboard',
         'rekapBulan', 'rekapTahun', 'widgetPengumuman'
     ));
     }
-},
+}
