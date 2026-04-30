@@ -115,7 +115,7 @@
                         <img src="{{ asset('storage/' . $item->file_path) }}"
                              alt="{{ $item->judul }}" loading="lazy"
                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                             onerror="this.closest('div').innerHTML='<div class=\'flex items-center justify-center h-14 text-slate-300 text-sm\'>🖼️</div>'">
+                             onerror="wdgImgError(this)">
                     </div>
                     @endif
 
@@ -195,6 +195,23 @@
 <script>
 (function () {
     'use strict';
+
+    /* ── Helper: gambar gagal dimuat (list thumbnail) ── */
+    window.wdgImgError = function (img) {
+        var wrap = img.closest('div');
+        if (wrap) {
+            wrap.innerHTML = '<div class="flex items-center justify-center h-14 text-slate-300 text-sm">🖼️</div>';
+        }
+    };
+
+    /* ── Helper: gambar gagal dimuat (modal) ── */
+    window.wdgModalImgError = function (img) {
+        var wrap = img.closest('div');
+        if (wrap) {
+            wrap.innerHTML = '<div class="p-6 text-center"><div class="text-3xl mb-1.5">🖼️</div><p class="text-xs text-slate-400">Gambar tidak dapat dimuat.</p></div>';
+        }
+    };
+
     window.wdgBuka = function (d) {
         var role    = d.widgetRole || 'admin';
         var konten  = document.getElementById('wdgModalKonten-' + role);
@@ -205,6 +222,7 @@
         overlay.classList.add('flex');
         document.body.style.overflow = 'hidden';
     };
+
     window.wdgTutup = function (role) {
         var overlay = document.getElementById('wdgModal-' + (role || 'admin'));
         if (!overlay) return;
@@ -212,6 +230,7 @@
         overlay.classList.remove('flex');
         document.body.style.overflow = '';
     };
+
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') wdgTutup('admin'); });
 
     function wdgHtml(d) {
@@ -227,18 +246,23 @@
         h += '<div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400 mb-3 pb-3 border-b border-slate-200 dark:border-slate-700">';
         h += '<span>📅 ' + e(d.tanggal) + '</span><span>👤 ' + e(d.creator) + '</span><span>🕐 ' + e(d.diffHumans) + '</span>';
         h += '</div>';
+
+        /* Gambar */
         if (d.tipe === 'gambar' && d.fileUrl) {
             h += '<div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-600 mb-3 bg-slate-50 dark:bg-slate-900 flex items-center justify-center">';
-            h += '<img src="' + d.fileUrl + '" alt="' + e(d.judul) + '" class="w-full max-h-64 object-contain block"';
-            h += ' onerror="this.closest(\'div\').innerHTML=\'<div class=\\\"p-6 text-center\\\"><div class=\\\"text-3xl mb-1.5\\\">🖼️</div><p class=\\\"text-xs text-slate-400\\\">Gambar tidak dapat dimuat.</p></div>\'">';
+            h += '<img src="' + d.fileUrl + '" alt="' + e(d.judul) + '" class="w-full max-h-64 object-contain block" onerror="wdgModalImgError(this)">';
             h += '</div>';
         }
+
+        /* Isi teks */
         if (d.isi && d.isi.trim()) {
             var adaTag = /<[a-z][\s\S]*>/i.test(d.isi);
             h += adaTag
                 ? '<div class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed mb-3 prose prose-sm dark:prose-invert max-w-none">' + s(d.isi) + '</div>'
                 : '<div class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed mb-3 whitespace-pre-line">' + e(d.isi) + '</div>';
         }
+
+        /* Dokumen */
         if (d.tipe === 'dokumen' && d.fileUrl) {
             h += '<div class="flex items-center justify-between gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-200 dark:border-indigo-700 mb-3">';
             h += '<div class="flex items-center gap-2"><div class="w-7 h-7 bg-indigo-100 dark:bg-indigo-800 rounded-lg flex items-center justify-center text-sm">📄</div>';
@@ -248,6 +272,8 @@
             h += '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>';
             h += 'Unduh</a></div>';
         }
+
+        /* Link */
         if (d.tipe === 'link' && d.linkUrl) {
             h += '<div class="p-3 bg-sky-50 dark:bg-sky-900/30 rounded-xl border border-sky-200 dark:border-sky-700 mb-3">';
             h += '<p class="text-[10px] text-slate-500 mb-2 font-medium">🔗 Tautan</p>';
@@ -255,15 +281,34 @@
             h += '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>';
             h += e(d.linkLabel || 'Buka Link') + '</a></div>';
         }
+
+        /* Tanggal selesai */
         if (d.tglSelesai) {
             h += '<div class="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700 mb-3">';
             h += '<span>⏰</span><p class="text-[10px] text-amber-700 dark:text-amber-300 font-medium">Berakhir: <strong>' + e(d.tglSelesai) + '</strong></p></div>';
         }
+
         h += '<div class="flex justify-end pt-1"><button onclick="wdgTutup(\'admin\')" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-colors">Tutup</button></div>';
         return h;
     }
-    function e(v) { if(v==null) return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
-    function s(h) { return (h||'').replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<iframe[\s\S]*?<\/iframe>/gi,'').replace(/\bon\w+=["'][^"']*["']/gi,'').replace(/javascript:/gi,'#'); }
+
+    function e(v) {
+        if (v == null) return '';
+        return String(v)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function s(h) {
+        return (h || '')
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+            .replace(/\bon\w+=["'][^"']*["']/gi, '')
+            .replace(/javascript:/gi, '#');
+    }
 })();
 </script>
 @endonce

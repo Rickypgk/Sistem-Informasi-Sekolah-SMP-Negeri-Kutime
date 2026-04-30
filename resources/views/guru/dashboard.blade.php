@@ -17,6 +17,13 @@
      * Meski controller gagal inject, ?? false mencegah undefined error.
      */
     $isWaliKelas = isset($isWaliKelas) ? (bool) $isWaliKelas : false;
+
+    /*
+     * SAFETY CAST — jamin $guruUltah selalu Collection.
+     * Jika controller gagal inject (misal guru belum terdaftar),
+     * widget tidak akan crash karena ada guard @if di dalam partial.
+     */
+    $guruUltah = isset($guruUltah) ? $guruUltah : collect();
 @endphp
 
 <div class="space-y-4">
@@ -46,6 +53,13 @@
             @include('guru.dashboard.announcements')
 
             {{--
+                Widget Ulang Tahun Guru Bulan Ini.
+                Guard @if ada di DALAM partial (ultah_guru.blade.php),
+                sehingga jika $guruUltah kosong, tidak ada HTML yang dirender.
+            --}}
+            @include('guru.dashboard.ultah_guru')
+
+            {{--
                 KUNCI UTAMA: Guard @if($isWaliKelas) di SINI.
                 File wali-kelas-summary hanya di-include
                 jika $isWaliKelas benar-benar true.
@@ -54,12 +68,6 @@
                 @include('guru.dashboard.wali-kelas-summary')
             @endif
 
-        </div>
-        {{-- DEBUG SEMENTARA - hapus setelah konfirmasi --}}
-        <div style="background:#1e293b;color:#4ade80;padding:10px 14px;font-size:11px;font-family:monospace;border-radius:8px;margin-bottom:12px;">
-            isWaliKelas = {{ var_export($isWaliKelas ?? 'UNDEFINED', true) }} |
-            kelasWaliData = {{ $kelasWaliData ? $kelasWaliData->name : 'NULL' }} |
-            totalSiswaWali = {{ $totalSiswaWali ?? 0 }}
         </div>
 
     </div>

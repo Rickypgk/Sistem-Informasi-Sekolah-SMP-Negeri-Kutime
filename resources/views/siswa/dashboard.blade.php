@@ -1,5 +1,11 @@
 {{--
 | resources/views/siswa/dashboard.blade.php
+| Dashboard utama siswa — profesional, efektif, dan rapi.
+|
+| Partial yang di-include:
+|   - siswa.dashboard.stats        → KPI cards
+|   - siswa.dashboard.schedule     → Jadwal hari ini + mingguan
+|   - siswa.dashboard.announcement → Widget pengumuman
 --}}
 
 @extends('layouts.app')
@@ -7,250 +13,359 @@
 
 @section('content')
 
-@php
-    if (!isset($widgetPengumuman)) {
-        $widgetPengumuman = \App\Models\Pengumuman::where('is_active', 1)
-            ->where('show_di_dashboard', 1)
-            ->whereIn('target_audience', ['siswa', 'semua'])
-            ->latest()
-            ->limit(4)
-            ->get();
-    }
-@endphp
+<div class="space-y-5">
 
-{{-- MODAL --}}
-<div id="wdgModal-siswa"
-     onclick="if(event.target===this)wdgTutup('siswa')"
-     class="fixed inset-0 z-[9999] hidden items-center justify-center p-4"
-     style="background:rgba(0,0,0,.65);backdrop-filter:blur(6px)">
-    <div class="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto
-                bg-white dark:bg-slate-800 rounded-3xl shadow-2xl
-                border border-slate-200 dark:border-slate-700">
-        <button onclick="wdgTutup('siswa')"
-                class="absolute top-4 right-4 z-10 w-9 h-9 flex items-center justify-center
-                       bg-slate-100 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-900/40
-                       text-slate-500 hover:text-red-500 rounded-2xl transition-all">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+    {{-- ══════════════════════════════════════════════════════════
+         HERO HEADER
+         ══════════════════════════════════════════════════════════ --}}
+    <div class="relative overflow-hidden rounded-3xl"
+         style="background: linear-gradient(135deg, #1e40af 0%, #2563eb 40%, #0891b2 100%);">
+
+        {{-- Grid pattern overlay --}}
+        <div class="absolute inset-0 opacity-[0.08]" aria-hidden="true">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="hero-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hero-grid)"/>
             </svg>
-        </button>
-        <div id="wdgModalKonten-siswa" class="p-6 sm:p-8"></div>
-    </div>
-</div>
-
-<div class="space-y-6">
-
-    {{-- Header --}}
-    <div class="bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600
-                rounded-3xl p-6 text-white relative overflow-hidden">
-        <div class="relative">
-            <h2 class="text-xl font-bold">
-                Selamat datang, {{ auth()->user()->name ?? 'Siswa' }}! 👋
-            </h2>
-            <p class="text-sky-200 text-sm mt-1">{{ now()->isoFormat('dddd, D MMMM Y') }}</p>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {{-- Konten utama --}}
-        <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-                <p class="text-sm text-slate-500 dark:text-slate-400">Konten dashboard siswa...</p>
-            </div>
         </div>
 
-        {{-- Widget Pengumuman --}}
-        <div class="lg:col-span-1">
-            <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        {{-- Dekorasi lingkaran --}}
+        <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full opacity-10"
+             style="background:radial-gradient(circle, #ffffff 0%, transparent 70%)"></div>
+        <div class="absolute right-8 -bottom-12 w-40 h-40 rounded-full opacity-10"
+             style="background:radial-gradient(circle, #93c5fd 0%, transparent 70%)"></div>
 
-                <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700/50">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600
-                                    flex items-center justify-center text-white text-sm shadow-sm">📢</div>
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Pengumuman</h3>
-                            <p class="text-xs text-slate-400">{{ $widgetPengumuman->count() }} pengumuman</p>
-                        </div>
+        <div class="relative px-6 py-6 sm:py-7">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+                {{-- Kiri: Salam --}}
+                <div class="flex items-center gap-4">
+                    {{-- Avatar inisial --}}
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg
+                                shadow-lg" style="background:rgba(255,255,255,0.2); color: white">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'S', 0, 1)) }}
                     </div>
-                    @if(Route::has('siswa.pengumuman'))
-                    <a href="{{ route('siswa.pengumuman') }}"
-                       class="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center gap-1">
-                        Lihat semua
-                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </a>
-                    @endif
+                    <div>
+                        <p class="text-blue-200 text-xs font-medium">
+                            {{ now()->isoFormat('dddd, D MMMM Y') }}
+                        </p>
+                        <h1 class="text-xl sm:text-2xl font-extrabold text-white leading-tight mt-0.5">
+                            Halo, {{ explode(' ', auth()->user()->name ?? 'Siswa')[0] }}! 👋
+                        </h1>
+                        @if($studyGroup)
+                        <p class="text-blue-200 text-xs mt-1">
+                            Kelas <strong class="text-white">{{ $studyGroup->name }}</strong>
+                            @if($studyGroup->homeroomTeacher)
+                            · Wali: <span class="text-blue-100">{{ $studyGroup->homeroomTeacher->name }}</span>
+                            @endif
+                        </p>
+                        @endif
+                    </div>
                 </div>
 
-                @if($widgetPengumuman->isEmpty())
-                    <div class="px-5 py-10 text-center">
-                        <div class="text-4xl mb-3">📭</div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">Belum ada pengumuman.</p>
+                {{-- Kanan: Jam realtime + info hari --}}
+                <div class="flex items-center gap-3 sm:gap-4">
+                    {{-- Jam --}}
+                    <div class="rounded-2xl px-4 py-2.5 text-center border"
+                         style="background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2)">
+                        <p id="jamSekarang" class="text-2xl font-black text-white leading-none tracking-tight">
+                            {{ now()->format('H:i') }}
+                        </p>
+                        <p class="text-blue-200 text-[10px] mt-0.5 font-medium">WIB</p>
                     </div>
-                @else
-                    <div class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                        @foreach($widgetPengumuman as $item)
-                        @php
-                            $wFileUrl = $item->file_path ? asset('storage/' . $item->file_path) : '';
-                            $wData = [
-                                'judul'         => (string)($item->judul ?? ''),
-                                'isi'           => (string)($item->isi ?? ''),
-                                'tipe'          => (string)($item->tipe_konten ?? 'teks'),
-                                'tipeIcon'      => (string)($item->tipeIcon()),
-                                'audience'      => (string)($item->audienceLabel()),
-                                'audienceColor' => (string)($item->audienceBadgeColor()),
-                                'fileUrl'       => $wFileUrl,
-                                'fileName'      => (string)($item->file_name ?? ''),
-                                'fileExt'       => (string)($item->fileExtension() ?? ''),
-                                'linkUrl'       => (string)($item->link_url ?? ''),
-                                'linkLabel'     => (string)($item->link_label ?? 'Kunjungi Link'),
-                                'tanggal'       => $item->created_at->isoFormat('D MMMM Y, HH:mm'),
-                                'diffHumans'    => $item->created_at->diffForHumans(),
-                                'creator'       => (string)(optional($item->creator)->name ?? 'Admin'),
-                                'tglSelesai'    => $item->tanggal_selesai ? $item->tanggal_selesai->isoFormat('D MMM Y, HH:mm') : '',
-                                'widgetRole'    => 'siswa',
-                            ];
-                            $wJson = json_encode($wData, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE);
-                        @endphp
 
-                        <button type="button"
-                                onclick='wdgBuka({{ $wJson }})'
-                                class="group w-full text-left hover:bg-slate-50 dark:hover:bg-slate-700/40
-                                       transition-colors focus:outline-none overflow-hidden">
-
-                            @if($item->tipe_konten === 'gambar' && $item->file_path)
-                            <div class="w-full h-28 overflow-hidden bg-slate-100 dark:bg-slate-700">
-                                <img src="{{ asset('storage/' . $item->file_path) }}"
-                                     alt="{{ $item->judul }}" loading="lazy"
-                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                     onerror="this.closest('div').innerHTML='<div class=\'w-full h-28 flex flex-col items-center justify-center text-slate-400 text-xs gap-1\'><span class=\'text-2xl\'>🖼️</span><span>Tidak tersedia</span></div>'">
-                            </div>
-                            @endif
-
-                            <div class="flex items-start gap-3 px-5 py-3.5">
-                                @if($item->tipe_konten !== 'gambar')
-                                <div class="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-base mt-0.5
-                                    @if($item->tipe_konten === 'dokumen') bg-indigo-100 dark:bg-indigo-900/40
-                                    @elseif($item->tipe_konten === 'link') bg-sky-100 dark:bg-sky-900/40
-                                    @else bg-emerald-100 dark:bg-emerald-900/40 @endif">
-                                    {{ $item->tipeIcon() }}
-                                </div>
-                                @endif
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-1
-                                              group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                                        {{ $item->judul }}
-                                    </p>
-                                    @if($item->isi && $item->tipe_konten !== 'gambar')
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
-                                        {{ strip_tags($item->isi) }}
-                                    </p>
-                                    @endif
-                                    @if($item->tipe_konten === 'dokumen' && $item->file_path)
-                                    <p class="text-xs font-bold text-indigo-500 mt-0.5">📄 {{ $item->fileExtension() ?: 'FILE' }}</p>
-                                    @endif
-                                    @if($item->tipe_konten === 'link' && $item->link_url)
-                                    <p class="text-xs text-sky-500 mt-0.5 truncate">{{ $item->link_url }}</p>
-                                    @endif
-                                    <span class="text-xs text-slate-400 mt-1 block">
-                                        {{ $item->created_at->diffForHumans() }}
-                                    </span>
-                                </div>
-                                <div class="shrink-0 self-center text-slate-300 dark:text-slate-600
-                                            group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </div>
-                            </div>
-                        </button>
-                        @endforeach
-                    </div>
-                    @if(Route::has('siswa.pengumuman'))
-                    <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-700/50">
-                        <a href="{{ route('siswa.pengumuman') }}"
-                           class="flex items-center justify-center gap-1.5 text-xs font-semibold
-                                  text-sky-600 hover:text-sky-700 transition-colors py-1">
-                            Lihat semua pengumuman
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </a>
+                    {{-- Sesi aktif hari ini --}}
+                    @if($studyGroup)
+                    <div class="rounded-2xl px-4 py-2.5 text-center border"
+                         style="background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.2)">
+                        <p class="text-2xl font-black text-white leading-none">
+                            {{ $jadwalHariIni->count() }}
+                        </p>
+                        <p class="text-blue-200 text-[10px] mt-0.5 font-medium whitespace-nowrap">
+                            Sesi Hari Ini
+                        </p>
                     </div>
                     @endif
-                @endif
+                </div>
             </div>
+
+            {{-- Progress hari sekolah (visual sederhana) --}}
+            @if($studyGroup && $jadwalHariIni->isNotEmpty())
+            @php
+                $jamNow  = \Carbon\Carbon::now();
+                $sorted  = $jadwalHariIni->sortBy('start_time');
+                $firstTt = $sorted->first();
+                $lastTt  = $sorted->last();
+                $mulai   = \Carbon\Carbon::createFromTimeString($firstTt->start_time);
+                $selesai = \Carbon\Carbon::createFromTimeString($lastTt->end_time);
+                $totalMenit = $mulai->diffInMinutes($selesai);
+                $lewat  = max(0, min($totalMenit, $mulai->diffInMinutes($jamNow)));
+                $persen = $totalMenit > 0 ? round($lewat / $totalMenit * 100) : 0;
+            @endphp
+            <div class="mt-5 pt-4" style="border-top:1px solid rgba(255,255,255,0.15)">
+                <div class="flex items-center justify-between mb-1.5">
+                    <p class="text-[11px] text-blue-200 font-medium">
+                        Progres belajar hari ini
+                        ({{ substr($firstTt->start_time,0,5) }} – {{ substr($lastTt->end_time,0,5) }})
+                    </p>
+                    <p class="text-[11px] text-white font-bold">{{ $persen }}%</p>
+                </div>
+                <div class="w-full h-1.5 rounded-full" style="background:rgba(255,255,255,0.2)">
+                    <div class="h-1.5 rounded-full transition-all duration-500"
+                         style="background:rgba(255,255,255,0.9); width:{{ $persen }}%"></div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
+
+    {{-- ══════════════════════════════════════════════════════════
+         STATS / KPI ROW
+         ══════════════════════════════════════════════════════════ --}}
+    @include('siswa.dashboard.stats', [
+        'totalJadwal'      => $totalJadwal,
+        'totalMapel'       => $totalMapel,
+        'totalGuru'        => $totalGuru,
+        'hariAktif'        => $hariAktif,
+        'totalJamPerMinggu'=> $totalJamPerMinggu,
+        'studyGroup'       => $studyGroup,
+    ])
+
+    {{-- ══════════════════════════════════════════════════════════
+         MAIN CONTENT GRID
+         ══════════════════════════════════════════════════════════ --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {{-- ── KOLOM KIRI (2/3): Jadwal + Guru Hari Ini ──────── --}}
+        <div class="lg:col-span-2 space-y-5">
+
+            {{-- Jadwal Hari Ini + Rekap Mingguan --}}
+            @include('siswa.dashboard.schedule', [
+                'studyGroup'       => $studyGroup,
+                'jadwalHariIni'    => $jadwalHariIni,
+                'jadwalByDay'      => $jadwalByDay,
+                'jadwalBerikutnya' => $jadwalBerikutnya,
+                'hariBerikutnya'   => $hariBerikutnya,
+                'hariIni'          => $hariIni,
+                'hariIniDb'        => $hariIniDb,
+            ])
+
+            {{-- ── GURU HARI INI ─────────────────────────────── --}}
+            @if($studyGroup && $jadwalHariIni->isNotEmpty())
+            @php
+                $guruHariIni = $jadwalHariIni
+                    ->groupBy(fn($tt) => $tt->teacher_id ?? 0)
+                    ->map(fn($items) => [
+                        'teacher'  => $items->first()->teacher,
+                        'subjects' => $items->map(fn($t) => [
+                            'name'       => $t->studySubject->name,
+                            'color'      => $t->studySubject->color ?? '#6366f1',
+                            'start'      => substr($t->start_time, 0, 5),
+                            'end'        => substr($t->end_time, 0, 5),
+                            'session'    => $t->session_type,
+                            'room'       => $t->room,
+                        ])->values(),
+                    ])->values();
+            @endphp
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200
+                        dark:border-slate-700 shadow-sm overflow-hidden">
+
+                <div class="flex items-center justify-between px-4 py-3.5 border-b
+                            border-slate-100 dark:border-slate-700/60
+                            bg-gradient-to-r from-amber-50 to-orange-50
+                            dark:from-amber-900/10 dark:to-orange-900/10">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500
+                                    flex items-center justify-center shadow-sm">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                                Guru Mengajar Hari Ini
+                            </h3>
+                            <p class="text-[10px] text-slate-400 leading-none mt-0.5">
+                                {{ $guruHariIni->count() }} guru · {{ $hariIni }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    @foreach($guruHariIni as $entry)
+                    @php $guru = $entry['teacher']; @endphp
+                    <div class="flex flex-col gap-2 p-3.5 rounded-xl border border-slate-100
+                                dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/20
+                                hover:border-amber-200 dark:hover:border-amber-700/50
+                                transition-colors">
+                        {{-- Info guru --}}
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500
+                                        flex items-center justify-center shrink-0 font-bold text-white text-sm">
+                                {{ strtoupper(substr($guru->name ?? 'G', 0, 1)) }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                    {{ $guru->name ?? '-' }}
+                                </p>
+                                <p class="text-[10px] text-slate-400">
+                                    {{ count($entry['subjects']) }} sesi
+                                </p>
+                            </div>
+                        </div>
+                        {{-- Mapel yang diajar --}}
+                        <div class="space-y-1">
+                            @foreach($entry['subjects'] as $subj)
+                            <div class="flex items-center gap-1.5 pl-1">
+                                <div class="w-1.5 h-1.5 rounded-full shrink-0"
+                                     style="background:{{ $subj['color'] }}"></div>
+                                <span class="text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate flex-1">
+                                    {{ $subj['name'] }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-mono shrink-0">
+                                    {{ $subj['start'] }}–{{ $subj['end'] }}
+                                </span>
+                                @if($subj['room'])
+                                <span class="text-[9px] text-slate-400 shrink-0">
+                                    · {{ $subj['room'] }}
+                                </span>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+        </div>
+
+        {{-- ── KOLOM KANAN (1/3): Pengumuman + Info Kelas ─────── --}}
+        <div class="lg:col-span-1 space-y-4">
+
+            {{-- Widget Pengumuman --}}
+            @include('siswa.dashboard.announcement', [
+                'widgetPengumuman' => $widgetPengumuman,
+            ])
+
+            {{-- Info Kelas --}}
+            @if($studyGroup)
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200
+                        dark:border-slate-700 shadow-sm overflow-hidden">
+
+                <div class="px-4 py-3.5 border-b border-slate-100 dark:border-slate-700/60
+                            bg-gradient-to-r from-violet-50 to-purple-50
+                            dark:from-violet-900/10 dark:to-purple-900/10">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                        Info Kelas
+                    </h3>
+                    <p class="text-[10px] text-slate-400 mt-0.5">
+                        {{ $studyGroup->name }} · {{ $studyGroup->academic_year }}
+                    </p>
+                </div>
+
+                <div class="p-4 space-y-3">
+                    @php
+                        $infoItems = [
+                            ['icon' => '🏫', 'label' => 'Kelas',       'val' => $studyGroup->name],
+                            ['icon' => '📅', 'label' => 'Tahun Ajaran', 'val' => $studyGroup->academic_year ?? '-'],
+                            ['icon' => '📖', 'label' => 'Semester',     'val' => 'Semester ' . ($studyGroup->semester ?? '-')],
+                        ];
+                        if ($studyGroup->homeroomTeacher) {
+                            $infoItems[] = [
+                                'icon'  => '👩‍🏫',
+                                'label' => 'Wali Kelas',
+                                'val'   => $studyGroup->homeroomTeacher->name,
+                            ];
+                        }
+                        if (isset($studyGroup->students_count) || method_exists($studyGroup, 'students')) {
+                            $jumlahSiswa = is_numeric($studyGroup->students_count ?? null)
+                                ? $studyGroup->students_count
+                                : optional($studyGroup->students)->count();
+                            if ($jumlahSiswa !== null) {
+                                $infoItems[] = ['icon' => '👥', 'label' => 'Jumlah Siswa', 'val' => $jumlahSiswa . ' siswa'];
+                            }
+                        }
+                    @endphp
+
+                    @foreach($infoItems as $info)
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base shrink-0 leading-none">{{ $info['icon'] }}</span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] text-slate-400 leading-none">{{ $info['label'] }}</p>
+                            <p class="text-xs font-semibold text-slate-700 dark:text-slate-200 mt-0.5 truncate">
+                                {{ $info['val'] }}
+                            </p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Quick Links --}}
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200
+                        dark:border-slate-700 shadow-sm p-4">
+                <h3 class="text-xs font-bold text-slate-700 dark:text-slate-200 mb-3">Menu Cepat</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    @php
+                        $quickLinks = [
+                            ['label' => 'Jadwal',       'icon' => '🗓️', 'color' => 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100',   'route' => 'siswa.jadwal'],
+                            ['label' => 'Pengumuman',   'icon' => '📢', 'color' => 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 hover:bg-sky-100',               'route' => 'siswa.pengumuman'],
+                            ['label' => 'Nilai',        'icon' => '📊', 'color' => 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100', 'route' => 'siswa.nilai'],
+                            ['label' => 'Absensi',      'icon' => '✅', 'color' => 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100',     'route' => 'siswa.absensi'],
+                        ];
+                    @endphp
+                    @foreach($quickLinks as $ql)
+                    @if(Route::has($ql['route']))
+                    <a href="{{ route($ql['route']) }}"
+                       class="flex flex-col items-center justify-center gap-1.5 py-3 px-2
+                              rounded-xl text-center transition-all {{ $ql['color'] }}
+                              active:scale-95">
+                        <span class="text-xl leading-none">{{ $ql['icon'] }}</span>
+                        <span class="text-[10px] font-semibold leading-tight">{{ $ql['label'] }}</span>
+                    </a>
+                    @else
+                    <div class="flex flex-col items-center justify-center gap-1.5 py-3 px-2
+                                rounded-xl text-center bg-slate-50 dark:bg-slate-900/20
+                                text-slate-400 cursor-not-allowed opacity-60">
+                        <span class="text-xl leading-none">{{ $ql['icon'] }}</span>
+                        <span class="text-[10px] font-semibold leading-tight">{{ $ql['label'] }}</span>
+                    </div>
+                    @endif
+                    @endforeach
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 
+@push('scripts')
 <script>
-(function () {
-    'use strict';
-    window.wdgBuka = function (d) {
-        var role = d.widgetRole || 'siswa';
-        var k = document.getElementById('wdgModalKonten-' + role);
-        var o = document.getElementById('wdgModal-' + role);
-        if (!k || !o) return;
-        k.innerHTML = wdgHtml(d);
-        o.classList.remove('hidden'); o.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    };
-    window.wdgTutup = function (role) {
-        var o = document.getElementById('wdgModal-' + (role||'siswa'));
-        if (!o) return;
-        o.classList.add('hidden'); o.classList.remove('flex');
-        document.body.style.overflow = '';
-    };
-    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') wdgTutup('siswa'); });
-
-    function wdgHtml(d) {
-        var h = '';
-        h += '<div class="flex items-start gap-4 mb-5 pr-10"><div class="text-3xl shrink-0 mt-0.5">' + d.tipeIcon + '</div><div class="flex-1 min-w-0">';
-        h += '<h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 leading-snug break-words">' + e(d.judul) + '</h2>';
-        h += '<div class="flex gap-2 mt-2 flex-wrap"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ' + d.audienceColor + '">' + e(d.audience) + '</span>';
-        h += '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 capitalize">' + e(d.tipe) + '</span></div></div></div>';
-        h += '<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400 mb-5 pb-5 border-b border-slate-200 dark:border-slate-700">';
-        h += '<span>📅 ' + e(d.tanggal) + '</span><span>👤 ' + e(d.creator) + '</span><span>🕐 ' + e(d.diffHumans) + '</span></div>';
-        if (d.tipe==='gambar') {
-            if (d.fileUrl) {
-                h += '<div class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-600 mb-5 bg-slate-50 dark:bg-slate-900 flex items-center justify-center min-h-[100px]">';
-                h += '<img src="'+d.fileUrl+'" alt="'+e(d.judul)+'" class="w-full max-h-[420px] object-contain block" onerror="this.closest(\'div\').innerHTML=\'<div class=\\\"p-8 text-center\\\"><div class=\\\"text-5xl mb-3\\\">🖼️</div><p class=\\\"text-sm text-slate-400\\\">Gambar tidak dapat dimuat.</p></div>\'">';
-                h += '</div>';
-            } else { h += '<div class="p-8 mb-5 bg-slate-50 rounded-2xl text-center"><div class="text-4xl mb-2">🖼️</div><p class="text-sm text-slate-400">Tidak ada gambar.</p></div>'; }
-        }
-        if (d.isi && d.isi.trim()) {
-            var t = /<[a-z][\s\S]*>/i.test(d.isi);
-            h += t ? '<div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-5 prose prose-sm dark:prose-invert max-w-none">'+s(d.isi)+'</div>'
-                   : '<div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-5 whitespace-pre-line">'+e(d.isi)+'</div>';
-        }
-        if (d.tipe==='dokumen') {
-            if (d.fileUrl) {
-                h += '<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl border border-indigo-200 dark:border-indigo-700 mb-5">';
-                h += '<div class="flex items-center gap-3"><div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-2xl">📄</div>';
-                h += '<div><p class="text-sm font-bold text-indigo-700">'+e(d.fileExt||'FILE')+' Dokumen</p><p class="text-xs text-slate-400 max-w-[200px] truncate">'+e(d.fileName)+'</p></div></div>';
-                h += '<a href="'+d.fileUrl+'" target="_blank" download onclick="event.stopPropagation()" class="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl no-underline">⬇️ Unduh</a></div>';
-            } else { h += '<div class="p-8 mb-5 bg-slate-50 rounded-2xl text-center"><div class="text-4xl mb-2">📄</div><p class="text-sm text-slate-400">Tidak ada dokumen.</p></div>'; }
-        }
-        if (d.tipe==='link') {
-            if (d.linkUrl) {
-                h += '<div class="p-4 bg-sky-50 dark:bg-sky-900/30 rounded-2xl border border-sky-200 dark:border-sky-700 mb-5">';
-                h += '<p class="text-xs text-slate-500 mb-3 font-medium">🔗 Tautan Pengumuman</p>';
-                h += '<a href="'+d.linkUrl+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-xl no-underline">🔗 '+e(d.linkLabel||'Kunjungi Link')+'</a>';
-                h += '<p class="text-xs text-slate-400 mt-2 break-all">'+e(d.linkUrl)+'</p></div>';
-            } else { h += '<div class="p-8 mb-5 bg-slate-50 rounded-2xl text-center"><div class="text-4xl mb-2">🔗</div><p class="text-sm text-slate-400">Tidak ada tautan.</p></div>'; }
-        }
-        if (d.tglSelesai) {
-            h += '<div class="flex items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-700 mb-4"><span class="text-xl">⏰</span><p class="text-xs text-amber-700 dark:text-amber-300 font-medium">Berakhir: <strong>'+e(d.tglSelesai)+'</strong></p></div>';
-        }
-        h += '<div class="flex justify-end pt-2"><button onclick="wdgTutup(\'siswa\')" class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-semibold rounded-2xl">Tutup</button></div>';
-        return h;
+/* Update jam realtime */
+(function(){
+    function updateClock(){
+        var el = document.getElementById('jamSekarang');
+        if(!el) return;
+        var now = new Date();
+        var h = String(now.getHours()).padStart(2,'0');
+        var m = String(now.getMinutes()).padStart(2,'0');
+        el.textContent = h + ':' + m;
     }
-    function e(v){if(v==null)return '';return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
-    function s(h){return(h||'').replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<iframe[\s\S]*?<\/iframe>/gi,'').replace(/\bon\w+=["'][^"']*["']/gi,'').replace(/javascript:/gi,'#');}
+    setInterval(updateClock, 10000);
 })();
 </script>
+@endpush
 
 @endsection

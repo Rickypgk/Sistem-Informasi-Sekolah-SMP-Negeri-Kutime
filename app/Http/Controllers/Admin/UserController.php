@@ -1111,4 +1111,18 @@ class UserController extends Controller
         $str = trim((string) $value);
         return ($str === '' || $str === 'null') ? null : $str;
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = array_filter(explode(',', $request->input('ids', '')));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Tidak ada user yang dipilih.');
+        }
+
+        $count = User::whereIn('id', $ids)->count();
+        User::whereIn('id', $ids)->delete();
+
+        return back()->with('success', "{$count} user berhasil dihapus.");
+    }
 }

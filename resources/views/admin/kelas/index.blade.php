@@ -138,6 +138,41 @@
         </select>
     </div>
 
+    {{-- ── Bulk Action Bar (muncul saat ada checkbox yang dipilih) ── --}}
+    <div id="bulkActionBar"
+         class="hidden items-center justify-between gap-3 px-4 py-2.5 rounded-xl
+                bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800
+                transition-all">
+        <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-xs font-semibold text-red-700 dark:text-red-300">
+                <span id="selectedCount">0</span> kelas dipilih
+            </span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="deselectAll()"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300
+                           dark:border-slate-600 text-slate-600 dark:text-slate-300 text-xs font-medium
+                           hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                Batal Pilih
+            </button>
+            <button onclick="openBulkDeleteModal()"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600
+                           text-white text-xs font-semibold hover:bg-red-700 active:scale-95 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0
+                             01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0
+                             00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Hapus yang Dipilih
+            </button>
+        </div>
+    </div>
+
     {{-- ── Tabel ───────────────────────────────────────────────── --}}
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200
                 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -146,6 +181,14 @@
                 <thead>
                     <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200
                                dark:border-slate-700 text-left">
+                        {{-- ── Checkbox Select All ── --}}
+                        <th class="px-3 py-2.5 w-8">
+                            <input type="checkbox" id="checkboxSelectAll"
+                                   onclick="toggleSelectAll(this)"
+                                   class="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600
+                                          text-indigo-600 focus:ring-indigo-300 cursor-pointer
+                                          accent-indigo-600">
+                        </th>
                         <th class="px-3 py-2.5 text-[10px] font-semibold text-slate-500
                                    dark:text-slate-400 uppercase tracking-wide w-7">#</th>
                         <th class="px-3 py-2.5 text-[10px] font-semibold text-slate-500
@@ -185,9 +228,21 @@
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
 
                     @forelse($kelas as $i => $k)
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors searchable-row"
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors searchable-row
+                                   selected:bg-red-50 dark:selected:bg-red-900/10"
+                            id="row-{{ $k->id }}"
                             data-semester="{{ $k->semester }}"
                             data-tingkat="{{ $k->grade }}">
+
+                            {{-- ── Checkbox per baris ── --}}
+                            <td class="px-3 py-2.5">
+                                <input type="checkbox"
+                                       class="row-checkbox w-3.5 h-3.5 rounded border-slate-300
+                                              dark:border-slate-600 text-indigo-600
+                                              focus:ring-indigo-300 cursor-pointer accent-indigo-600"
+                                       value="{{ $k->id }}"
+                                       onchange="onRowCheckboxChange()">
+                            </td>
 
                             <td class="px-3 py-2.5 text-[10px] text-slate-400">{{ $i + 1 }}</td>
 
@@ -342,7 +397,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-4 py-14 text-center">
+                            <td colspan="11" class="px-4 py-14 text-center">
                                 <div class="flex flex-col items-center gap-2 text-slate-400">
                                     <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700
                                                 flex items-center justify-center">
@@ -377,10 +432,6 @@
 </div>
 
 {{-- ── Data JSON untuk modal edit ── --}}
-{{--
-    Semua field disertakan di sini agar JS bisa mengisi form edit dengan lengkap:
-    academic_year, semester, dan room adalah field yang sering hilang.
---}}
 <script id="kelasData" type="application/json">
 {!! json_encode(
     $kelas->map(fn($k) => [
@@ -402,6 +453,70 @@
 @include('admin.kelas._modal_edit',   ['gurus' => $gurus])
 @include('admin.kelas._modal_hapus')
 
+{{-- ── Modal Hapus Massal ─────────────────────────────────────────────────── --}}
+<div id="modalHapusMassal"
+     class="hidden fixed inset-0 z-50 items-center justify-center p-4
+            bg-black/40 backdrop-blur-sm">
+    <div class="animate-modal bg-white dark:bg-slate-800 rounded-2xl shadow-xl
+                border border-slate-200 dark:border-slate-700 w-full max-w-sm p-5">
+
+        {{-- Icon --}}
+        <div class="flex items-center justify-center w-12 h-12 rounded-2xl
+                    bg-red-100 dark:bg-red-900/30 mx-auto mb-4">
+            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none"
+                 stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0
+                         01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0
+                         00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+        </div>
+
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 text-center mb-1">
+            Konfirmasi Hapus Massal
+        </h3>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 text-center mb-1">
+            Kamu akan menghapus
+            <strong class="text-red-600 dark:text-red-400" id="bulkDeleteCount">0</strong>
+            kelas yang dipilih:
+        </p>
+
+        {{-- Daftar nama kelas yang akan dihapus --}}
+        <div id="bulkDeleteList"
+             class="mt-2 mb-4 max-h-36 overflow-y-auto rounded-xl border border-slate-200
+                    dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-3 py-2 space-y-1">
+        </div>
+
+        <p class="text-[10px] text-slate-400 dark:text-slate-500 text-center mb-4">
+            Tindakan ini <strong class="text-red-500">tidak dapat dibatalkan</strong>.
+            Pastikan data yang dihapus sudah benar.
+        </p>
+
+        <div class="flex gap-2">
+            <button onclick="closeModal('modalHapusMassal')"
+                    class="flex-1 px-4 py-2 rounded-xl border border-slate-200
+                           dark:border-slate-700 text-xs font-semibold text-slate-600
+                           dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                Batal
+            </button>
+            <form id="formHapusMassal"
+                  action="{{ route('admin.kelas.bulk-destroy') }}"
+                  method="POST"
+                  class="flex-1">
+                @csrf
+                @method('DELETE')
+                {{-- Hidden inputs untuk IDs akan diisi oleh JS --}}
+                <div id="bulkDeleteInputs"></div>
+                <button type="submit"
+                        class="w-full px-4 py-2 rounded-xl bg-red-600 text-white text-xs
+                               font-semibold hover:bg-red-700 active:scale-95 transition">
+                    Ya, Hapus Semua
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('styles')
 <style>
     .animate-modal {
@@ -411,6 +526,14 @@
         from { opacity:0; transform:scale(.92) translateY(10px); }
         to   { opacity:1; transform:scale(1)   translateY(0); }
     }
+
+    /* Row highlight saat checkbox dicentang */
+    .row-selected {
+        background-color: rgb(254 242 242) !important;  /* red-50 */
+    }
+    .dark .row-selected {
+        background-color: rgb(127 29 29 / 0.15) !important;
+    }
 </style>
 @endpush
 
@@ -419,7 +542,9 @@
 // ── Data kelas dari server ────────────────────────────────────────────────────
 const KELAS_DATA = JSON.parse(document.getElementById('kelasData').textContent);
 
-/* ── Modal helpers ── */
+/* ────────────────────────────────────────────────────────────────────────────
+   Modal helpers
+──────────────────────────────────────────────────────────────────────────── */
 function openModal(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -438,11 +563,143 @@ function closeModal(id) {
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-        ['modalTambahKelas', 'modalEditKelas', 'modalHapusKelas'].forEach(closeModal);
+        ['modalTambahKelas', 'modalEditKelas', 'modalHapusKelas', 'modalHapusMassal']
+            .forEach(closeModal);
     }
 });
 
-// ── Buka modal edit — isi SEMUA field termasuk semester, tahun ajaran, ruang ──
+/* ────────────────────────────────────────────────────────────────────────────
+   Checkbox — Select All / Per Baris
+──────────────────────────────────────────────────────────────────────────── */
+
+/** Kembalikan semua checkbox baris yang sedang terlihat (tidak hidden oleh filter) */
+function getVisibleCheckboxes() {
+    return Array.from(document.querySelectorAll('.row-checkbox')).filter(cb => {
+        const row = cb.closest('tr');
+        return row && row.style.display !== 'none';
+    });
+}
+
+/** Kembalikan semua checkbox yang sudah dicentang */
+function getCheckedCheckboxes() {
+    return Array.from(document.querySelectorAll('.row-checkbox:checked'));
+}
+
+/** Toggle highlight warna pada baris */
+function updateRowHighlight(checkbox) {
+    const row = checkbox.closest('tr');
+    if (!row) return;
+    if (checkbox.checked) {
+        row.classList.add('row-selected');
+    } else {
+        row.classList.remove('row-selected');
+    }
+}
+
+/** Sinkron state checkbox "select all" di header */
+function syncSelectAllCheckbox() {
+    const all      = getVisibleCheckboxes();
+    const checked  = all.filter(cb => cb.checked);
+    const selectAll = document.getElementById('checkboxSelectAll');
+    if (!selectAll) return;
+
+    if (checked.length === 0) {
+        selectAll.checked       = false;
+        selectAll.indeterminate = false;
+    } else if (checked.length === all.length) {
+        selectAll.checked       = true;
+        selectAll.indeterminate = false;
+    } else {
+        selectAll.checked       = false;
+        selectAll.indeterminate = true;  // sebagian terpilih
+    }
+}
+
+/** Update bulk action bar — tampilkan/sembunyikan dan update counter */
+function updateBulkBar() {
+    const checked = getCheckedCheckboxes();
+    const bar     = document.getElementById('bulkActionBar');
+    const counter = document.getElementById('selectedCount');
+
+    if (!bar || !counter) return;
+
+    if (checked.length > 0) {
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+    } else {
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+    }
+    counter.textContent = checked.length;
+}
+
+/** Dipanggil saat checkbox header diklik */
+function toggleSelectAll(masterCb) {
+    const visible = getVisibleCheckboxes();
+    visible.forEach(cb => {
+        cb.checked = masterCb.checked;
+        updateRowHighlight(cb);
+    });
+    syncSelectAllCheckbox();
+    updateBulkBar();
+}
+
+/** Dipanggil saat checkbox per baris berubah */
+function onRowCheckboxChange() {
+    // update highlight baris yang berubah
+    document.querySelectorAll('.row-checkbox').forEach(updateRowHighlight);
+    syncSelectAllCheckbox();
+    updateBulkBar();
+}
+
+/** Batalkan semua pilihan */
+function deselectAll() {
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.checked = false;
+        updateRowHighlight(cb);
+    });
+    const selectAll = document.getElementById('checkboxSelectAll');
+    if (selectAll) {
+        selectAll.checked       = false;
+        selectAll.indeterminate = false;
+    }
+    updateBulkBar();
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Modal Hapus Massal
+──────────────────────────────────────────────────────────────────────────── */
+function openBulkDeleteModal() {
+    const checked = getCheckedCheckboxes();
+    if (checked.length === 0) return;
+
+    const ids   = checked.map(cb => cb.value);
+    const names = ids.map(id => KELAS_DATA[id]?.name ?? 'Kelas #' + id);
+
+    // Update counter
+    document.getElementById('bulkDeleteCount').textContent = ids.length;
+
+    // Render daftar nama
+    const listEl = document.getElementById('bulkDeleteList');
+    listEl.innerHTML = names.map(name => `
+        <div class="flex items-center gap-1.5">
+            <span class="w-1 h-1 rounded-full bg-red-400 shrink-0 inline-block"></span>
+            <span class="text-[11px] text-slate-700 dark:text-slate-300">${name}</span>
+        </div>
+    `).join('');
+
+    // Isi hidden inputs untuk form
+    const inputsEl = document.getElementById('bulkDeleteInputs');
+    inputsEl.innerHTML = ids.map(id =>
+        `<input type="hidden" name="ids[]" value="${id}">`
+    ).join('');
+
+    openModal('modalHapusMassal');
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Modal Edit Kelas
+──────────────────────────────────────────────────────────────────────────── */
 function openEditKelasModal(kelasId) {
     const d = KELAS_DATA[kelasId];
     if (!d) {
@@ -450,7 +707,6 @@ function openEditKelasModal(kelasId) {
         return;
     }
 
-    // Helper: set value atau fallback ke string kosong
     const set = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.value = (val !== null && val !== undefined) ? String(val) : '';
@@ -461,32 +717,33 @@ function openEditKelasModal(kelasId) {
         if (el) el.checked = !!val;
     };
 
-    // ── Isi semua field ──────────────────────────────────────────
     set('editKelasName',            d.name);
     set('editKelasGrade',           d.grade);
     set('editKelasSection',         d.section);
-    set('editKelasAcademicYear',    d.academic_year);   // ← FIELD UTAMA YG SERING HILANG
-    set('editKelasSemester',        d.semester);        // ← FIELD UTAMA YG SERING HILANG
-    set('editKelasRoom',            d.room);            // ← FIELD UTAMA YG SERING HILANG
+    set('editKelasAcademicYear',    d.academic_year);
+    set('editKelasSemester',        d.semester);
+    set('editKelasRoom',            d.room);
     set('editKelasCapacity',        d.capacity);
     set('editKelasHomeroomTeacher', d.homeroom_teacher_id);
     setCheck('editKelasIsActive',   d.is_active);
 
-    // ── Set action form ke URL edit yang benar ───────────────────
-    document.getElementById('formEditKelas').action =
-        '/admin/kelas/' + kelasId;
+    document.getElementById('formEditKelas').action = '/admin/kelas/' + kelasId;
 
     openModal('modalEditKelas');
 }
 
-// ── Buka modal hapus ──────────────────────────────────────────────────────────
+/* ────────────────────────────────────────────────────────────────────────────
+   Modal Hapus (single)
+──────────────────────────────────────────────────────────────────────────── */
 function openDeleteModal(kelasId, kelasNama) {
     document.getElementById('deleteKelasName').textContent = kelasNama;
     document.getElementById('formHapusKelas').action = '/admin/kelas/' + kelasId;
     openModal('modalHapusKelas');
 }
 
-// ── Search & filter ───────────────────────────────────────────────────────────
+/* ────────────────────────────────────────────────────────────────────────────
+   Search & Filter
+──────────────────────────────────────────────────────────────────────────── */
 function filterRows() {
     const q   = (document.getElementById('searchInput')?.value ?? '').toLowerCase();
     const sem = document.getElementById('filterSemester')?.value ?? '';
@@ -498,13 +755,19 @@ function filterRows() {
         const matchTkt  = !tkt || row.dataset.tingkat  === tkt;
         row.style.display = (matchText && matchSem && matchTkt) ? '' : 'none';
     });
+
+    // Setelah filter, sinkron kembali checkbox select-all dan bulk bar
+    syncSelectAllCheckbox();
+    updateBulkBar();
 }
 
 document.getElementById('searchInput')?.addEventListener('input', filterRows);
 document.getElementById('filterSemester')?.addEventListener('change', filterRows);
 document.getElementById('filterTingkat')?.addEventListener('change', filterRows);
 
-// ── Auto-buka modal tambah jika ada validation error ─────────────────────────
+/* ────────────────────────────────────────────────────────────────────────────
+   Auto-buka modal tambah jika ada validation error
+──────────────────────────────────────────────────────────────────────────── */
 @if($errors->any())
     document.addEventListener('DOMContentLoaded', () => openModal('modalTambahKelas'));
 @endif

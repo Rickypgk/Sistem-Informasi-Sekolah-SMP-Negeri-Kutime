@@ -280,4 +280,11 @@ class KelasController extends Controller
             ? now()->year . '/' . (now()->year + 1)
             : (now()->year - 1) . '/' . now()->year;
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer|exists:kelas,id']);
+        Kelas::whereIn('id', $request->ids)->delete();
+        return back()->with('success', count($request->ids) . ' kelas berhasil dihapus.');
+    }
 }

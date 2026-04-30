@@ -8,6 +8,7 @@ use App\Models\Siswa;
 use App\Models\AbsensiSiswa;
 use App\Models\Timetable;
 use App\Models\Kelas;
+use App\Models\Guru;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Carbon;
@@ -15,6 +16,108 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    /**
+     * ══════════════════════════════════════════════════════════════
+     * SINGLE SOURCE OF TRUTH — resolveKelasWali()
+     *
+     * Method ini IDENTIK dengan ProfilController::resolveKelasWali()
+     * dan WaliKelasController (asumsi query dari kelas_id di guru).
+     *
+     * URUTAN PRIORITAS (dari yang paling reliable):
+     *   1. kelas_id di tabel guru   ← FK langsung, paling akurat
+     *   2. relasi kelas() di model Guru
+     *   3. wali_guru_id di tabel kelas
+     *   4. wali_kelas_id di tabel kelas
+     *   5. wali_id di tabel kelas
+     *   6. guru_id + is_wali di tabel kelas
+     *   7. relasi waliKelas() di model Guru
+     *   8. isWaliKelas() di User model
+     *
+     * KENAPA urutan ini?
+     * FK di tabel guru (kelas_id) adalah data yang diisi via form Profil
+     * → paling sinkron dengan apa yang tampil di halaman Profil.
+     * FK di tabel kelas (wali_guru_id dll) bisa stale/tidak sinkron.
+     * ══════════════════════════════════════════════════════════════
+     */
+    private function resolveKelasWali($guru, $user): ?Kelas
+    {
+        if (!$guru) return null;
+
+        $kelasWali = null;
+
+        try {
+            /* ── Strategi 1: kolom kelas_id di tabel guru (PRIORITAS TERTINGGI) ──
+             * Ini yang dipakai halaman Profil saat simpan form.
+             * Paling sinkron dengan data profil guru.
+             */
+            $guruColumns = Schema::getColumnListing(
+                Schema::hasTable('guru') ? 'guru' : 'gurus'
+            );
+            if (in_array('kelas_id', $guruColumns) && !empty($guru->kelas_id)) {
+                $kelasWali = Kelas::find($guru->kelas_id);
+            }
+
+            /* ── Strategi 2: relasi kelas() langsung di model Guru ── */
+            if (!$kelasWali && method_exists($guru, 'kelas')) {
+                try {
+                    $kls = $guru->kelas instanceof Kelas
+                        ? $guru->kelas
+                        : $guru->kelas()->first();
+                    if ($kls instanceof Kelas) {
+                        $kelasWali = $kls;
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            /* ── Strategi 3–6: kolom FK di tabel kelas (fallback) ── */
+            $kelasColumns = Schema::getColumnListing('kelas');
+
+            if (!$kelasWali && in_array('wali_guru_id', $kelasColumns)) {
+                $kelasWali = Kelas::where('wali_guru_id', $guru->id)->first();
+            }
+            if (!$kelasWali && in_array('wali_kelas_id', $kelasColumns)) {
+                $kelasWali = Kelas::where('wali_kelas_id', $guru->id)->first();
+            }
+            if (!$kelasWali && in_array('wali_id', $kelasColumns)) {
+                $kelasWali = Kelas::where('wali_id', $guru->id)->first();
+            }
+            if (!$kelasWali && in_array('guru_id', $kelasColumns) && in_array('is_wali', $kelasColumns)) {
+                $kelasWali = Kelas::where('guru_id', $guru->id)->where('is_wali', true)->first();
+            }
+
+            /* ── Strategi 7: relasi waliKelas() di model Guru ── */
+            if (!$kelasWali && method_exists($guru, 'waliKelas')) {
+                try {
+                    $wk = $guru->waliKelas()->first();
+                    $kls = $wk?->kelas ?? $wk ?? null;
+                    if ($kls instanceof Kelas) {
+                        $kelasWali = $kls;
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            /* ── Strategi 8: isWaliKelas() di User model ── */
+            if (!$kelasWali && method_exists($user, 'isWaliKelas') && $user->isWaliKelas()) {
+                if (method_exists($user, 'kelasWali')) {
+                    try {
+                        $kls = $user->kelasWali()->first();
+                        if ($kls instanceof Kelas) {
+                            $kelasWali = $kls;
+                        }
+                    } catch (\Exception $e) {}
+                }
+            }
+
+        } catch (\Exception $e) {
+            $kelasWali = null;
+        }
+
+        return ($kelasWali instanceof Kelas) ? $kelasWali : null;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       INDEX
+    ══════════════════════════════════════════════════════════════ */
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -38,11 +141,34 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
+           2. ULANG TAHUN GURU BULAN INI
+        ───────────────────────────────────────────────────────── */
+        $guruUltah = collect();
+        try {
+            $bulanSekarang = Carbon::now()->month;
+            $hariSekarang  = Carbon::now()->day;
+
+            $guruUltah = Guru::whereNotNull('tanggal_lahir')
+                ->whereMonth('tanggal_lahir', $bulanSekarang)
+                ->orderByRaw('DAY(tanggal_lahir) ASC')
+                ->get()
+                ->map(function ($g) use ($hariSekarang) {
+                    $g->ultah_hari_ini = (int) Carbon::parse($g->tanggal_lahir)->format('d') === $hariSekarang;
+                    return $g;
+                })
+                ->sortByDesc('ultah_hari_ini')
+                ->values();
+        } catch (\Exception $e) {
+            $guruUltah = collect();
+        }
+
+        /* ─────────────────────────────────────────────────────────
            DEFAULT jika guru belum terdaftar
         ───────────────────────────────────────────────────────── */
         if (!$guru) {
             return view('guru.dashboard', [
                 'widgetPengumuman'    => $widgetPengumuman,
+                'guruUltah'           => $guruUltah,
                 'totalSiswa'          => 0,
                 'kehadiranPct'        => 0,
                 'siswaRisiko'         => 0,
@@ -64,70 +190,12 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           2. DETEKSI WALI KELAS — MULTI-STRATEGY
-              Mencoba SEMUA kemungkinan struktur DB secara berurutan.
-              Berhenti di strategi pertama yang berhasil.
+           3. DETEKSI WALI KELAS
+              Gunakan resolveKelasWali() — SAMA dengan ProfilController
+              sehingga hasil selalu konsisten di semua halaman.
         ───────────────────────────────────────────────────────── */
-        $isWaliKelas   = false;
-        $kelasWaliData = null;
-
-        try {
-            $kelasColumns = Schema::getColumnListing('kelas');
-
-            /* ── Strategi A: kolom wali_guru_id di tabel kelas ── */
-            if (!$kelasWaliData && in_array('wali_guru_id', $kelasColumns)) {
-                $kelasWaliData = Kelas::where('wali_guru_id', $guru->id)->first();
-            }
-
-            /* ── Strategi B: kolom wali_kelas_id di tabel kelas ── */
-            if (!$kelasWaliData && in_array('wali_kelas_id', $kelasColumns)) {
-                $kelasWaliData = Kelas::where('wali_kelas_id', $guru->id)->first();
-            }
-
-            /* ── Strategi C: kolom guru_id dengan flag is_wali ── */
-            if (!$kelasWaliData && in_array('guru_id', $kelasColumns) && in_array('is_wali', $kelasColumns)) {
-                $kelasWaliData = Kelas::where('guru_id', $guru->id)->where('is_wali', true)->first();
-            }
-
-            /* ── Strategi D: kolom wali_id di tabel kelas ── */
-            if (!$kelasWaliData && in_array('wali_id', $kelasColumns)) {
-                $kelasWaliData = Kelas::where('wali_id', $guru->id)->first();
-            }
-
-            /* ── Strategi E: relasi guru->waliKelas (jika ada di model Guru) ── */
-            if (!$kelasWaliData && $guru->relationLoaded('waliKelas')) {
-                $wk = $guru->waliKelas;
-                $kelasWaliData = $wk?->kelas ?? $wk ?? null;
-            }
-            if (!$kelasWaliData && method_exists($guru, 'waliKelas')) {
-                try {
-                    $wk = $guru->waliKelas()->first();
-                    $kelasWaliData = $wk?->kelas ?? $wk ?? null;
-                } catch (\Exception $e) {}
-            }
-
-            /* ── Strategi F: method isWaliKelas() di User model ── */
-            if (!$kelasWaliData && method_exists($user, 'isWaliKelas') && $user->isWaliKelas()) {
-                // Coba dapat kelas dari relasi user->guru->kelas
-                if (method_exists($user, 'kelasWali')) {
-                    try { $kelasWaliData = $user->kelasWali()->first(); } catch (\Exception $e) {}
-                }
-            }
-
-            /* ── Strategi G: kolom wali_guru_id di tabel guru (jika ada) ── */
-            if (!$kelasWaliData) {
-                $guruColumns = Schema::getColumnListing('guru');
-                if (in_array('kelas_id', $guruColumns) && !empty($guru->kelas_id)) {
-                    $kelasWaliData = Kelas::find($guru->kelas_id);
-                }
-            }
-
-            $isWaliKelas = !is_null($kelasWaliData);
-
-        } catch (\Exception $e) {
-            $isWaliKelas   = false;
-            $kelasWaliData = null;
-        }
+        $kelasWaliData = $this->resolveKelasWali($guru, $user);
+        $isWaliKelas   = !is_null($kelasWaliData);
 
         /* ── Nama & jumlah siswa wali kelas ── */
         $namaKelasWali  = null;
@@ -145,7 +213,7 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           3. STUDY GROUP IDs dari Timetable
+           4. STUDY GROUP IDs dari Timetable
         ───────────────────────────────────────────────────────── */
         $studyGroupIds = collect();
         try {
@@ -173,12 +241,12 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           4. TOTAL SISWA
+           5. TOTAL SISWA
         ───────────────────────────────────────────────────────── */
         $totalSiswa = $siswaIds->count();
 
         /* ─────────────────────────────────────────────────────────
-           5. KPI KEHADIRAN BULAN INI
+           6. KPI KEHADIRAN BULAN INI
         ───────────────────────────────────────────────────────── */
         $bulanIni     = Carbon::now()->month;
         $tahunIni     = Carbon::now()->year;
@@ -196,7 +264,7 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           6. ABSENSI HARI INI
+           7. ABSENSI HARI INI
         ───────────────────────────────────────────────────────── */
         $today          = Carbon::today();
         $absensiHariIni = ['hadir'=>0,'sakit'=>0,'izin'=>0,'alpha'=>0];
@@ -213,7 +281,7 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           7. SISWA BERISIKO
+           8. SISWA BERISIKO
         ───────────────────────────────────────────────────────── */
         $siswaBerisiko = collect();
         $siswaRisiko   = 0;
@@ -242,7 +310,7 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           8. CHART TREN 7 HARI TERAKHIR
+           9. CHART TREN 7 HARI TERAKHIR
         ───────────────────────────────────────────────────────── */
         $chartLabels = [];
         $chartHadir  = [];
@@ -268,7 +336,7 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           9. JADWAL MENGAJAR HARI INI
+           10. JADWAL MENGAJAR HARI INI
         ───────────────────────────────────────────────────────── */
         $hariMap = [
             'Sunday'=>'Minggu','Monday'=>'Senin','Tuesday'=>'Selasa',
@@ -298,7 +366,9 @@ class DashboardController extends Controller
         }
 
         /* ─────────────────────────────────────────────────────────
-           10. REKAP ABSENSI WALI KELAS
+           11. REKAP ABSENSI WALI KELAS
+               Query SELALU berdasarkan $kelasWaliData->id
+               agar siswa yang tampil = kelas yang benar.
         ───────────────────────────────────────────────────────── */
         $siswaRekapDashboard = collect();
         $rekapDataDashboard  = [];
@@ -307,8 +377,15 @@ class DashboardController extends Controller
 
         if ($isWaliKelas && $kelasWaliData) {
             try {
+                /*
+                 * PASTIKAN query menggunakan $kelasWaliData->id
+                 * yang sudah di-resolve oleh resolveKelasWali() di atas.
+                 * Ini menjamin siswa yang tampil = kelas yang sama
+                 * dengan profil dan halaman wali-kelas/index.
+                 */
                 $siswaRekapDashboard = Siswa::where('kelas_id', $kelasWaliData->id)
                     ->orderBy('nama')->get();
+
                 foreach ($siswaRekapDashboard as $siswa) {
                     try {
                         $r = AbsensiSiswa::where('siswa_id', $siswa->id)
@@ -319,6 +396,7 @@ class DashboardController extends Controller
                                          SUM(CASE WHEN status='alpha' THEN 1 ELSE 0 END) as alpha")
                             ->first();
                     } catch (\Exception $e) { $r = null; }
+
                     $rekapDataDashboard[$siswa->id] = [
                         'hadir' => $r?->hadir ?? 0,
                         'sakit' => $r?->sakit ?? 0,
@@ -340,7 +418,8 @@ class DashboardController extends Controller
             'isWaliKelas', 'kelasWaliData', 'namaKelasWali', 'totalSiswaWali',
             'siswaBerisiko', 'chartLabels', 'chartHadir', 'chartTidak',
             'jadwalHariIni', 'siswaRekapDashboard', 'rekapDataDashboard',
-            'rekapBulan', 'rekapTahun', 'widgetPengumuman'
+            'rekapBulan', 'rekapTahun', 'widgetPengumuman',
+            'guruUltah'
         ));
     }
 }

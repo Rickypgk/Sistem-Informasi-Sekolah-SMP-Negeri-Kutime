@@ -39,6 +39,41 @@
     </div>
 </div>
 
+{{-- Modal Konfirmasi Hapus Massal --}}
+<div id="pgBulkDeleteModal"
+     onclick="if(event.target===this)pgTutupBulkModal()"
+     class="fixed inset-0 z-[1000] hidden items-center justify-center p-4"
+     style="background:rgba(0,0,0,.6);backdrop-filter:blur(6px)">
+    <div class="w-full max-w-sm bg-white dark:bg-slate-800 rounded-2xl shadow-2xl
+                border border-slate-200 dark:border-slate-700 p-5">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-xl shrink-0">
+                🗑️
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Hapus Pengumuman</h3>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Tindakan ini tidak dapat dibatalkan</p>
+            </div>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 mb-4" id="pgBulkDeleteDesc">
+            Yakin ingin menghapus <strong id="pgBulkDeleteCount">0</strong> pengumuman yang dipilih?
+        </p>
+        <div class="flex gap-2">
+            <button onclick="pgTutupBulkModal()"
+                    class="flex-1 px-4 py-2 rounded-xl text-xs font-semibold
+                           bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600
+                           text-slate-700 dark:text-slate-200 transition">
+                Batal
+            </button>
+            <button onclick="pgKonfirmasiBulkDelete()"
+                    class="flex-1 px-4 py-2 rounded-xl text-xs font-semibold
+                           bg-red-600 hover:bg-red-700 text-white transition">
+                Ya, Hapus
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="space-y-4">
 
     {{-- Header --}}
@@ -46,7 +81,7 @@
         <div>
             <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">📢 Kelola Pengumuman</h2>
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                Buat & kelola pengumuman untuk Guru dan Siswa
+                Buat &amp; kelola pengumuman untuk Guru dan Siswa
             </p>
         </div>
         <a href="{{ route('admin.pengumuman.create') }}"
@@ -136,6 +171,50 @@
         </form>
     </div>
 
+    {{-- Bulk Action Bar (muncul saat ada yang dicentang) --}}
+    <div id="pgBulkBar"
+         class="hidden items-center justify-between gap-3 px-4 py-3 rounded-2xl
+                bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200
+                dark:border-indigo-700 shadow-sm">
+        <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-300 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <span class="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                <span id="pgSelectedCount">0</span> pengumuman dipilih
+            </span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="pgDeselectAll()"
+                    class="px-3 py-1.5 text-xs font-semibold rounded-xl
+                           bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600
+                           text-slate-600 dark:text-slate-300 border border-slate-200
+                           dark:border-slate-600 transition">
+                Batal Pilih
+            </button>
+            <button onclick="pgBukaBulkModal()"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold
+                           rounded-xl bg-red-600 hover:bg-red-700 text-white transition shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0
+                             01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0
+                             00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Hapus yang Dipilih
+            </button>
+        </div>
+    </div>
+
+    {{-- Form Bulk Delete (hidden, di-submit via JS) --}}
+    <form id="pgBulkDeleteForm" method="POST" action="{{ route('admin.pengumuman.bulkDestroy') }}" class="hidden">
+        @csrf
+        @method('DELETE')
+        <div id="pgBulkDeleteIds"></div>
+    </form>
+
     {{-- Tabel --}}
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200
                 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -156,6 +235,18 @@
                 <thead>
                     <tr class="border-b border-slate-200 dark:border-slate-700
                                bg-slate-50 dark:bg-slate-900/50 text-left">
+                        {{-- Checkbox Pilih Semua --}}
+                        <th class="px-4 py-2.5 w-8">
+                            <div class="flex items-center justify-center">
+                                <input type="checkbox" id="pgCheckAll"
+                                       onchange="pgToggleAll(this)"
+                                       title="Pilih semua"
+                                       class="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600
+                                              text-indigo-600 bg-white dark:bg-slate-700
+                                              focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer
+                                              accent-indigo-600">
+                            </div>
+                        </th>
                         <th class="px-4 py-2.5 text-[10px] font-semibold text-slate-500
                                    dark:text-slate-400 uppercase tracking-wide">Pengumuman</th>
                         <th class="px-3 py-2.5 text-[10px] font-semibold text-slate-500
@@ -172,7 +263,7 @@
                                    dark:text-slate-400 uppercase tracking-wide">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50" id="pgTableBody">
                     @foreach($pengumuman as $item)
                     @php
                         $pgFileUrl = $item->file_path ? asset('storage/' . $item->file_path) : '';
@@ -197,7 +288,21 @@
                         ];
                         $pgJson = json_encode($pgData, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE);
                     @endphp
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group
+                               pg-row" data-id="{{ $item->id }}">
+
+                        {{-- Checkbox baris --}}
+                        <td class="px-4 py-3 w-8">
+                            <div class="flex items-center justify-center">
+                                <input type="checkbox"
+                                       class="pg-row-check w-3.5 h-3.5 rounded border-slate-300
+                                              dark:border-slate-600 text-indigo-600 bg-white
+                                              dark:bg-slate-700 focus:ring-indigo-500
+                                              focus:ring-offset-0 cursor-pointer accent-indigo-600"
+                                       value="{{ $item->id }}"
+                                       onchange="pgUpdateBulkBar()">
+                            </div>
+                        </td>
 
                         {{-- Judul --}}
                         <td class="px-4 py-3 max-w-xs">
@@ -222,7 +327,7 @@
                                                 bg-slate-100 dark:bg-slate-700">
                                         <img src="{{ asset('storage/' . $item->file_path) }}" alt=""
                                              class="w-full h-full object-cover"
-                                             onerror="this.parentElement.classList.add('hidden')">
+                                             onerror="pgThumbError(this)">
                                     </div>
                                     @endif
                                 </div>
@@ -342,83 +447,301 @@
 <script>
 (function () {
     'use strict';
+
+    /* ─────────────────────────────────────────
+     * FIX UTAMA: semua onerror pakai fungsi
+     * global — tidak ada escaped-quote hell
+     * ───────────────────────────────────────── */
+
+    /** Thumbnail kecil di baris tabel gagal → sembunyikan wrapper */
+    window.pgThumbError = function (img) {
+        var wrap = img.parentElement;
+        if (wrap) wrap.classList.add('hidden');
+    };
+
+    /** Gambar di dalam modal gagal → tampilkan placeholder */
+    window.pgModalImgError = function (img) {
+        var wrap = img.closest('div');
+        if (!wrap) return;
+        wrap.innerHTML =
+            '<div class="p-6 text-center">' +
+                '<div class="text-3xl mb-1.5">🖼️</div>' +
+                '<p class="text-xs text-slate-400">Gambar tidak dapat dimuat.</p>' +
+            '</div>';
+    };
+
+    /* ── Buka / Tutup modal detail ── */
     window.pgBuka = function (d) {
         var k = document.getElementById('pgModalKonten');
         if (!k) return;
         k.innerHTML = pgHtml(d);
         var o = document.getElementById('pgModal');
-        o.classList.remove('hidden'); o.classList.add('flex');
+        o.classList.remove('hidden');
+        o.classList.add('flex');
         document.body.style.overflow = 'hidden';
     };
+
     window.pgTutup = function () {
         var o = document.getElementById('pgModal');
-        o.classList.add('hidden'); o.classList.remove('flex');
+        o.classList.add('hidden');
+        o.classList.remove('flex');
         document.body.style.overflow = '';
     };
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') pgTutup(); });
 
+    document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') {
+            pgTutup();
+            pgTutupBulkModal();
+        }
+    });
+
+    /* ── Toggle aktif / nonaktif ── */
     window.pgToggle = function (id, btn) {
         var token = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
         fetch('/admin/pengumuman/' + id + '/toggle', {
-            method: 'PATCH',
-            headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json', 'Accept': 'application/json' }
-        }).then(function(r){ return r.json(); }).then(function(data) {
+            method : 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN' : token,
+                'Content-Type' : 'application/json',
+                'Accept'       : 'application/json'
+            }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
             if (!data.success) return;
             var on = data.is_active;
-            btn.className = 'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ' + (on ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600');
-            btn.querySelector('span').style.transform = on ? 'translateX(18px)' : 'translateX(2px)';
+            btn.className =
+                'relative inline-flex h-5 w-9 items-center rounded-full ' +
+                'transition-colors focus:outline-none ' +
+                (on ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600');
+            btn.querySelector('span').style.transform =
+                on ? 'translateX(18px)' : 'translateX(2px)';
             btn.dataset.active = on ? '1' : '0';
-        }).catch(function(e){ console.error('Toggle error:', e); });
+        })
+        .catch(function (err) { console.error('Toggle error:', err); });
     };
 
+    /* ════════════════════════════════════════
+     * BULK SELECT / DELETE
+     * ════════════════════════════════════════ */
+
+    /** Pilih / Batal pilih semua checkbox di halaman ini */
+    window.pgToggleAll = function (masterCb) {
+        var checks = document.querySelectorAll('.pg-row-check');
+        checks.forEach(function (cb) { cb.checked = masterCb.checked; });
+        pgUpdateBulkBar();
+        pgHighlightRows();
+    };
+
+    /** Update tampilan bulk bar berdasar jumlah yang dicentang */
+    window.pgUpdateBulkBar = function () {
+        var checked = document.querySelectorAll('.pg-row-check:checked');
+        var bar     = document.getElementById('pgBulkBar');
+        var countEl = document.getElementById('pgSelectedCount');
+        var master  = document.getElementById('pgCheckAll');
+        var all     = document.querySelectorAll('.pg-row-check');
+
+        if (!bar || !countEl) return;
+
+        countEl.textContent = checked.length;
+
+        if (checked.length > 0) {
+            bar.classList.remove('hidden');
+            bar.classList.add('flex');
+        } else {
+            bar.classList.add('hidden');
+            bar.classList.remove('flex');
+        }
+
+        /* State checkbox master: checked / indeterminate / unchecked */
+        if (master) {
+            if (checked.length === 0) {
+                master.checked       = false;
+                master.indeterminate = false;
+            } else if (checked.length === all.length) {
+                master.checked       = true;
+                master.indeterminate = false;
+            } else {
+                master.checked       = false;
+                master.indeterminate = true;
+            }
+        }
+
+        pgHighlightRows();
+    };
+
+    /** Highlight baris yang dicentang */
+    function pgHighlightRows() {
+        document.querySelectorAll('.pg-row').forEach(function (row) {
+            var cb = row.querySelector('.pg-row-check');
+            if (cb && cb.checked) {
+                row.classList.add('bg-indigo-50', 'dark:bg-indigo-900/20');
+                row.classList.remove('hover:bg-slate-50');
+            } else {
+                row.classList.remove('bg-indigo-50', 'dark:bg-indigo-900/20');
+                row.classList.add('hover:bg-slate-50');
+            }
+        });
+    }
+
+    /** Batal pilih semua */
+    window.pgDeselectAll = function () {
+        var master = document.getElementById('pgCheckAll');
+        if (master) { master.checked = false; master.indeterminate = false; }
+        document.querySelectorAll('.pg-row-check').forEach(function (cb) {
+            cb.checked = false;
+        });
+        pgUpdateBulkBar();
+        pgHighlightRows();
+    };
+
+    /** Buka modal konfirmasi hapus massal */
+    window.pgBukaBulkModal = function () {
+        var checked = document.querySelectorAll('.pg-row-check:checked');
+        if (checked.length === 0) return;
+        document.getElementById('pgBulkDeleteCount').textContent = checked.length;
+        var m = document.getElementById('pgBulkDeleteModal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    };
+
+    /** Tutup modal konfirmasi hapus massal */
+    window.pgTutupBulkModal = function () {
+        var m = document.getElementById('pgBulkDeleteModal');
+        if (!m) return;
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+        document.body.style.overflow = '';
+    };
+
+    /** Eksekusi hapus massal: inject hidden input → submit form */
+    window.pgKonfirmasiBulkDelete = function () {
+        var checked = document.querySelectorAll('.pg-row-check:checked');
+        if (checked.length === 0) return;
+
+        var container = document.getElementById('pgBulkDeleteIds');
+        container.innerHTML = '';
+
+        checked.forEach(function (cb) {
+            var inp = document.createElement('input');
+            inp.type  = 'hidden';
+            inp.name  = 'ids[]';
+            inp.value = cb.value;
+            container.appendChild(inp);
+        });
+
+        document.getElementById('pgBulkDeleteForm').submit();
+    };
+
+    /* ── Bangun HTML modal detail ── */
     function pgHtml(d) {
         var h = '';
-        h += '<div class="flex items-start gap-2.5 mb-3.5 pr-7"><div class="text-xl shrink-0 mt-0.5">' + d.tipeIcon + '</div>';
-        h += '<div class="flex-1 min-w-0"><h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug break-words">' + e(d.judul) + '</h2>';
-        h += '<div class="flex gap-1.5 mt-1.5 flex-wrap">';
-        h += '<span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ' + d.audienceColor + '">' + e(d.audience) + '</span>';
-        h += '<span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 capitalize">' + e(d.tipe) + '</span>';
-        h += '</div></div></div>';
-        h += '<div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400 mb-3.5 pb-3.5 border-b border-slate-200 dark:border-slate-700">';
-        h += '<span>📅 ' + e(d.tanggal) + '</span><span>👤 ' + e(d.creator) + '</span><span>🕐 ' + e(d.diffHumans) + '</span>';
+
+        /* Header judul + badge */
+        h += '<div class="flex items-start gap-2.5 mb-3.5 pr-7">';
+        h +=   '<div class="text-xl shrink-0 mt-0.5">' + d.tipeIcon + '</div>';
+        h +=   '<div class="flex-1 min-w-0">';
+        h +=     '<h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug break-words">' + e(d.judul) + '</h2>';
+        h +=     '<div class="flex gap-1.5 mt-1.5 flex-wrap">';
+        h +=       '<span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ' + d.audienceColor + '">' + e(d.audience) + '</span>';
+        h +=       '<span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 capitalize">' + e(d.tipe) + '</span>';
+        h +=     '</div>';
+        h +=   '</div>';
         h += '</div>';
+
+        /* Meta */
+        h += '<div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400 mb-3.5 pb-3.5 border-b border-slate-200 dark:border-slate-700">';
+        h +=   '<span>📅 ' + e(d.tanggal) + '</span>';
+        h +=   '<span>👤 ' + e(d.creator) + '</span>';
+        h +=   '<span>🕐 ' + e(d.diffHumans) + '</span>';
+        h += '</div>';
+
+        /* Gambar */
         if (d.tipe === 'gambar' && d.fileUrl) {
             h += '<div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-600 mb-3.5 bg-slate-50 dark:bg-slate-900 flex items-center justify-center">';
-            h += '<img src="' + d.fileUrl + '" alt="' + e(d.judul) + '" class="w-full max-h-60 object-contain block"';
-            h += ' onerror="this.closest(\'div\').innerHTML=\'<div class=\\\"p-6 text-center\\\"><div class=\\\"text-3xl mb-1.5\\\">🖼️</div><p class=\\\"text-xs text-slate-400\\\">Gambar tidak dapat dimuat.</p></div>\'">';
+            h +=   '<img src="' + d.fileUrl + '"' +
+                       ' alt="' + e(d.judul) + '"' +
+                       ' class="w-full max-h-60 object-contain block"' +
+                       ' onerror="pgModalImgError(this)">';
             h += '</div>';
         }
+
+        /* Isi teks */
         if (d.isi && d.isi.trim()) {
             var adaTag = /<[a-z][\s\S]*>/i.test(d.isi);
             h += adaTag
                 ? '<div class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed mb-3.5 prose prose-sm dark:prose-invert max-w-none">' + s(d.isi) + '</div>'
                 : '<div class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed mb-3.5 whitespace-pre-line">' + e(d.isi) + '</div>';
         }
+
+        /* Dokumen */
         if (d.tipe === 'dokumen' && d.fileUrl) {
             h += '<div class="flex items-center justify-between gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-200 dark:border-indigo-700 mb-3.5">';
-            h += '<div class="flex items-center gap-2"><div class="w-7 h-7 bg-indigo-100 dark:bg-indigo-800 rounded-lg flex items-center justify-center text-sm">📄</div>';
-            h += '<div><p class="text-xs font-bold text-indigo-700 dark:text-indigo-300">' + e(d.fileExt || 'FILE') + '</p>';
-            h += '<p class="text-[10px] text-slate-400 max-w-[150px] truncate">' + e(d.fileName) + '</p></div></div>';
-            h += '<a href="' + d.fileUrl + '" target="_blank" download onclick="event.stopPropagation()" class="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg no-underline">';
-            h += '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>';
-            h += 'Unduh</a></div>';
+            h +=   '<div class="flex items-center gap-2">';
+            h +=     '<div class="w-7 h-7 bg-indigo-100 dark:bg-indigo-800 rounded-lg flex items-center justify-center text-sm">📄</div>';
+            h +=     '<div>';
+            h +=       '<p class="text-xs font-bold text-indigo-700 dark:text-indigo-300">' + e(d.fileExt || 'FILE') + '</p>';
+            h +=       '<p class="text-[10px] text-slate-400 max-w-[150px] truncate">' + e(d.fileName) + '</p>';
+            h +=     '</div>';
+            h +=   '</div>';
+            h +=   '<a href="' + d.fileUrl + '" target="_blank" download onclick="event.stopPropagation()"' +
+                      ' class="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg no-underline">';
+            h +=     '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>';
+            h +=     'Unduh';
+            h +=   '</a>';
+            h += '</div>';
         }
+
+        /* Link */
         if (d.tipe === 'link' && d.linkUrl) {
             h += '<div class="p-3 bg-sky-50 dark:bg-sky-900/30 rounded-xl border border-sky-200 dark:border-sky-700 mb-3.5">';
-            h += '<p class="text-[10px] text-slate-500 mb-2 font-medium">🔗 Tautan</p>';
-            h += '<a href="' + d.linkUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg no-underline">';
-            h += '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>';
-            h += e(d.linkLabel || 'Buka Link') + '</a></div>';
+            h +=   '<p class="text-[10px] text-slate-500 mb-2 font-medium">🔗 Tautan</p>';
+            h +=   '<a href="' + d.linkUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation()"' +
+                      ' class="inline-flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg no-underline">';
+            h +=     '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>';
+            h +=     e(d.linkLabel || 'Buka Link');
+            h +=   '</a>';
+            h += '</div>';
         }
+
+        /* Tanggal selesai */
         if (d.tglSelesai) {
             h += '<div class="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700 mb-3">';
-            h += '<span>⏰</span><p class="text-[10px] text-amber-700 dark:text-amber-300 font-medium">Berakhir: <strong>' + e(d.tglSelesai) + '</strong></p></div>';
+            h +=   '<span>⏰</span>';
+            h +=   '<p class="text-[10px] text-amber-700 dark:text-amber-300 font-medium">Berakhir: <strong>' + e(d.tglSelesai) + '</strong></p>';
+            h += '</div>';
         }
-        h += '<div class="flex justify-end pt-1"><button onclick="pgTutup()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-colors">Tutup</button></div>';
+
+        /* Tombol tutup */
+        h += '<div class="flex justify-end pt-1">';
+        h +=   '<button onclick="pgTutup()"' +
+                   ' class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600' +
+                   ' text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-colors">Tutup</button>';
+        h += '</div>';
+
         return h;
     }
-    function e(v) { if(v==null) return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
-    function s(h) { return (h||'').replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<iframe[\s\S]*?<\/iframe>/gi,'').replace(/\bon\w+=["'][^"']*["']/gi,'').replace(/javascript:/gi,'#'); }
+
+    /* Escape HTML untuk output aman */
+    function e(v) {
+        if (v == null) return '';
+        return String(v)
+            .replace(/&/g,  '&amp;')
+            .replace(/</g,  '&lt;')
+            .replace(/>/g,  '&gt;')
+            .replace(/"/g,  '&quot;')
+            .replace(/'/g,  '&#039;');
+    }
+
+    /* Sanitasi HTML rich-text (buang script/iframe/on*) */
+    function s(h) {
+        return (h || '')
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+            .replace(/\bon\w+=["'][^"']*["']/gi, '')
+            .replace(/javascript:/gi, '#');
+    }
 })();
 </script>
 

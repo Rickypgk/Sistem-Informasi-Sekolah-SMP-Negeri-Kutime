@@ -15,6 +15,13 @@
      * Meski controller gagal inject, ?? false mencegah undefined error.
      */
     $isWaliKelas = isset($isWaliKelas) ? (bool) $isWaliKelas : false;
+
+    /*
+     * SAFETY CAST — jamin $guruUltah selalu Collection.
+     * Jika controller gagal inject (misal guru belum terdaftar),
+     * widget tidak akan crash karena ada guard @if di dalam partial.
+     */
+    $guruUltah = isset($guruUltah) ? $guruUltah : collect();
 ?>
 
 <div class="space-y-4">
@@ -44,16 +51,12 @@
             <?php echo $__env->make('guru.dashboard.announcements', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
             
+            <?php echo $__env->make('guru.dashboard.ultah_guru', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+
+            
             <?php if($isWaliKelas): ?>
                 <?php echo $__env->make('guru.dashboard.wali-kelas-summary', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <?php endif; ?>
-
-        </div>
-        
-        <div style="background:#1e293b;color:#4ade80;padding:10px 14px;font-size:11px;font-family:monospace;border-radius:8px;margin-bottom:12px;">
-            isWaliKelas = <?php echo e(var_export($isWaliKelas ?? 'UNDEFINED', true)); ?> |
-            kelasWaliData = <?php echo e($kelasWaliData ? $kelasWaliData->name : 'NULL'); ?> |
-            totalSiswaWali = <?php echo e($totalSiswaWali ?? 0); ?>
 
         </div>
 

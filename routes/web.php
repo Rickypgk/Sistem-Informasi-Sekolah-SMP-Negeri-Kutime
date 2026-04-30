@@ -76,6 +76,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         Route::get('/export/excel',            [UserController::class, 'exportExcel'])->name('export-excel');
         Route::get('/export/pdf',              [UserController::class, 'exportPdf'])->name('export-pdf');
         Route::get('/template/import',         [UserController::class, 'downloadTemplate'])->name('template-import');
+
+        Route::delete('bulk-destroy', [UserController::class, 'bulkDestroy'])->name('bulk-destroy');
     });
 
     // DOWNLOAD TEMPLATE - DENGAN PARAMETER ROLE (INI YANG BARU)
@@ -84,6 +86,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
     // ── Kelola Kelas ──────────────────────────────────────────────
     Route::resource('kelas', KelasController::class);
+    Route::delete('kelas/bulk-destroy', [KelasController::class, 'bulkDestroy'])->name('kelas.bulk-destroy');
 
     // ── Absensi Guru ──────────────────────────────────────────────
     //
@@ -111,7 +114,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::delete('/pengumuman/{pengumuman}',       [PengumumanController::class, 'adminDestroy'])->name('pengumuman.destroy');
     Route::get('/pengumuman/{pengumuman}',          [PengumumanController::class, 'adminShow'])->name('pengumuman.show');
     Route::patch('/pengumuman/{pengumuman}/toggle', [PengumumanController::class, 'adminToggle'])->name('pengumuman.toggle');
-
+    // routes/web.php
+    Route::delete('pengumuman/bulk-destroy', [PengumumanController::class, 'bulkDestroy'])->name('pengumuman.bulkDestroy');
 
 
     // ── Kelola Website ────────────────────────────────────────────

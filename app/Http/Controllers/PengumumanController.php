@@ -277,4 +277,22 @@ class PengumumanController extends Controller
             ->limit($limit)
             ->get();
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer|exists:pengumuman,id']);
+
+        $pengumuman = \App\Models\Pengumuman::whereIn('id', $request->ids)->get();
+
+        foreach ($pengumuman as $item) {
+            // Hapus file storage jika ada
+            if ($item->file_path) {
+                \Storage::disk('public')->delete($item->file_path);
+            }
+            $item->delete();
+        }
+
+        return redirect()->route('admin.pengumuman')
+            ->with('success', count($request->ids) . ' pengumuman berhasil dihapus.');
+    }
 }

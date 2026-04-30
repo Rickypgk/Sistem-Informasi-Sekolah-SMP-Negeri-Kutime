@@ -38,10 +38,10 @@ class GaleriController extends Controller
             } else {
                 $rules['file_path'] = 'required|mimes:mp4,mov,avi,mkv,webm';
             }
-            $rules['thumbnail'] = 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120';
+            $rules['thumbnail'] = 'nullable|image|mimes:jpg,jpeg,png,webp|max:9999999';
         } else {
             $rules['link_url']  = 'required|url';
-            $rules['thumbnail'] = 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120';
+            $rules['thumbnail'] = 'nullable|image|mimes:jpg,jpeg,png,webp|max:9999999';
         }
 
         $validated = $request->validate($rules);
@@ -92,7 +92,7 @@ class GaleriController extends Controller
             'kategori'  => 'required|in:kegiatan,akademik,prestasi,lainnya',
             'status'    => 'required|in:aktif,draf',
             'urutan'    => 'nullable|integer|min:0',
-            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:9999999',
         ];
 
         if (in_array($tipe, ['photo', 'video'])) {

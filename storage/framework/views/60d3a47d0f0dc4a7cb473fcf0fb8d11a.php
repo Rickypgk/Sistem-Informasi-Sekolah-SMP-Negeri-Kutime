@@ -238,7 +238,7 @@ $widgetPengumuman = $widgetPengumuman ?? collect();
 </div>
 
 
-<?php if (! $__env->hasRenderedOnce('814c7ecd-c677-4c9f-8913-e79fe837bcf8')): $__env->markAsRenderedOnce('814c7ecd-c677-4c9f-8913-e79fe837bcf8'); ?>
+<?php if (! $__env->hasRenderedOnce('cc542ed1-921d-4f2e-bb68-6729943b21dc')): $__env->markAsRenderedOnce('cc542ed1-921d-4f2e-bb68-6729943b21dc'); ?>
 <div id="pgModal"
     onclick="if(event.target===this)pgTutup()"
     class="fixed inset-0 z-[999] hidden items-center justify-center p-4"

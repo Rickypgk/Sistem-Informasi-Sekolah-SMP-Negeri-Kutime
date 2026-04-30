@@ -116,6 +116,14 @@
                     {{-- Media tipe (dikontrol Alpine) --}}
                     <input type="hidden" name="media_tipe" :value="mediaTipe">
 
+                    {{--
+                        FIX UTAMA: Satu hidden input untuk media_link.
+                        Alpine akan sync nilai ini setiap kali user mengetik
+                        di input YouTube atau Facebook, sehingga field ini
+                        SELALU terkirim bersama form tanpa bergantung x-show.
+                    --}}
+                    <input type="hidden" name="media_link" id="f-media-link-hidden" :value="mediaLinkValue">
+
                     <div class="grid lg:grid-cols-5 gap-5">
 
                         {{-- ── Kiri: Konten ── --}}
@@ -252,11 +260,16 @@
                                     </div>
                                 </div>
 
-                                {{-- Link YouTube --}}
+                                {{--
+                                    FIX: Input YouTube — tidak punya name="media_link" lagi.
+                                    Nilainya disync ke Alpine mediaLinkValue via x-model,
+                                    yang kemudian diteruskan ke hidden input di atas.
+                                --}}
                                 <div x-show="mediaTipe === 'link_youtube'" class="space-y-2">
-                                    <input type="url" id="f-media-youtube" name="media_link"
+                                    <input type="url" id="f-media-youtube"
                                            class="w-full rounded-lg border-slate-300 text-xs py-2 focus:border-red-500 focus:ring-red-400"
                                            placeholder="https://www.youtube.com/watch?v=..."
+                                           x-model="mediaLinkValue"
                                            @input="previewYoutube($event.target.value)">
                                     <div x-show="youtubeThumbnail" class="rounded-lg overflow-hidden border border-slate-200 bg-white">
                                         <img :src="youtubeThumbnail" class="w-full max-h-40 object-cover">
@@ -264,11 +277,15 @@
                                     </div>
                                 </div>
 
-                                {{-- Link Facebook --}}
+                                {{--
+                                    FIX: Input Facebook — tidak punya name="media_link" lagi.
+                                    Nilainya disync ke Alpine mediaLinkValue via x-model.
+                                --}}
                                 <div x-show="mediaTipe === 'link_facebook'" class="space-y-2">
-                                    <input type="url" id="f-media-facebook" name="media_link"
+                                    <input type="url" id="f-media-facebook"
                                            class="w-full rounded-lg border-slate-300 text-xs py-2 focus:border-blue-500 focus:ring-blue-400"
-                                           placeholder="https://www.facebook.com/watch?v=...">
+                                           placeholder="https://www.facebook.com/watch?v=..."
+                                           x-model="mediaLinkValue">
                                     <p class="text-xs text-slate-400">Masukkan URL video Facebook.</p>
                                 </div>
 
@@ -537,7 +554,7 @@
                                     </a>
                                 @endif
 
-                                {{-- Tombol Edit (inline, isi form via JS) --}}
+                                {{-- Tombol Edit --}}
                                 <button type="button"
                                         @click="openEdit(
                                             {{ $item->id }},
@@ -646,6 +663,7 @@ function beritaTab() {
 
         // ── Media state ──
         mediaTipe:            'none',
+        mediaLinkValue:       '',   // FIX: satu source-of-truth untuk media_link
         existingFileUrl:      '',
         existingThumbnailUrl: '',
         photoPreview:         null,
@@ -667,17 +685,14 @@ function beritaTab() {
                 this.formOpen = true;
                 @if(old('media_tipe'))
                     this.mediaTipe = @js(old('media_tipe'));
-                    this.$nextTick(() => {
-                        @if(old('media_link'))
-                            const ytEl = document.getElementById('f-media-youtube');
-                            const fbEl = document.getElementById('f-media-facebook');
-                            if (ytEl) ytEl.value = @js(old('media_link'));
-                            if (fbEl) fbEl.value = @js(old('media_link'));
+                    @if(old('media_link'))
+                        this.mediaLinkValue = @js(old('media_link'));
+                        this.$nextTick(() => {
                             if (@js(old('media_tipe')) === 'link_youtube') {
                                 this.previewYoutube(@js(old('media_link')));
                             }
-                        @endif
-                    });
+                        });
+                    @endif
                 @endif
             @endif
         },
@@ -690,7 +705,7 @@ function beritaTab() {
             this.scrollToPanel();
         },
 
-        // ── Buka form mode Edit (isi data dari inline) ──
+        // ── Buka form mode Edit ──
         openEdit(id, judul, ringkasan, isi, kategori, status, tanggal, isPenting,
                  mediaTipe, mediaLink, mediaFileUrl, mediaThumbnailUrl) {
 
@@ -702,7 +717,6 @@ function beritaTab() {
             this.formOpen  = true;
 
             this.$nextTick(() => {
-                // Isi field teks
                 this.setVal('f-judul',     judul);
                 this.setVal('f-ringkasan', ringkasan);
                 this.setVal('f-isi',       isi);
@@ -710,30 +724,24 @@ function beritaTab() {
                 this.setVal('f-status',    status);
                 this.setVal('f-tanggal',   tanggal);
 
-                // Checkbox penting
                 const pEl = document.getElementById('f-penting');
                 if (pEl) pEl.checked = isPenting;
 
-                // Media
-                this.mediaTipe            = mediaTipe  || 'none';
-                this.existingFileUrl      = mediaFileUrl      || '';
+                this.mediaTipe            = mediaTipe       || 'none';
+                this.mediaLinkValue       = mediaLink        || '';
+                this.existingFileUrl      = mediaFileUrl     || '';
                 this.existingThumbnailUrl = mediaThumbnailUrl || '';
 
-                // Isi input link
+                // Preview thumbnail YouTube jika mode edit link_youtube
                 this.$nextTick(() => {
-                    if (mediaTipe === 'link_youtube') {
-                        this.setVal('f-media-youtube', mediaLink);
+                    if (mediaTipe === 'link_youtube' && mediaLink) {
                         this.previewYoutube(mediaLink);
-                    } else if (mediaTipe === 'link_facebook') {
-                        this.setVal('f-media-facebook', mediaLink);
                     }
                 });
 
-                // Update action form + method
                 const form = document.getElementById('berita-form');
-                if (form) {
-                    form.action = '{{ url('admin/berita') }}/' + id;
-                }
+                if (form) form.action = '{{ url('admin/berita') }}/' + id;
+
                 const methodInput = document.getElementById('f-method');
                 if (methodInput) methodInput.value = 'PATCH';
             });
@@ -759,41 +767,39 @@ function beritaTab() {
             this.editId               = null;
             this.editJudul            = '';
             this.mediaTipe            = 'none';
+            this.mediaLinkValue       = '';
             this.existingFileUrl      = '';
             this.existingThumbnailUrl = '';
             this.photoPreview         = null;
             this.videoPreview         = null;
             this.youtubeThumbnail     = null;
 
-            // Reset teks
             ['f-judul', 'f-ringkasan', 'f-isi'].forEach(id => this.setVal(id, ''));
             this.setVal('f-kategori', 'berita');
             this.setVal('f-status',   'draf');
             this.setVal('f-tanggal',  new Date().toISOString().slice(0, 16));
 
-            // Reset checkbox
             const pEl = document.getElementById('f-penting');
             if (pEl) pEl.checked = false;
 
-            // Reset file inputs
             ['f-media-photo', 'f-media-video', 'f-thumbnail'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
 
-            // Reset form action & method ke store
             const form = document.getElementById('berita-form');
             if (form) form.action = '{{ route('admin.berita.store') }}';
             const methodInput = document.getElementById('f-method');
             if (methodInput) methodInput.value = 'POST';
         },
 
-        // ── Ganti tipe media ──
+        // ── Ganti tipe media — reset link & preview ──
         onTipeChange() {
             this.photoPreview     = null;
             this.videoPreview     = null;
             this.youtubeThumbnail = null;
             this.existingFileUrl  = '';
+            this.mediaLinkValue   = '';   // FIX: bersihkan link saat ganti tipe
         },
 
         // ── Preview foto ──

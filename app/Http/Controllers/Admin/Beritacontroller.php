@@ -28,7 +28,7 @@ class BeritaController extends Controller
             'status'          => 'required|in:aktif,draf',
             'tanggal_publish' => 'nullable|date',
             'media_tipe'      => 'required|in:none,photo,video,link_youtube,link_facebook',
-            'media_thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'media_thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:9999999',
         ];
 
         // Validasi file hanya saat tipe photo/video
@@ -98,7 +98,7 @@ class BeritaController extends Controller
             'status'          => 'required|in:aktif,draf',
             'tanggal_publish' => 'nullable|date',
             'media_tipe'      => 'required|in:none,photo,video,link_youtube,link_facebook',
-            'media_thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'media_thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:9999999',
         ];
 
         if ($mediaTipe === 'photo') {

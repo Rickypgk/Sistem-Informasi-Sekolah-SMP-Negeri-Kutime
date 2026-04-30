@@ -232,10 +232,6 @@
 
 </div>
 
-{{-- =========================================================== --}}
-{{-- DATA KELAS JSON — disimpan di script tag agar tidak ada      --}}
-{{-- konflik antara Blade parser dengan @json / arrow function    --}}
-{{-- =========================================================== --}}
 @php
     $kelasForJs = ($kelasList ?? collect())->map(function ($k) {
         return [
@@ -258,7 +254,6 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200
                 dark:border-slate-700 w-full max-w-md overflow-hidden">
 
-        {{-- Header --}}
         <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
@@ -281,16 +276,13 @@
               enctype="multipart/form-data" class="p-5 space-y-4">
             @csrf
 
-            {{-- 1. Pilih Role --}}
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                     Role Tujuan
                 </label>
                 <div class="grid grid-cols-2 gap-2">
                     <label class="cursor-pointer">
-                        <input type="radio" name="role" value="guru"
-                               id="importRoleGuru"
-                               class="peer hidden" checked>
+                        <input type="radio" name="role" value="guru" id="importRoleGuru" class="peer hidden" checked>
                         <div class="text-center py-2.5 rounded-xl border-2 border-slate-100 dark:border-slate-700
                                     peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-950/50
                                     text-xs font-semibold text-slate-600 dark:text-slate-400
@@ -300,9 +292,7 @@
                         </div>
                     </label>
                     <label class="cursor-pointer">
-                        <input type="radio" name="role" value="siswa"
-                               id="importRoleSiswa"
-                               class="peer hidden">
+                        <input type="radio" name="role" value="siswa" id="importRoleSiswa" class="peer hidden">
                         <div class="text-center py-2.5 rounded-xl border-2 border-slate-100 dark:border-slate-700
                                     peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-950/50
                                     text-xs font-semibold text-slate-600 dark:text-slate-400
@@ -314,32 +304,20 @@
                 </div>
             </div>
 
-            {{-- ===== FIELD KHUSUS SISWA ===== --}}
-            {{-- Tersembunyi secara default, muncul saat role Siswa dipilih --}}
             <div id="sectionSiswaImport"
-                 class="hidden space-y-3
-                        bg-violet-50 dark:bg-violet-950/20
-                        border border-violet-200 dark:border-violet-800
-                        rounded-2xl p-4">
-
+                 class="hidden space-y-3 bg-violet-50 dark:bg-violet-950/20
+                        border border-violet-200 dark:border-violet-800 rounded-2xl p-4">
                 <p class="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">
                     📋 Penempatan Kelas Siswa
                 </p>
-
-                {{--
-                    Tingkat + Semester digunakan untuk memfilter dropdown Kelas.
-                    Nilai tingkat & semester juga dikirim ke controller sebagai referensi.
-                --}}
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
-                                      uppercase tracking-wide mb-1">
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
                             Tingkat <span class="text-red-400">*</span>
                         </label>
                         <select name="import_grade" id="importGrade"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
-                                       px-3 py-2 text-xs transition
-                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
+                                       px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300
                                        bg-white dark:bg-slate-700 dark:text-slate-200">
                             <option value="">— Pilih Tingkat —</option>
                             <option value="7">VII (Kelas 7)</option>
@@ -347,16 +325,13 @@
                             <option value="9">IX (Kelas 9)</option>
                         </select>
                     </div>
-
                     <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
-                                      uppercase tracking-wide mb-1">
+                        <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
                             Semester <span class="text-red-400">*</span>
                         </label>
                         <select name="import_semester" id="importSemester"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600
-                                       px-3 py-2 text-xs transition
-                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
+                                       px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300
                                        bg-white dark:bg-slate-700 dark:text-slate-200">
                             <option value="">— Pilih Semester —</option>
                             <option value="1">Semester 1 (Ganjil)</option>
@@ -364,21 +339,13 @@
                         </select>
                     </div>
                 </div>
-
-                {{--
-                    Dropdown kelas diisi DINAMIS oleh JS dari data kelasListData.
-                    Filter berdasarkan grade + semester yang dipilih admin.
-                    Field ini yang dikirim ke controller: import_kelas_id
-                --}}
                 <div>
-                    <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400
-                                  uppercase tracking-wide mb-1">
+                    <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
                         Kelas <span class="text-red-400">*</span>
                     </label>
                     <select name="import_kelas_id" id="importKelasId"
                             class="w-full rounded-xl border border-slate-200 dark:border-slate-600
-                                   px-3 py-2 text-xs transition
-                                   focus:outline-none focus:ring-2 focus:ring-indigo-300
+                                   px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300
                                    bg-white dark:bg-slate-700 dark:text-slate-200">
                         <option value="">— Pilih tingkat &amp; semester dulu —</option>
                     </select>
@@ -386,11 +353,8 @@
                         Semua siswa dari file ini akan masuk ke kelas yang dipilih.
                     </p>
                 </div>
-
             </div>
-            {{-- ===== END FIELD KHUSUS SISWA ===== --}}
 
-            {{-- 2. Download Template --}}
             <div class="rounded-xl border border-dashed border-slate-200 dark:border-slate-600
                         bg-slate-50 dark:bg-slate-900/50 p-3.5">
                 <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
@@ -400,11 +364,9 @@
                     <a id="btnTemplateGuru"
                        href="{{ route('admin.users.template-import', ['role' => 'guru']) }}"
                        class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
-                              border border-indigo-200 dark:border-indigo-800
-                              bg-indigo-50 dark:bg-indigo-950/50
-                              text-indigo-700 dark:text-indigo-400
-                              text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-950
-                              transition-colors duration-150">
+                              border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50
+                              text-indigo-700 dark:text-indigo-400 text-xs font-semibold
+                              hover:bg-indigo-100 dark:hover:bg-indigo-950 transition-colors duration-150">
                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -414,11 +376,9 @@
                     <a id="btnTemplateSiswa"
                        href="{{ route('admin.users.template-import', ['role' => 'siswa']) }}"
                        class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
-                              border border-emerald-200 dark:border-emerald-800
-                              bg-emerald-50 dark:bg-emerald-950/50
-                              text-emerald-700 dark:text-emerald-400
-                              text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-950
-                              transition-colors duration-150">
+                              border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50
+                              text-emerald-700 dark:text-emerald-400 text-xs font-semibold
+                              hover:bg-emerald-100 dark:hover:bg-emerald-950 transition-colors duration-150">
                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -431,7 +391,6 @@
                 </p>
             </div>
 
-            {{-- 3. Password Default --}}
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                     Password Default <span class="text-red-400">*</span>
@@ -444,17 +403,14 @@
                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Min. 5 karakter.</p>
             </div>
 
-            {{-- 4. Upload File --}}
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                     File Excel (.xlsx / .xls) <span class="text-red-400">*</span>
                 </label>
-                <input type="file" name="import_file" id="importFileInput" required
-                       accept=".xlsx,.xls"
+                <input type="file" name="import_file" id="importFileInput" required accept=".xlsx,.xls"
                        class="w-full text-xs text-slate-500 dark:text-slate-400
                               file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                              file:text-xs file:font-semibold
-                              file:bg-indigo-50 dark:file:bg-indigo-950/50
+                              file:text-xs file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-950/50
                               file:text-indigo-700 dark:file:text-indigo-400
                               hover:file:bg-indigo-100 dark:hover:file:bg-indigo-950
                               file:cursor-pointer cursor-pointer file:transition-colors">
@@ -470,7 +426,6 @@
                 </div>
             </div>
 
-            {{-- Tombol Aksi --}}
             <div class="flex gap-2 pt-1">
                 <button type="submit"
                         class="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95
@@ -486,6 +441,70 @@
             </div>
 
         </form>
+    </div>
+</div>
+
+{{-- =========================================================== --}}
+{{-- MODAL BULK DELETE                                             --}}
+{{-- =========================================================== --}}
+<div id="modalBulkHapus"
+     class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200
+                dark:border-slate-700 w-full max-w-sm overflow-hidden">
+
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Hapus User Terpilih</h3>
+            </div>
+            <button onclick="closeModal('modalBulkHapus')"
+                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="p-5 space-y-4">
+            <div class="flex items-start gap-3 bg-red-50 dark:bg-red-950/30 border border-red-200
+                        dark:border-red-800 rounded-xl p-3.5">
+                <svg class="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                    <p class="text-xs font-bold text-red-700 dark:text-red-400">Konfirmasi Penghapusan</p>
+                    <p class="text-[11px] text-red-600 dark:text-red-500 mt-0.5 leading-relaxed">
+                        Akan menghapus <span id="bulkDeleteCount" class="font-bold">0</span> user yang dipilih.
+                        Tindakan ini tidak dapat dibatalkan.
+                    </p>
+                </div>
+            </div>
+
+            <form id="formBulkHapus" method="POST" action="{{ route('admin.users.bulk-destroy') }}">
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="ids" id="bulkDeleteIds">
+                <div class="flex gap-2">
+                    <button type="submit"
+                            class="flex-1 bg-red-600 hover:bg-red-700 active:scale-95
+                                   text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm">
+                        Ya, Hapus Sekarang
+                    </button>
+                    <button type="button" onclick="closeModal('modalBulkHapus')"
+                            class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600
+                                   text-xs font-semibold text-slate-600 dark:text-slate-400
+                                   hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -515,7 +534,6 @@ function closeModal(id) {
     document.body.style.overflow = '';
 }
 
-// Tutup modal jika klik backdrop
 document.querySelectorAll('[id^="modal"]').forEach(modal => {
     modal.addEventListener('click', function (e) {
         if (e.target === this) closeModal(this.id);
@@ -588,6 +606,21 @@ function openDeleteModal(userId, userName) {
     openModal('modalHapus');
 }
 
+// ── Bulk Delete ───────────────────────────────────────────────────────────────
+function openBulkDeleteModal(tab) {
+    const checkboxes = document.querySelectorAll(`.bulk-checkbox-${tab}:checked`);
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+
+    if (ids.length === 0) {
+        alert('Pilih minimal satu user yang akan dihapus.');
+        return;
+    }
+
+    document.getElementById('bulkDeleteCount').textContent = ids.length;
+    document.getElementById('bulkDeleteIds').value = ids.join(',');
+    openModal('modalBulkHapus');
+}
+
 // ── Auto-open modal jika ada error validasi ──────────────────────────────────
 @if($errors->any() && old('_form_context') === 'tambah')
     document.addEventListener('DOMContentLoaded', () => openModal('modalTambahUser'));
@@ -600,7 +633,6 @@ function openDeleteModal(userId, userName) {
 // ── Import Modal: Toggle section siswa & filter kelas dinamis ────────────────
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Baca data kelas dari script tag — aman dari Blade parser error
     var rawJson  = document.getElementById('kelasListData');
     var allKelas = rawJson ? JSON.parse(rawJson.textContent) : [];
 
@@ -611,16 +643,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var selectSemester = document.getElementById('importSemester');
     var selectKelas    = document.getElementById('importKelasId');
 
-    // Guard: jika salah satu elemen tidak ada di DOM, hentikan
     if (!roleGuru || !roleSiswa || !sectionSiswa ||
         !selectGrade || !selectSemester || !selectKelas) {
         return;
     }
 
-    // Tampilkan / sembunyikan section kelas siswa sesuai role yang dipilih
     function toggleSiswaSection() {
         var isSiswa = roleSiswa.checked;
-
         if (isSiswa) {
             sectionSiswa.classList.remove('hidden');
             selectGrade.setAttribute('required', 'required');
@@ -631,25 +660,21 @@ document.addEventListener('DOMContentLoaded', function () {
             selectGrade.removeAttribute('required');
             selectSemester.removeAttribute('required');
             selectKelas.removeAttribute('required');
-            // Reset semua pilihan agar tidak ikut terkirim dengan nilai lama
             selectGrade.value     = '';
             selectSemester.value  = '';
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
         }
     }
 
-    // Filter dropdown kelas dari data kelola kelas berdasarkan grade + semester
     function filterKelas() {
         var grade    = selectGrade.value;
         var semester = selectSemester.value;
 
-        // Belum memilih salah satu → tampilkan placeholder
         if (!grade || !semester) {
             selectKelas.innerHTML = '<option value="">— Pilih tingkat &amp; semester dulu —</option>';
             return;
         }
 
-        // Filter hanya kelas yang cocok dengan grade DAN semester yang dipilih
         var filtered = allKelas.filter(function (k) {
             return k.grade === String(grade) && k.semester === String(semester);
         });
@@ -660,25 +685,20 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Bangun opsi dropdown dari data kelas yang sudah difilter
         var html = '<option value="">— Pilih Kelas —</option>';
         filtered.forEach(function (k) {
             var label = k.name;
-            if (k.academic_year) {
-                label += ' \u2014 ' + k.academic_year;
-            }
+            if (k.academic_year) label += ' \u2014 ' + k.academic_year;
             html += '<option value="' + k.id + '">' + label + '</option>';
         });
         selectKelas.innerHTML = html;
     }
 
-    // Pasang event listener ke radio dan select
     roleGuru.addEventListener('change', toggleSiswaSection);
     roleSiswa.addEventListener('change', toggleSiswaSection);
     selectGrade.addEventListener('change', filterKelas);
     selectSemester.addEventListener('change', filterKelas);
 
-    // Jalankan inisialisasi awal (Guru terpilih default → section siswa tersembunyi)
     toggleSiswaSection();
 });
 </script>
